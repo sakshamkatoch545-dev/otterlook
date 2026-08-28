@@ -1,7 +1,7 @@
 """
 AuraColor AI - Streamlit Community Cloud Application
 Renders the complete luxury frontend application identically to localhost,
-including the dark gold design system, live camera selfie capture, animated pipeline stepper,
+including the dark gold design system, live camera selfie viewfinder modal, animated pipeline stepper,
 interactive facial colorimetry visualizer, dynamic seasonal palette, and categorized styling tabs.
 """
 
@@ -65,7 +65,7 @@ sample_warm_b64 = get_sample_b64("sample_warm.jpg")
 sample_cool_b64 = get_sample_b64("sample_cool.jpg")
 sample_neutral_b64 = get_sample_b64("sample_neutral.jpg")
 
-# Complete Self-Contained HTML with Embedded Engine
+# Complete Self-Contained HTML with Embedded Engine & Live Camera
 html_content = f"""<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -143,7 +143,7 @@ html_content = f"""<!DOCTYPE html>
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             </div>
             <h3>Upload or Capture Facial Portrait</h3>
-            <p>Drag & drop your portrait here, take a selfie, or browse from files</p>
+            <p>Drag & drop your portrait here, take a live selfie, or browse from files</p>
             
             <div class="upload-actions">
               <button type="button" class="btn btn-sm btn-camera" id="camera-btn">
@@ -396,6 +396,29 @@ html_content = f"""<!DOCTYPE html>
     </section>
   </main>
 
+  <!-- Live Camera Viewfinder Modal -->
+  <div class="camera-modal-overlay hidden" id="camera-modal">
+    <div class="camera-modal-card">
+      <div class="camera-modal-header">
+        <h3>Live Selfie Viewfinder</h3>
+        <button class="modal-close" id="camera-close-btn" aria-label="Close camera">&times;</button>
+      </div>
+      <div class="camera-viewfinder-box">
+        <video id="camera-video" autoplay playsinline muted></video>
+        <div class="camera-face-guide">
+          <div class="face-oval-guide"></div>
+          <span class="guide-text">Position face inside oval with natural lighting</span>
+        </div>
+      </div>
+      <div class="camera-controls">
+        <button type="button" class="btn btn-primary btn-snap" id="camera-snap-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Snap Photo
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Educational Viva Defense Modal -->
   <div class="modal-overlay hidden" id="viva-modal">
     <div class="modal-card">
@@ -485,6 +508,13 @@ html_content = f"""<!DOCTYPE html>
       const modalCloseBtn = document.getElementById("modal-close-btn");
       const toast = document.getElementById("toast");
 
+      // Live Camera DOM Elements
+      let mediaStream = null;
+      const cameraModal = document.getElementById("camera-modal");
+      const cameraVideo = document.getElementById("camera-video");
+      const cameraCloseBtn = document.getElementById("camera-close-btn");
+      const cameraSnapBtn = document.getElementById("camera-snap-btn");
+
       let currentImageBitmap = null;
       let currentDataUrl = null;
 
@@ -512,12 +542,64 @@ html_content = f"""<!DOCTYPE html>
         if (e.target === vivaModal) vivaModal.classList.add("hidden");
       }});
 
-      // File & Camera Input
-      browseBtn.addEventListener("click", (e) => {{ e.stopPropagation(); fileInput.click(); }});
-      if (cameraBtn) {{
-        cameraBtn.addEventListener("click", (e) => {{ e.stopPropagation(); cameraInput.click(); }});
+      // Live Camera Stream
+      async function openLiveCamera() {{
+        try {{
+          mediaStream = await navigator.mediaDevices.getUserMedia({{
+            video: {{
+              facingMode: "user",
+              width: {{ ideal: 1280 }},
+              height: {{ ideal: 720 }}
+            }},
+            audio: false
+          }});
+          if (cameraVideo) cameraVideo.srcObject = mediaStream;
+          if (cameraModal) cameraModal.classList.remove("hidden");
+        }} catch (err) {{
+          console.warn("Could not open live stream, fallback to camera file input:", err);
+          if (cameraInput) cameraInput.click();
+        }}
       }}
 
+      function closeLiveCamera() {{
+        if (mediaStream) {{
+          mediaStream.getTracks().forEach((track) => track.stop());
+          mediaStream = null;
+        }}
+        if (cameraModal) cameraModal.classList.add("hidden");
+      }}
+
+      if (cameraBtn) {{
+        cameraBtn.addEventListener("click", (e) => {{
+          e.stopPropagation();
+          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {{
+            openLiveCamera();
+          }} else if (cameraInput) {{
+            cameraInput.click();
+          }}
+        }});
+      }}
+
+      if (cameraCloseBtn) cameraCloseBtn.addEventListener("click", closeLiveCamera);
+
+      if (cameraSnapBtn && cameraVideo) {{
+        cameraSnapBtn.addEventListener("click", () => {{
+          if (!cameraVideo.videoWidth) return;
+          const snapCanvas = document.createElement("canvas");
+          snapCanvas.width = cameraVideo.videoWidth;
+          snapCanvas.height = cameraVideo.videoHeight;
+          const ctx = snapCanvas.getContext("2d");
+          ctx.translate(snapCanvas.width, 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(cameraVideo, 0, 0, snapCanvas.width, snapCanvas.height);
+          const dataUrl = snapCanvas.toDataURL("image/jpeg", 0.92);
+          closeLiveCamera();
+          loadImageFromDataUrl(dataUrl);
+        }});
+      }}
+
+      // File & Camera Input
+      browseBtn.addEventListener("click", (e) => {{ e.stopPropagation(); fileInput.click(); }});
       dropZone.addEventListener("click", () => {{ if (!currentImageBitmap) fileInput.click(); }});
       dropZone.addEventListener("dragover", (e) => {{ e.preventDefault(); dropZone.classList.add("drag-over"); }});
       dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
@@ -667,7 +749,6 @@ html_content = f"""<!DOCTYPE html>
             const r = imgData[i];
             const g = imgData[i + 1];
             const b = imgData[i + 2];
-            // Basic skin filter
             if (r > g && g > b && r > 45 && r < 250) {{
               totalR += r;
               totalG += g;
@@ -678,7 +759,6 @@ html_content = f"""<!DOCTYPE html>
         }});
 
         if (count === 0) {{
-          // Fallback center crop
           const centerData = ctx.getImageData(Math.floor(w * 0.3), Math.floor(h * 0.3), Math.floor(w * 0.4), Math.floor(h * 0.4)).data;
           for (let i = 0; i < centerData.length; i += 16) {{
             totalR += centerData[i];
@@ -692,7 +772,6 @@ html_content = f"""<!DOCTYPE html>
         const meanG = totalG / Math.max(count, 1);
         const meanB = totalB / Math.max(count, 1);
 
-        // Convert RGB to CIELAB
         function rgbToLab(r, g, b) {{
           let rLin = r / 255.0, gLin = g / 255.0, bLin = b / 255.0;
           rLin = rLin > 0.04045 ? Math.pow((rLin + 0.055) / 1.055, 2.4) : rLin / 12.92;
@@ -713,7 +792,6 @@ html_content = f"""<!DOCTYPE html>
         const lab = rgbToLab(meanR, meanG, meanB);
         const ita = Math.atan2((lab.L - 50.0), Math.max(lab.b, 0.1)) * (180.0 / Math.PI);
 
-        // ML Decision Rules
         let undertone = "Warm";
         let conf = 88;
         let probs = {{ Warm: 0.88, Neutral: 0.09, Cool: 0.03 }};

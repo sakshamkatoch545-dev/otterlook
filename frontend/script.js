@@ -66,24 +66,96 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target === vivaModal) vivaModal.classList.add("hidden");
   });
 
+  // --- Live Camera Controller ---
+  let mediaStream = null;
+  const cameraModal = document.getElementById("camera-modal");
+  const cameraVideo = document.getElementById("camera-video");
+  const cameraCloseBtn = document.getElementById("camera-close-btn");
+  const cameraSnapBtn = document.getElementById("camera-snap-btn");
+
+  async function openLiveCamera() {
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "user",
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      });
+      if (cameraVideo) {
+        cameraVideo.srcObject = mediaStream;
+      }
+      if (cameraModal) {
+        cameraModal.classList.remove("hidden");
+      }
+    } catch (err) {
+      console.warn("Could not open live camera stream, falling back to camera file input:", err);
+      if (cameraInput) cameraInput.click();
+    }
+  }
+
+  function closeLiveCamera() {
+    if (mediaStream) {
+      mediaStream.getTracks().forEach((track) => track.stop());
+      mediaStream = null;
+    }
+    if (cameraModal) {
+      cameraModal.classList.add("hidden");
+    }
+  }
+
+  if (cameraBtn) {
+    cameraBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        openLiveCamera();
+      } else if (cameraInput) {
+        cameraInput.click();
+      }
+    });
+  }
+
+  if (cameraCloseBtn) {
+    cameraCloseBtn.addEventListener("click", closeLiveCamera);
+  }
+
+  if (cameraSnapBtn && cameraVideo) {
+    cameraSnapBtn.addEventListener("click", () => {
+      if (!cameraVideo.videoWidth) return;
+      const snapCanvas = document.createElement("canvas");
+      snapCanvas.width = cameraVideo.videoWidth;
+      snapCanvas.height = cameraVideo.videoHeight;
+      const ctx = snapCanvas.getContext("2d");
+      
+      // Mirror horizontally to match viewfinder
+      ctx.translate(snapCanvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(cameraVideo, 0, 0, snapCanvas.width, snapCanvas.height);
+      
+      snapCanvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], "selfie_portrait.jpg", { type: "image/jpeg" });
+          closeLiveCamera();
+          handleFileSelection(file);
+        }
+      }, "image/jpeg", 0.92);
+    });
+  }
+
+  if (cameraInput) {
+    cameraInput.addEventListener("change", (e) => {
+      if (e.target.files && e.target.files[0]) {
+        handleFileSelection(e.target.files[0]);
+      }
+    });
+  }
+
   // --- File Upload & Mobile Camera Selfie ---
   if (browseBtn) {
     browseBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       fileInput.click();
-    });
-  }
-
-  if (cameraBtn && cameraInput) {
-    cameraBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      cameraInput.click();
-    });
-
-    cameraInput.addEventListener("change", (e) => {
-      if (e.target.files && e.target.files[0]) {
-        handleFileSelection(e.target.files[0]);
-      }
     });
   }
 
