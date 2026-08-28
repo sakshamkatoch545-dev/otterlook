@@ -58,6 +58,10 @@
 }
 
 /* Reset & Base */
+.hidden {
+  display: none !important;
+}
+
 *, *::before, *::after {
   margin: 0;
   padding: 0;
