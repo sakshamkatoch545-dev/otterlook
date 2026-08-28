@@ -446,6 +446,16 @@ body {
   flex-wrap: wrap;
 }
 
+.mobile-only-btn {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .mobile-only-btn {
+    display: inline-flex !important;
+  }
+}
+
 .file-hint {
   font-size: 0.75rem;
   color: var(--text-muted);
