@@ -74,20 +74,122 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // --- Live Selfie Camera Modal & Stream ---
+  const cameraModal = document.getElementById("camera-modal");
+  const cameraModalCloseBtn = document.getElementById("camera-modal-close-btn");
+  const cameraVideo = document.getElementById("camera-video");
+  const cameraCaptureBtn = document.getElementById("camera-capture-btn");
+  const cameraFlipBtn = document.getElementById("camera-flip-btn");
   const cameraBtn = document.getElementById("camera-btn");
   const cameraInput = document.getElementById("camera-input");
-  if (cameraBtn && cameraInput) {
+  let currentStream = null;
+  let currentFacingMode = "user";
+
+  async function startCameraStream(facingMode = "user") {
+    try {
+      if (currentStream) {
+        currentStream.getTracks().forEach((t) => t.stop());
+      }
+      currentFacingMode = facingMode;
+      const constraints = {
+        video: { facingMode: { ideal: facingMode }, width: { ideal: 1280 }, height: { ideal: 960 } },
+        audio: false,
+      };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      currentStream = stream;
+      cameraVideo.srcObject = stream;
+      await cameraVideo.play();
+      cameraModal.classList.remove("hidden");
+    } catch (err) {
+      console.warn("Webcam stream unavailable, falling back to device camera input:", err);
+      if (cameraInput) cameraInput.click();
+    }
+  }
+
+  function stopCameraStream() {
+    if (currentStream) {
+      currentStream.getTracks().forEach((t) => t.stop());
+      currentStream = null;
+    }
+    if (cameraModal) cameraModal.classList.add("hidden");
+  }
+
+  if (cameraBtn) {
     cameraBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      cameraInput.click();
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        startCameraStream("user");
+      } else if (cameraInput) {
+        cameraInput.click();
+      }
     });
+  }
 
+  if (cameraModalCloseBtn) cameraModalCloseBtn.addEventListener("click", stopCameraStream);
+  if (cameraModal) {
+    cameraModal.addEventListener("click", (e) => {
+      if (e.target === cameraModal) stopCameraStream();
+    });
+  }
+
+  if (cameraFlipBtn) {
+    cameraFlipBtn.addEventListener("click", () => {
+      const nextMode = currentFacingMode === "user" ? "environment" : "user";
+      startCameraStream(nextMode);
+    });
+  }
+
+  if (cameraCaptureBtn) {
+    cameraCaptureBtn.addEventListener("click", () => {
+      if (!cameraVideo || !cameraVideo.videoWidth) return;
+      const snapCanvas = document.createElement("canvas");
+      snapCanvas.width = cameraVideo.videoWidth;
+      snapCanvas.height = cameraVideo.videoHeight;
+      const snapCtx = snapCanvas.getContext("2d");
+      if (currentFacingMode === "user") {
+        snapCtx.translate(snapCanvas.width, 0);
+        snapCtx.scale(-1, 1);
+      }
+      snapCtx.drawImage(cameraVideo, 0, 0);
+      snapCanvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], "selfie.jpg", { type: "image/jpeg" });
+          handleFileSelection(file);
+        }
+      }, "image/jpeg", 0.95);
+      stopCameraStream();
+    });
+  }
+
+  if (cameraInput) {
     cameraInput.addEventListener("change", (e) => {
       if (e.target.files && e.target.files[0]) {
         handleFileSelection(e.target.files[0]);
       }
     });
   }
+
+  // --- Style & Color Preferences ---
+  let selectedFocus = "all";
+  let selectedVibe = "signature";
+
+  document.querySelectorAll("#focus-chip-group .chip-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      document.querySelectorAll("#focus-chip-group .chip-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedFocus = btn.getAttribute("data-focus");
+    });
+  });
+
+  document.querySelectorAll("#vibe-chip-group .chip-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      document.querySelectorAll("#vibe-chip-group .chip-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedVibe = btn.getAttribute("data-vibe");
+    });
+  });
 
   dropZone.addEventListener("click", () => {
     if (!currentFile) fileInput.click();
@@ -402,6 +504,12 @@ document.addEventListener("DOMContentLoaded", () => {
     renderAvoidGrid("rec-avoid-grid", data.less_recommended);
 
     document.getElementById("foundation-advice-text").textContent = data.foundation_advice;
+
+    // Auto-switch to selected styling tab if user chose a specific focus
+    if (selectedFocus && selectedFocus !== "all" && selectedFocus !== "festive") {
+      const tabBtn = document.querySelector(`.tab-btn[data-tab="${selectedFocus}"]`);
+      if (tabBtn) tabBtn.click();
+    }
   }
 
   function renderRecGrid(containerId, items) {

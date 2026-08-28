@@ -131,6 +131,36 @@
           <div class="quality-details" id="quality-details"></div>
         </div>
 
+        <!-- Style & Color Preference Selector -->
+        <div class="style-pref-card" id="style-pref-card">
+          <div class="pref-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a7 7 0 0 0 7 7c0 2-1 3-1 4a2 2 0 0 1-2 2h-1a2 2 0 0 0-2 2v1a2 2 0 0 1-2 2"/></svg>
+            <span>What colors & style are you looking for?</span>
+          </div>
+          <div class="pref-options-grid">
+            <div class="pref-group">
+              <label class="pref-group-label">Styling Focus & Occasion:</label>
+              <div class="chip-group" id="focus-chip-group">
+                <button type="button" class="chip-btn active" data-focus="all">🌟 All Styling</button>
+                <button type="button" class="chip-btn" data-focus="clothing">👔 Casual & Workwear</button>
+                <button type="button" class="chip-btn" data-focus="festive">👗 Festive & Evening</button>
+                <button type="button" class="chip-btn" data-focus="makeup">💄 Makeup & Lip/Base</button>
+                <button type="button" class="chip-btn" data-focus="jewelry">💍 Jewelry & Metals</button>
+              </div>
+            </div>
+            <div class="pref-group">
+              <label class="pref-group-label">Color Vibe / Preference:</label>
+              <div class="chip-group" id="vibe-chip-group">
+                <button type="button" class="chip-btn active" data-vibe="signature">✨ Signature AI Harmony</button>
+                <button type="button" class="chip-btn" data-vibe="earthy">🌿 Earthy & Warm</button>
+                <button type="button" class="chip-btn" data-vibe="jewel">💎 Rich Jewel & Deep</button>
+                <button type="button" class="chip-btn" data-vibe="pastels">🌸 Soft Pastels & Rose</button>
+                <button type="button" class="chip-btn" data-vibe="neutrals">☕ Minimalist Neutrals</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Error Banner -->
         <div class="error-banner hidden" id="error-banner">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -329,6 +359,36 @@
       </div>
     </section>
   </main>
+
+  <!-- Live Selfie Camera Modal -->
+  <div class="modal-overlay hidden" id="camera-modal">
+    <div class="modal-card camera-modal-card">
+      <div class="modal-header">
+        <h3>📸 Live Facial Selfie</h3>
+        <button class="modal-close" id="camera-modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body camera-modal-body">
+        <div class="camera-stream-wrapper">
+          <video id="camera-video" autoplay playsinline muted></video>
+          <div class="face-guide-oval">
+            <div class="guide-oval-border"></div>
+            <span class="guide-text">Align face inside the oval</span>
+          </div>
+        </div>
+        <div class="camera-controls">
+          <button type="button" class="btn btn-outline btn-sm" id="camera-flip-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0-4.418-3.582-8-8-8s-8 3.582-8 8v1"/><path d="M4 14c0 4.418 3.582 8 8 8s8-3.582 8-8v-1"/><polyline points="1 7 4 11 7 7"/><polyline points="23 17 20 13 17 17"/></svg>
+            Flip Camera
+          </button>
+          <button type="button" class="btn btn-primary btn-glow btn-capture" id="camera-capture-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+            Capture Portrait
+          </button>
+        </div>
+        <p class="camera-hint">Face natural soft lighting for the most accurate undertone detection.</p>
+      </div>
+    </div>
+  </div>
 
   <!-- About the App Modal -->
   <div class="modal-overlay hidden" id="viva-modal">

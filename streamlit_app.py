@@ -195,6 +195,36 @@ def get_cached_html():
           <div class="quality-details" id="quality-details"></div>
         </div>
 
+        <!-- Style & Color Preference Selector -->
+        <div class="style-pref-card" id="style-pref-card">
+          <div class="pref-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a7 7 0 0 0 7 7c0 2-1 3-1 4a2 2 0 0 1-2 2h-1a2 2 0 0 0-2 2v1a2 2 0 0 1-2 2"/></svg>
+            <span>What colors & style are you looking for?</span>
+          </div>
+          <div class="pref-options-grid">
+            <div class="pref-group">
+              <label class="pref-group-label">Styling Focus & Occasion:</label>
+              <div class="chip-group" id="focus-chip-group">
+                <button type="button" class="chip-btn active" data-focus="all">🌟 All Styling</button>
+                <button type="button" class="chip-btn" data-focus="clothing">👔 Casual & Workwear</button>
+                <button type="button" class="chip-btn" data-focus="festive">👗 Festive & Evening</button>
+                <button type="button" class="chip-btn" data-focus="makeup">💄 Makeup & Lip/Base</button>
+                <button type="button" class="chip-btn" data-focus="jewelry">💍 Jewelry & Metals</button>
+              </div>
+            </div>
+            <div class="pref-group">
+              <label class="pref-group-label">Color Vibe / Preference:</label>
+              <div class="chip-group" id="vibe-chip-group">
+                <button type="button" class="chip-btn active" data-vibe="signature">✨ Signature AI Harmony</button>
+                <button type="button" class="chip-btn" data-vibe="earthy">🌿 Earthy & Warm</button>
+                <button type="button" class="chip-btn" data-vibe="jewel">💎 Rich Jewel & Deep</button>
+                <button type="button" class="chip-btn" data-vibe="pastels">🌸 Soft Pastels & Rose</button>
+                <button type="button" class="chip-btn" data-vibe="neutrals">☕ Minimalist Neutrals</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Error Banner -->
         <div class="error-banner hidden" id="error-banner">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -394,6 +424,36 @@ def get_cached_html():
     </section>
   </main>
 
+  <!-- Live Selfie Camera Modal -->
+  <div class="modal-overlay hidden" id="camera-modal">
+    <div class="modal-card camera-modal-card">
+      <div class="modal-header">
+        <h3>📸 Live Facial Selfie</h3>
+        <button class="modal-close" id="camera-modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body camera-modal-body">
+        <div class="camera-stream-wrapper">
+          <video id="camera-video" autoplay playsinline muted></video>
+          <div class="face-guide-oval">
+            <div class="guide-oval-border"></div>
+            <span class="guide-text">Align face inside the oval</span>
+          </div>
+        </div>
+        <div class="camera-controls">
+          <button type="button" class="btn btn-outline btn-sm" id="camera-flip-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0-4.418-3.582-8-8-8s-8 3.582-8 8v1"/><path d="M4 14c0 4.418 3.582 8 8 8s8-3.582 8-8v-1"/><polyline points="1 7 4 11 7 7"/><polyline points="23 17 20 13 17 17"/></svg>
+            Flip Camera
+          </button>
+          <button type="button" class="btn btn-primary btn-glow btn-capture" id="camera-capture-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+            Capture Portrait
+          </button>
+        </div>
+        <p class="camera-hint">Face natural soft lighting for the most accurate undertone detection.</p>
+      </div>
+    </div>
+  </div>
+
   <!-- About the App Modal -->
   <div class="modal-overlay hidden" id="viva-modal">
     <div class="modal-card">
@@ -507,17 +567,116 @@ def get_cached_html():
         if (e.target === vivaModal) vivaModal.classList.add("hidden");
       }});
 
-      // File Upload & Mobile Camera Selfie
-      browseBtn.addEventListener("click", (e) => {{ e.stopPropagation(); fileInput.click(); }});
-      if (cameraBtn && cameraInput) {{
+      // --- Live Selfie Camera Modal & Stream ---
+      const cameraModal = document.getElementById("camera-modal");
+      const cameraModalCloseBtn = document.getElementById("camera-modal-close-btn");
+      const cameraVideo = document.getElementById("camera-video");
+      const cameraCaptureBtn = document.getElementById("camera-capture-btn");
+      const cameraFlipBtn = document.getElementById("camera-flip-btn");
+      let currentStream = null;
+      let currentFacingMode = "user";
+
+      async function startCameraStream(facingMode = "user") {{
+        try {{
+          if (currentStream) {{
+            currentStream.getTracks().forEach((t) => t.stop());
+          }}
+          currentFacingMode = facingMode;
+          const constraints = {{
+            video: {{ facingMode: {{ ideal: facingMode }}, width: {{ ideal: 1280 }}, height: {{ ideal: 960 }} }},
+            audio: false
+          }};
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          currentStream = stream;
+          cameraVideo.srcObject = stream;
+          await cameraVideo.play();
+          cameraModal.classList.remove("hidden");
+        }} catch (err) {{
+          console.warn("Webcam stream unavailable, falling back to device camera input:", err);
+          if (cameraInput) cameraInput.click();
+        }}
+      }}
+
+      function stopCameraStream() {{
+        if (currentStream) {{
+          currentStream.getTracks().forEach((t) => t.stop());
+          currentStream = null;
+        }}
+        if (cameraModal) cameraModal.classList.add("hidden");
+      }}
+
+      if (cameraBtn) {{
         cameraBtn.addEventListener("click", (e) => {{
           e.stopPropagation();
-          cameraInput.click();
+          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {{
+            startCameraStream("user");
+          }} else if (cameraInput) {{
+            cameraInput.click();
+          }}
         }});
+      }}
+
+      if (cameraModalCloseBtn) cameraModalCloseBtn.addEventListener("click", stopCameraStream);
+      if (cameraModal) {{
+        cameraModal.addEventListener("click", (e) => {{
+          if (e.target === cameraModal) stopCameraStream();
+        }});
+      }}
+
+      if (cameraFlipBtn) {{
+        cameraFlipBtn.addEventListener("click", () => {{
+          const nextMode = currentFacingMode === "user" ? "environment" : "user";
+          startCameraStream(nextMode);
+        }});
+      }}
+
+      if (cameraCaptureBtn) {{
+        cameraCaptureBtn.addEventListener("click", () => {{
+          if (!cameraVideo || !cameraVideo.videoWidth) return;
+          const snapCanvas = document.createElement("canvas");
+          snapCanvas.width = cameraVideo.videoWidth;
+          snapCanvas.height = cameraVideo.videoHeight;
+          const snapCtx = snapCanvas.getContext("2d");
+          if (currentFacingMode === "user") {{
+            snapCtx.translate(snapCanvas.width, 0);
+            snapCtx.scale(-1, 1);
+          }}
+          snapCtx.drawImage(cameraVideo, 0, 0);
+          loadImageFromDataUrl(snapCanvas.toDataURL("image/jpeg", 0.95));
+          stopCameraStream();
+        }});
+      }}
+
+      if (cameraInput) {{
         cameraInput.addEventListener("change", (e) => {{
           if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
         }});
       }}
+
+      // --- Style & Color Preferences ---
+      let selectedFocus = "all";
+      let selectedVibe = "signature";
+
+      document.querySelectorAll("#focus-chip-group .chip-btn").forEach((btn) => {{
+        btn.addEventListener("click", (e) => {{
+          e.stopPropagation();
+          document.querySelectorAll("#focus-chip-group .chip-btn").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          selectedFocus = btn.getAttribute("data-focus");
+        }});
+      }});
+
+      document.querySelectorAll("#vibe-chip-group .chip-btn").forEach((btn) => {{
+        btn.addEventListener("click", (e) => {{
+          e.stopPropagation();
+          document.querySelectorAll("#vibe-chip-group .chip-btn").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          selectedVibe = btn.getAttribute("data-vibe");
+        }});
+      }});
+
+      // File Upload
+      browseBtn.addEventListener("click", (e) => {{ e.stopPropagation(); fileInput.click(); }});
       dropZone.addEventListener("click", () => {{ if (!currentImageBitmap) fileInput.click(); }});
       dropZone.addEventListener("dragover", (e) => {{ e.preventDefault(); dropZone.classList.add("drag-over"); }});
       dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
@@ -898,6 +1057,12 @@ def get_cached_html():
           : ut === "Cool"
           ? "Choose neutral-cool or rose-based liquid formulas with 'C' designation. Avoid orange-based foundations."
           : "Opt for true neutral 'N' labeled foundations that balance yellow and pink pigments seamlessly.";
+
+        // Auto-switch to selected styling tab if user chose a specific focus
+        if (selectedFocus && selectedFocus !== "all" && selectedFocus !== "festive") {{
+          const tabBtn = document.querySelector(`.tab-btn[data-tab="${{selectedFocus}}"]`);
+          if (tabBtn) tabBtn.click();
+        }}
       }}
 
       function drawCanvas(regions) {{
