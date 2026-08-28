@@ -219,7 +219,6 @@ def get_cached_html():
                 <button type="button" class="chip-btn" data-vibe="earthy">🌿 Earthy & Warm</button>
                 <button type="button" class="chip-btn" data-vibe="jewel">💎 Rich Jewel & Deep</button>
                 <button type="button" class="chip-btn" data-vibe="pastels">🌸 Soft Pastels & Rose</button>
-                <button type="button" class="chip-btn" data-vibe="neutrals">☕ Minimalist Neutrals</button>
               </div>
             </div>
           </div>
