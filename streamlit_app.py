@@ -5,9 +5,8 @@ AI-Powered Personal Colour Analysis & Machine Learning Undertone Classification 
 
 import os
 import sys
-import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import streamlit as st
 
 # Ensure backend directory is in sys.path
@@ -197,9 +196,10 @@ with st.sidebar:
 if selected_image is None:
     st.info("👆 Please upload a front-facing portrait or take a selfie from the sidebar to begin analysis.")
 else:
-    # Convert PIL to BGR OpenCV
-    image_np = np.array(selected_image.convert("RGB"))
-    image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+    # Convert PIL Image to RGB & BGR NumPy array cleanly
+    image_rgb_pil = selected_image.convert("RGB")
+    image_rgb = np.array(image_rgb_pil)
+    image_bgr = image_rgb[:, :, ::-1]  # Pure NumPy RGB to BGR
 
     with st.spinner("Executing Computer Vision & ML Pipeline..."):
         # Step 1: Quality Check
@@ -214,7 +214,7 @@ else:
             # Step 3: Skin Extraction
             skin_result = pipeline["skin_extractor"].extract_skin_pixels(image_bgr, face_result["regions"])
             
-            if skin_result["total_pixels"] < 30:
+            if skin_result["total_pixels"] < 25:
                 st.error("❌ Insufficient skin pixels detected. Please ensure front lighting and face visibility.")
             else:
                 # Step 4: Color Feature Extraction
@@ -232,19 +232,23 @@ else:
                     skin_metrics=metrics
                 )
 
-                # Draw Annotated Visualizer
-                annotated_img = image_np.copy()
-                region_colors_rgb = {
-                    "forehead": (226, 114, 91),
-                    "left_cheek": (56, 189, 248),
-                    "right_cheek": (56, 189, 248),
-                    "chin": (45, 212, 191)
+                # Draw Annotated Visualizer using pure Pillow (Zero C-dependency)
+                annotated_img = image_rgb_pil.copy()
+                draw = ImageDraw.Draw(annotated_img)
+                
+                region_colors = {
+                    "forehead": "#E2725B",
+                    "left_cheek": "#38BDF8",
+                    "right_cheek": "#38BDF8",
+                    "chin": "#2DD4BF"
                 }
+                
                 for reg_name, box in face_result["regions"].items():
-                    color = region_colors_rgb.get(reg_name, (212, 175, 55))
-                    cv2.rectangle(annotated_img, (box["x"], box["y"]), (box["x"] + box["w"], box["y"] + box["h"]), color, 3)
-                    cv2.putText(annotated_img, reg_name.replace("_", " ").upper(), (box["x"], max(20, box["y"] - 6)),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 2)
+                    color = region_colors.get(reg_name, "#D4AF37")
+                    x0, y0 = box["x"], box["y"]
+                    x1, y1 = x0 + box["w"], y0 + box["h"]
+                    draw.rectangle([x0, y0, x1, y1], outline=color, width=3)
+                    draw.text((x0 + 4, max(4, y0 - 16)), reg_name.replace("_", " ").upper(), fill=color)
 
                 st.success(f"Analysis Complete! Quality Score: {quality['score']}/100 ({quality['status']})")
 

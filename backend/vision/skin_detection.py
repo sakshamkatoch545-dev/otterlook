@@ -2,11 +2,16 @@
 Multi-Region Skin Extraction and Pixel Filtering Module.
 Extracts skin patches from anatomical facial regions (forehead, left cheek,
 right cheek, chin/jaw), filters non-skin artifacts, and removes statistical outliers.
+Includes pure NumPy fallbacks for cross-platform zero-dependency operation.
 """
 
-import cv2
 import numpy as np
 from typing import Dict, Any, List, Tuple
+
+try:
+    import cv2
+except Exception:
+    cv2 = None
 
 class SkinExtractor:
     def __init__(self):
@@ -15,12 +20,6 @@ class SkinExtractor:
     def extract_skin_pixels(self, image_bgr: np.ndarray, regions: Dict[str, Dict[str, int]]) -> Dict[str, Any]:
         """
         Samples and filters skin pixels across multiple facial regions.
-        
-        Returns:
-            Dict containing:
-                - pixels_bgr: np.ndarray of shape (N, 3) representing clean sampled skin pixels
-                - region_samples: dict with per-region metrics, pixel count, and representative hex color
-                - total_pixels: int
         """
         if image_bgr is None or not regions:
             return {
@@ -46,36 +45,33 @@ class SkinExtractor:
             if patch_bgr.size == 0:
                 continue
 
-            # Convert patch to HSV and YCrCb for skin segmentation
-            patch_hsv = cv2.cvtColor(patch_bgr, cv2.COLOR_BGR2HSV)
-            patch_ycrcb = cv2.cvtColor(patch_bgr, cv2.COLOR_BGR2YCrCb)
+            b = patch_bgr[:, :, 0].astype(np.float64)
+            g = patch_bgr[:, :, 1].astype(np.float64)
+            r = patch_bgr[:, :, 2].astype(np.float64)
 
-            # 1. YCrCb Skin Rule: Cr in [130, 175], Cb in [75, 130]
-            cr = patch_ycrcb[:, :, 1]
-            cb = patch_ycrcb[:, :, 2]
-            ycrcb_mask = (cr >= 128) & (cr <= 178) & (cb >= 75) & (cb <= 135)
+            # YCrCb Skin Rule: Cr in [128, 178], Cb in [75, 135]
+            y_plane = 0.299 * r + 0.587 * g + 0.114 * b
+            cr_plane = (r - y_plane) * 0.713 + 128.0
+            cb_plane = (b - y_plane) * 0.564 + 128.0
+            ycrcb_mask = (cr_plane >= 125) & (cr_plane <= 180) & (cb_plane >= 70) & (cb_plane <= 140)
 
-            # 2. HSV Skin Rule: Hue in [0, 45], Saturation in [20, 210], Value in [35, 250]
-            hue = patch_hsv[:, :, 0]
-            sat = patch_hsv[:, :, 1]
-            val = patch_hsv[:, :, 2]
-            hsv_mask = (hue <= 40) & (sat >= 18) & (sat <= 220) & (val >= 30) & (val <= 248)
+            # RGB Skin Rule: R > G > B and brightness check
+            rgb_mask = (r > g) & (g > b) & (r > 40) & (r < 250)
 
-            combined_mask = ycrcb_mask & hsv_mask
+            combined_mask = ycrcb_mask | rgb_mask
 
-            # Candidate pixels
             candidate_pixels = patch_bgr[combined_mask]
 
-            # If skin mask is too restrictive (e.g. unique lighting), fallback to center 60% of ROI
-            if len(candidate_pixels) < 25:
+            # If skin mask is too restrictive, fallback to center 60% of ROI
+            if len(candidate_pixels) < 20:
                 ch_h, ch_w = patch_bgr.shape[:2]
-                center_crop = patch_bgr[int(ch_h*0.2):int(ch_h*0.8), int(ch_w*0.2):int(ch_w*0.8)]
+                center_crop = patch_bgr[int(ch_h * 0.2):int(ch_h * 0.8), int(ch_w * 0.2):int(ch_w * 0.8)]
                 candidate_pixels = center_crop.reshape(-1, 3)
 
             if len(candidate_pixels) == 0:
                 continue
 
-            # 3. Statistical Outlier Removal using IQR on Luminance & Channels
+            # Statistical Outlier Removal using IQR on Luminance & Channels
             clean_patch_pixels = self._remove_outliers(candidate_pixels)
             
             if len(clean_patch_pixels) > 0:
@@ -99,27 +95,26 @@ class SkinExtractor:
         return {
             "pixels_bgr": combined_pixels,
             "region_samples": region_details,
-            "total_pixels": len(combined_pixels)
+            "total_pixels": int(len(combined_pixels))
         }
 
-    def _remove_outliers(self, pixels_bgr: np.ndarray) -> np.ndarray:
+    def _remove_outliers(self, pixels: np.ndarray) -> np.ndarray:
         """
-        Removes specular reflections, heavy shadows, and stray hair pixels
-        using IQR (Interquartile Range) filtering across RGB channels.
+        Removes noisy pixels (hair, glare, shadows) using Interquartile Range (IQR) on luminance.
         """
-        if len(pixels_bgr) < 8:
-            return pixels_bgr
+        if len(pixels) < 15:
+            return pixels
 
-        # Luminance proxy
-        lum = 0.299 * pixels_bgr[:, 2] + 0.587 * pixels_bgr[:, 1] + 0.114 * pixels_bgr[:, 0]
+        # Calculate luminance
+        lum = 0.114 * pixels[:, 0] + 0.587 * pixels[:, 1] + 0.299 * pixels[:, 2]
         
-        q25 = np.percentile(lum, 20)
-        q75 = np.percentile(lum, 80)
+        q25, q75 = np.percentile(lum, [25, 75])
         iqr = q75 - q25
-        lower_bound = max(15.0, q25 - 1.2 * iqr)
-        upper_bound = min(245.0, q75 + 1.2 * iqr)
-
+        
+        lower_bound = max(15.0, q25 - 1.5 * iqr)
+        upper_bound = min(245.0, q75 + 1.5 * iqr)
+        
         valid_mask = (lum >= lower_bound) & (lum <= upper_bound)
-        filtered = pixels_bgr[valid_mask]
-
-        return filtered if len(filtered) > 5 else pixels_bgr
+        filtered = pixels[valid_mask]
+        
+        return filtered if len(filtered) > 10 else pixels

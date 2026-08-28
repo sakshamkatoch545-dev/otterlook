@@ -2,46 +2,104 @@
 Color Feature Extraction Module.
 Transforms filtered multi-region skin pixels into sRGB, HSV, and CIELAB color spaces.
 Computes comprehensive statistical moments, colorimetric ratios, and ITA° phototype index.
+Includes pure NumPy fallbacks for cross-platform zero-dependency operation.
 """
 
-import cv2
 import numpy as np
 from typing import Dict, Any
+
+try:
+    import cv2
+except Exception:
+    cv2 = None
 
 class ColourFeatureExtractor:
     def __init__(self):
         pass
 
+    @staticmethod
+    def _bgr_to_rgb_hsv_lab_numpy(pixels_bgr: np.ndarray):
+        """Pure NumPy conversion of BGR pixels to RGB, HSV, and CIELAB."""
+        b = pixels_bgr[:, 0].astype(np.float64)
+        g = pixels_bgr[:, 1].astype(np.float64)
+        r = pixels_bgr[:, 2].astype(np.float64)
+        
+        rgb = np.stack([r, g, b], axis=-1)
+        
+        # --- HSV ---
+        r_norm, g_norm, b_norm = r / 255.0, g / 255.0, b / 255.0
+        cmax = np.maximum(np.maximum(r_norm, g_norm), b_norm)
+        cmin = np.minimum(np.minimum(r_norm, g_norm), b_norm)
+        delta = cmax - cmin
+        
+        v = cmax * 255.0
+        s = np.where(cmax > 0, (delta / np.maximum(cmax, 1e-6)) * 255.0, 0.0)
+        
+        h = np.zeros_like(cmax)
+        mask_r = (cmax == r_norm) & (delta > 0)
+        mask_g = (cmax == g_norm) & (delta > 0)
+        mask_b = (cmax == b_norm) & (delta > 0)
+        
+        h[mask_r] = 60.0 * (((g_norm[mask_r] - b_norm[mask_r]) / delta[mask_r]) % 6)
+        h[mask_g] = 60.0 * (((b_norm[mask_g] - r_norm[mask_g]) / delta[mask_g]) + 2)
+        h[mask_b] = 60.0 * (((r_norm[mask_b] - g_norm[mask_b]) / delta[mask_b]) + 4)
+        h_cv = h / 2.0  # scale to 0-180 for OpenCV format parity
+        
+        hsv = np.stack([h_cv, s, v], axis=-1)
+        
+        # --- CIELAB (sRGB -> XYZ -> CIELAB D65) ---
+        def srgb_to_linear(c):
+            return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+            
+        r_lin = srgb_to_linear(r_norm)
+        g_lin = srgb_to_linear(g_norm)
+        b_lin = srgb_to_linear(b_norm)
+        
+        X = r_lin * 0.4124564 + g_lin * 0.3575761 + b_lin * 0.1804375
+        Y = r_lin * 0.2126729 + g_lin * 0.7151522 + b_lin * 0.0721750
+        Z = r_lin * 0.0193339 + g_lin * 0.1191920 + b_lin * 0.9503041
+        
+        # D65 reference white
+        Xn, Yn, Zn = 0.95047, 1.00000, 1.08883
+        
+        def f_lab(t):
+            return np.where(t > 0.008856, np.cbrt(np.maximum(t, 1e-8)), (7.787 * t) + (16.0 / 116.0))
+            
+        fx = f_lab(X / Xn)
+        fy = f_lab(Y / Yn)
+        fz = f_lab(Z / Zn)
+        
+        lab_l = (116.0 * fy) - 16.0
+        lab_a = 500.0 * (fx - fy)
+        lab_b = 200.0 * (fy - fz)
+        
+        return rgb, hsv, lab_l, lab_a, lab_b
+
     def extract_features(self, pixels_bgr: np.ndarray) -> Dict[str, Any]:
         """
         Calculates colorimetric metrics from an array of skin pixels (shape: [N, 3] in BGR).
-        
-        Returns:
-            Dict of statistical features formatted for ML inference and frontend display.
         """
         if pixels_bgr is None or len(pixels_bgr) == 0:
             raise ValueError("No valid skin pixels available for color feature extraction.")
 
-        # Ensure correct shape for OpenCV cvtColor (1, N, 3)
-        pixels_bgr_2d = pixels_bgr.reshape(1, -1, 3).astype(np.uint8)
+        if cv2 is not None:
+            try:
+                pixels_bgr_2d = pixels_bgr.reshape(1, -1, 3).astype(np.uint8)
+                pixels_rgb_2d = cv2.cvtColor(pixels_bgr_2d, cv2.COLOR_BGR2RGB)
+                pixels_hsv_2d = cv2.cvtColor(pixels_bgr_2d, cv2.COLOR_BGR2HSV)
+                pixels_lab_2d = cv2.cvtColor(pixels_bgr_2d, cv2.COLOR_BGR2LAB)
 
-        # Convert to RGB, HSV, and LAB
-        pixels_rgb_2d = cv2.cvtColor(pixels_bgr_2d, cv2.COLOR_BGR2RGB)
-        pixels_hsv_2d = cv2.cvtColor(pixels_bgr_2d, cv2.COLOR_BGR2HSV)
-        pixels_lab_2d = cv2.cvtColor(pixels_bgr_2d, cv2.COLOR_BGR2LAB)
+                rgb = pixels_rgb_2d[0].astype(np.float64)
+                hsv = pixels_hsv_2d[0].astype(np.float64)
+                lab = pixels_lab_2d[0].astype(np.float64)
 
-        rgb = pixels_rgb_2d[0].astype(np.float64)
-        hsv = pixels_hsv_2d[0].astype(np.float64)
-        lab = pixels_lab_2d[0].astype(np.float64)
-
-        # Standard OpenCV LAB scaling: L in [0, 255] (scaled from 0-100), a in [0, 255] (offset by 128), b in [0, 255] (offset by 128)
-        # Convert OpenCV LAB to standard CIELAB units:
-        # L* = L_cv * 100.0 / 255.0
-        # a* = a_cv - 128.0
-        # b* = b_cv - 128.0
-        lab_l = lab[:, 0] * (100.0 / 255.0)
-        lab_a = lab[:, 1] - 128.0
-        lab_b = lab[:, 2] - 128.0
+                lab_l = lab[:, 0] * (100.0 / 255.0)
+                lab_a = lab[:, 1] - 128.0
+                lab_b = lab[:, 2] - 128.0
+            except Exception:
+                rgb, hsv, lab_l, lab_a, lab_b = self._bgr_to_rgb_hsv_lab_numpy(pixels_bgr)
+        else:
+            rgb, hsv, lab_l, lab_a, lab_b = self._bgr_to_rgb_hsv_lab_numpy(pixels_bgr)
 
         # --- 1. RGB Statistics ---
         mean_r, mean_g, mean_b = np.mean(rgb[:, 0]), np.mean(rgb[:, 1]), np.mean(rgb[:, 2])
@@ -89,7 +147,6 @@ class ColourFeatureExtractor:
             phototype_desc = "Dark / Rich (Fitzpatrick VI)"
 
         return {
-            # Features dictionary for ML model
             "ml_features": {
                 "mean_r": float(round(mean_r, 3)),
                 "mean_g": float(round(mean_g, 3)),
@@ -114,7 +171,6 @@ class ColourFeatureExtractor:
                 "rg_ratio": float(round(rg_ratio, 4)),
                 "rb_ratio": float(round(rb_ratio, 4))
             },
-            # Display metrics for UI
             "display_metrics": {
                 "representative_hex": representative_hex,
                 "representative_rgb": [rep_r, rep_g, rep_b],
@@ -127,7 +183,7 @@ class ColourFeatureExtractor:
                     "std_b": round(std_lab_b, 2)
                 },
                 "hsv": {
-                    "H_deg": round(mean_h * 2.0, 1), # convert 0-180 to 0-360 degrees
+                    "H_deg": round(mean_h * 2.0, 1),
                     "S_pct": round((mean_s / 255.0) * 100.0, 1),
                     "V_pct": round((mean_v / 255.0) * 100.0, 1)
                 },
