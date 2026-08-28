@@ -136,20 +136,15 @@ html_content = f"""<!DOCTYPE html>
         <!-- Drag & Drop Zone -->
         <div class="upload-container" id="drop-zone">
           <input type="file" id="file-input" accept="image/jpeg,image/png,image/jpg,image/webp" hidden>
-          <input type="file" id="camera-input" accept="image/*" capture="user" hidden>
           
           <div class="upload-content" id="upload-prompt">
             <div class="upload-icon">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             </div>
-            <h3>Upload or Capture Facial Portrait</h3>
-            <p>Drag & drop your portrait here, take a selfie, or browse from files</p>
+            <h3>Upload Facial Portrait</h3>
+            <p>Drag & drop your portrait here, or browse from your files</p>
             
             <div class="upload-actions">
-              <button type="button" class="btn btn-sm btn-camera" id="camera-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                Take Selfie
-              </button>
               <button type="button" class="btn btn-sm btn-browse" id="browse-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 Browse Files
@@ -512,15 +507,8 @@ html_content = f"""<!DOCTYPE html>
         if (e.target === vivaModal) vivaModal.classList.add("hidden");
       }});
 
-      // File & Mobile Camera Selfie
+      // File Upload
       browseBtn.addEventListener("click", (e) => {{ e.stopPropagation(); fileInput.click(); }});
-      if (cameraBtn) {{
-        cameraBtn.addEventListener("click", (e) => {{
-          e.stopPropagation();
-          cameraInput.click();
-        }});
-      }}
-
       dropZone.addEventListener("click", () => {{ if (!currentImageBitmap) fileInput.click(); }});
       dropZone.addEventListener("dragover", (e) => {{ e.preventDefault(); dropZone.classList.add("drag-over"); }});
       dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
@@ -531,9 +519,6 @@ html_content = f"""<!DOCTYPE html>
       }});
 
       fileInput.addEventListener("change", (e) => {{
-        if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
-      }});
-      cameraInput.addEventListener("change", (e) => {{
         if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
       }});
 

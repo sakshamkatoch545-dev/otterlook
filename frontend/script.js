@@ -66,24 +66,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target === vivaModal) vivaModal.classList.add("hidden");
   });
 
-  // --- File Upload & Mobile Camera Selfie ---
+  // --- File Upload ---
   if (browseBtn) {
     browseBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       fileInput.click();
-    });
-  }
-
-  if (cameraBtn && cameraInput) {
-    cameraBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      cameraInput.click();
-    });
-
-    cameraInput.addEventListener("change", (e) => {
-      if (e.target.files && e.target.files[0]) {
-        handleFileSelection(e.target.files[0]);
-      }
     });
   }
 
