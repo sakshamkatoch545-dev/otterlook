@@ -9,10 +9,10 @@ import io
 import cv2
 import numpy as np
 
-# Ensure backend directory is in sys.path
-backend_dir = os.path.dirname(os.path.abspath(__file__))
-if backend_dir not in sys.path:
-    sys.path.insert(0, backend_dir)
+# Ensure root directory is in sys.path
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,12 +20,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
 from typing import Dict, Any
 
-from utils.image_quality import analyze_image_quality
-from vision.face_detection import FaceDetector
-from vision.skin_detection import SkinExtractor
-from vision.colour_extraction import ColourFeatureExtractor
-from ml.predictor import UndertonePredictor
-from recommendations.palette_generator import PaletteGenerator
+from backend.utils.image_quality import analyze_image_quality
+from backend.vision.face_detection import FaceDetector
+from backend.vision.skin_detection import SkinExtractor
+from backend.vision.colour_extraction import ColourFeatureExtractor
+from backend.ml.predictor import UndertonePredictor
+from backend.recommendations.palette_generator import PaletteGenerator
 
 app = FastAPI(
     title="AI-Based Personal Colour Analysis API",

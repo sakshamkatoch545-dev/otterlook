@@ -8,8 +8,8 @@ import pytest
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend")))
-from utils.image_quality import analyze_image_quality
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from backend.utils.image_quality import analyze_image_quality
 
 def test_valid_sharp_image():
     # Create a sharp, well-lit test image

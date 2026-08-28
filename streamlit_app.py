@@ -12,16 +12,15 @@ import streamlit as st
 
 # Setup system path
 root_dir = os.path.dirname(os.path.abspath(__file__))
-backend_dir = os.path.join(root_dir, "backend")
-if backend_dir not in sys.path:
-    sys.path.insert(0, backend_dir)
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
 
-from utils.image_quality import analyze_image_quality
-from vision.face_detection import FaceDetector
-from vision.skin_detection import SkinExtractor
-from vision.colour_extraction import ColourFeatureExtractor
-from ml.predictor import UndertonePredictor
-from recommendations.palette_generator import PaletteGenerator
+from backend.utils.image_quality import analyze_image_quality
+from backend.vision.face_detection import FaceDetector
+from backend.vision.skin_detection import SkinExtractor
+from backend.vision.colour_extraction import ColourFeatureExtractor
+from backend.ml.predictor import UndertonePredictor
+from backend.recommendations.palette_generator import PaletteGenerator
 
 # Page Configuration
 st.set_page_config(
