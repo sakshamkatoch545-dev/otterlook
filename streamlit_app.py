@@ -195,34 +195,6 @@ def get_cached_html():
           <div class="quality-details" id="quality-details"></div>
         </div>
 
-        <!-- Style & Color Preference Selector -->
-        <div class="style-pref-card" id="style-pref-card">
-          <div class="pref-title">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a7 7 0 0 0 7 7c0 2-1 3-1 4a2 2 0 0 1-2 2h-1a2 2 0 0 0-2 2v1a2 2 0 0 1-2 2"/></svg>
-            <span>What colors & style are you looking for?</span>
-          </div>
-          <div class="pref-options-grid">
-            <div class="pref-group">
-              <label class="pref-group-label">Styling Focus & Occasion:</label>
-              <div class="chip-group" id="focus-chip-group">
-                <button type="button" class="chip-btn active" data-focus="all">🌟 All Styling</button>
-                <button type="button" class="chip-btn" data-focus="clothing">👔 Casual & Workwear</button>
-                <button type="button" class="chip-btn" data-focus="festive">👗 Festive & Evening</button>
-                <button type="button" class="chip-btn" data-focus="makeup">💄 Makeup & Lip/Base</button>
-                <button type="button" class="chip-btn" data-focus="jewelry">💍 Jewelry & Metals</button>
-              </div>
-            </div>
-            <div class="pref-group">
-              <label class="pref-group-label">Color Vibe / Preference:</label>
-              <div class="chip-group" id="vibe-chip-group">
-                <button type="button" class="chip-btn active" data-vibe="signature">✨ Signature AI Harmony</button>
-                <button type="button" class="chip-btn" data-vibe="earthy">🌿 Earthy & Warm</button>
-                <button type="button" class="chip-btn" data-vibe="jewel">💎 Rich Jewel & Deep</button>
-                <button type="button" class="chip-btn" data-vibe="pastels">🌸 Soft Pastels & Rose</button>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <!-- Error Banner -->
         <div class="error-banner hidden" id="error-banner">
@@ -652,27 +624,6 @@ def get_cached_html():
         }});
       }}
 
-      // --- Style & Color Preferences ---
-      let selectedFocus = "all";
-      let selectedVibe = "signature";
-
-      document.querySelectorAll("#focus-chip-group .chip-btn").forEach((btn) => {{
-        btn.addEventListener("click", (e) => {{
-          e.stopPropagation();
-          document.querySelectorAll("#focus-chip-group .chip-btn").forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
-          selectedFocus = btn.getAttribute("data-focus");
-        }});
-      }});
-
-      document.querySelectorAll("#vibe-chip-group .chip-btn").forEach((btn) => {{
-        btn.addEventListener("click", (e) => {{
-          e.stopPropagation();
-          document.querySelectorAll("#vibe-chip-group .chip-btn").forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
-          selectedVibe = btn.getAttribute("data-vibe");
-        }});
-      }});
 
       // File Upload
       browseBtn.addEventListener("click", (e) => {{ e.stopPropagation(); fileInput.click(); }});
@@ -1056,12 +1007,6 @@ def get_cached_html():
           : ut === "Cool"
           ? "Choose neutral-cool or rose-based liquid formulas with 'C' designation. Avoid orange-based foundations."
           : "Opt for true neutral 'N' labeled foundations that balance yellow and pink pigments seamlessly.";
-
-        // Auto-switch to selected styling tab if user chose a specific focus
-        if (selectedFocus && selectedFocus !== "all" && selectedFocus !== "festive") {{
-          const tabBtn = document.querySelector(`.tab-btn[data-tab="${{selectedFocus}}"]`);
-          if (tabBtn) tabBtn.click();
-        }}
       }}
 
       function drawCanvas(regions) {{

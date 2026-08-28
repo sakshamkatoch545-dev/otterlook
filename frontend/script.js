@@ -169,27 +169,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- Style & Color Preferences ---
-  let selectedFocus = "all";
-  let selectedVibe = "signature";
-
-  document.querySelectorAll("#focus-chip-group .chip-btn").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      document.querySelectorAll("#focus-chip-group .chip-btn").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      selectedFocus = btn.getAttribute("data-focus");
-    });
-  });
-
-  document.querySelectorAll("#vibe-chip-group .chip-btn").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      document.querySelectorAll("#vibe-chip-group .chip-btn").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      selectedVibe = btn.getAttribute("data-vibe");
-    });
-  });
 
   dropZone.addEventListener("click", () => {
     if (!currentFile) fileInput.click();
@@ -504,12 +483,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderAvoidGrid("rec-avoid-grid", data.less_recommended);
 
     document.getElementById("foundation-advice-text").textContent = data.foundation_advice;
-
-    // Auto-switch to selected styling tab if user chose a specific focus
-    if (selectedFocus && selectedFocus !== "all" && selectedFocus !== "festive") {
-      const tabBtn = document.querySelector(`.tab-btn[data-tab="${selectedFocus}"]`);
-      if (tabBtn) tabBtn.click();
-    }
   }
 
   function renderRecGrid(containerId, items) {
