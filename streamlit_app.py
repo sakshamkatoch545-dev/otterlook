@@ -760,13 +760,19 @@ def get_cached_html():
         const matching = all.filter(c => c.undertones && c.undertones.includes(undertone));
         const palette = matching.filter(c => c.category === "Clothing" || (c.tags && c.tags.includes("core"))).slice(0, 10);
 
+        let avoidList = [];
+        if (COLOUR_DATABASE.avoid_rules && COLOUR_DATABASE.avoid_rules[undertone]) {{
+          const rawAvoid = COLOUR_DATABASE.avoid_rules[undertone];
+          avoidList = Array.isArray(rawAvoid) ? rawAvoid : (rawAvoid.colours || []);
+        }}
+
         return {{
           palette: palette,
           clothing: matching.filter(c => c.category === "Clothing"),
           makeup: matching.filter(c => c.category === "Makeup"),
           accessories: matching.filter(c => c.category === "Accessories"),
           neutrals: matching.filter(c => c.category === "Neutrals"),
-          avoid: (COLOUR_DATABASE.avoid_rules && COLOUR_DATABASE.avoid_rules[undertone]) ? COLOUR_DATABASE.avoid_rules[undertone].colours : [],
+          avoid: avoidList,
           seasonal: undertone === "Warm" ? "Warm Autumn / Golden Spring" : undertone === "Cool" ? "Cool Winter / Summer" : "Soft Neutral Harmony",
           summary: undertone === "Warm" 
             ? "Embrace rich earthy tones, terracottas, warm golds, olive greens, and fiery spices that illuminate your complexion."
@@ -885,30 +891,43 @@ def get_cached_html():
 
       function drawCanvas(regions) {{
         const canvas = document.getElementById("face-canvas");
+        if (!canvas || !currentImageBitmap) return;
         const ctx = canvas.getContext("2d");
-        if (!currentImageBitmap) return;
 
-        canvas.width = currentImageBitmap.width;
-        canvas.height = currentImageBitmap.height;
-        ctx.drawImage(currentImageBitmap, 0, 0);
+        const displayWidth = 480;
+        const scale = displayWidth / currentImageBitmap.width;
+        const displayHeight = Math.round(currentImageBitmap.height * scale);
+
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
+        ctx.drawImage(currentImageBitmap, 0, 0, displayWidth, displayHeight);
 
         const colors = {{ forehead: "#E2725B", left_cheek: "#38BDF8", right_cheek: "#38BDF8", chin: "#2DD4BF" }};
-        Object.entries(regions).forEach(([name, box]) => {{
-          const col = colors[name] || "#D4AF37";
-          ctx.strokeStyle = col;
-          ctx.lineWidth = Math.max(2, Math.floor(canvas.width / 180));
-          ctx.strokeRect(box.x, box.y, box.w, box.h);
-          ctx.fillStyle = `${{col}}25`;
-          ctx.fillRect(box.x, box.y, box.w, box.h);
-          ctx.fillStyle = col;
-          ctx.font = `bold ${{Math.max(11, Math.floor(canvas.width / 36))}}px sans-serif`;
-          ctx.fillText(name.replace("_", " ").toUpperCase(), box.x + 4, Math.max(14, box.y - 4));
-        }});
+        if (regions) {{
+          Object.entries(regions).forEach(([name, box]) => {{
+            const col = colors[name] || "#D4AF37";
+            const bx = Math.round(box.x * scale);
+            const by = Math.round(box.y * scale);
+            const bw = Math.round(box.w * scale);
+            const bh = Math.round(box.h * scale);
+
+            ctx.strokeStyle = col;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(bx, by, bw, bh);
+            ctx.fillStyle = `${{col}}25`;
+            ctx.fillRect(bx, by, bw, bh);
+            ctx.fillStyle = col;
+            ctx.font = "bold 13px sans-serif";
+            ctx.fillText(name.replace("_", " ").toUpperCase(), bx + 4, Math.max(16, by - 4));
+          }});
+        }}
       }}
 
       function renderGrid(id, items) {{
         const container = document.getElementById(id);
+        if (!container) return;
         container.innerHTML = "";
+        if (!items || !Array.isArray(items)) return;
         items.forEach((item) => {{
           const card = document.createElement("div");
           card.className = "rec-card";
@@ -927,7 +946,9 @@ def get_cached_html():
 
       function renderAvoidGrid(id, items) {{
         const container = document.getElementById(id);
+        if (!container) return;
         container.innerHTML = "";
+        if (!items || !Array.isArray(items)) return;
         items.forEach((item) => {{
           const card = document.createElement("div");
           card.className = "avoid-card";
@@ -935,7 +956,7 @@ def get_cached_html():
             <div class="avoid-circle" style="background-color: ${{item.hex}}"></div>
             <div class="avoid-details">
               <div class="avoid-name">${{item.name}} (${{item.hex}})</div>
-              <div class="avoid-reason">${{item.reason}}</div>
+              <div class="avoid-reason">${{item.reason || ""}}</div>
             </div>
           `;
           container.appendChild(card);
