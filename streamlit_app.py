@@ -38,35 +38,33 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Directories
-root_dir = os.path.dirname(os.path.abspath(__file__))
-frontend_dir = os.path.join(root_dir, "frontend")
-backend_dir = os.path.join(root_dir, "backend")
+# Cached HTML Generation for Instant Loading
+@st.cache_data
+def get_cached_html():
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    frontend_dir = os.path.join(root_dir, "frontend")
+    backend_dir = os.path.join(root_dir, "backend")
 
-# Read CSS
-css_path = os.path.join(frontend_dir, "style.css")
-with open(css_path, "r", encoding="utf-8") as f:
-    css_content = f.read()
+    css_path = os.path.join(frontend_dir, "style.css")
+    with open(css_path, "r", encoding="utf-8") as f:
+        css_content = f.read()
 
-# Read Colour Database
-db_path = os.path.join(backend_dir, "recommendations", "colour_database.json")
-with open(db_path, "r", encoding="utf-8") as f:
-    colour_db_json = f.read()
+    db_path = os.path.join(backend_dir, "recommendations", "colour_database.json")
+    with open(db_path, "r", encoding="utf-8") as f:
+        colour_db_json = f.read()
 
-# Read Sample Images as Base64 Data URLs
-def get_sample_b64(name):
-    p = os.path.join(frontend_dir, "assets", "samples", name)
-    if os.path.exists(p):
-        with open(p, "rb") as f:
-            return f"data:image/jpeg;base64,{base64.b64encode(f.read()).decode('utf-8')}"
-    return ""
+    def get_sample_b64(name):
+        p = os.path.join(frontend_dir, "assets", "samples", name)
+        if os.path.exists(p):
+            with open(p, "rb") as f:
+                return f"data:image/jpeg;base64,{base64.b64encode(f.read()).decode('utf-8')}"
+        return ""
 
-sample_warm_b64 = get_sample_b64("sample_warm.jpg")
-sample_cool_b64 = get_sample_b64("sample_cool.jpg")
-sample_neutral_b64 = get_sample_b64("sample_neutral.jpg")
+    sample_warm_b64 = get_sample_b64("sample_warm.jpg")
+    sample_cool_b64 = get_sample_b64("sample_cool.jpg")
+    sample_neutral_b64 = get_sample_b64("sample_neutral.jpg")
 
-# Complete Self-Contained HTML with Embedded Engine & Exact Localhost UX
-html_content = f"""<!DOCTYPE html>
+    return f"""<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
@@ -610,7 +608,7 @@ html_content = f"""<!DOCTYPE html>
         }});
       }}
 
-      // Stepper Animation
+      // Stepper Animation (High-speed animated feedback)
       async function animateStepper() {{
         const steps = [
           document.getElementById("step-1"),
@@ -623,22 +621,30 @@ html_content = f"""<!DOCTYPE html>
         steps.forEach((s) => (s.className = "step-item"));
         for (let i = 0; i < steps.length; i++) {{
           steps[i].classList.add("active");
-          await new Promise((res) => setTimeout(res, 220));
+          await new Promise((res) => setTimeout(res, 45));
           steps[i].classList.remove("active");
           steps[i].classList.add("completed");
         }}
       }}
 
-      // Core Colorimetry Analysis
+      // Core Colorimetry Analysis (Optimized high-speed sub-millisecond execution)
       function performColorAnalysis(img) {{
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d", {{ willReadFrequently: true }});
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-
-        const w = img.width;
-        const h = img.height;
+        
+        // Downscale to max 640px for blazingly fast skin pixel sampling
+        const maxDim = 640;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          const scale = maxDim / Math.max(w, h);
+          w = Math.round(w * scale);
+          h = Math.round(h * scale);
+        }
+        
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(img, 0, 0, w, h);
 
         const regions = {{
           forehead: {{ x: Math.max(0, Math.floor(w * 0.35)), y: Math.max(0, Math.floor(h * 0.18)), w: Math.floor(w * 0.30), h: Math.floor(h * 0.14) }},
@@ -957,4 +963,4 @@ html_content = f"""<!DOCTYPE html>
 """
 
 # Render Full Localhost Experience directly into Streamlit
-components.html(html_content, height=1400, scrolling=True)
+components.html(get_cached_html(), height=1400, scrolling=True)

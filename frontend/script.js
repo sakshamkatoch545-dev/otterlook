@@ -244,7 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     for (let i = 0; i < steps.length; i++) {
       steps[i].classList.add("active");
-      await new Promise((resolve) => setTimeout(resolve, 240));
+      await new Promise((resolve) => setTimeout(resolve, 45));
       steps[i].classList.remove("active");
       steps[i].classList.add("completed");
     }
