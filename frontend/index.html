@@ -25,10 +25,10 @@
         <h1 class="brand-title">AURA<span>COLOR</span> <span class="brand-sub">AI</span></h1>
       </div>
       <div class="header-actions">
-        <button id="viva-modal-btn" class="btn btn-outline guide-btn" title="View Color Science & ML Pipeline">
+        <button id="viva-modal-btn" class="btn btn-outline guide-btn" title="About AuraColor AI">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          <span class="btn-text-full">ML Architecture & Viva Guide</span>
-          <span class="btn-text-short">ML Guide</span>
+          <span class="btn-text-full">About AuraColor AI</span>
+          <span class="btn-text-short">About</span>
         </button>
         <button id="theme-toggle-btn" class="theme-toggle" aria-label="Toggle theme">
           <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -325,39 +325,36 @@
     </section>
   </main>
 
-  <!-- Educational Viva Defense Modal -->
+  <!-- About the App Modal -->
   <div class="modal-overlay hidden" id="viva-modal">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>Color Science & Machine Learning Architecture</h3>
+        <h3>About AuraColor AI</h3>
         <button class="modal-close" id="modal-close-btn">&times;</button>
       </div>
       <div class="modal-body">
-        <h4>1. Machine Learning Methodology</h4>
+        <h4>✨ What is AuraColor AI?</h4>
         <p>
-          Unlike naive RGB-threshold apps, this system trains a genuine <strong>Random Forest Classifier</strong> pipeline comparing against <strong>Support Vector Machines (SVM)</strong> and <strong>Logistic Regression</strong> on colorimetric skin feature spaces.
+          <strong>AuraColor AI</strong> is an intelligent Personal Colour Analysis platform designed to discover your natural skin undertone and generate tailored colour palettes for styling, wardrobe selection, cosmetics, and jewelry.
         </p>
-        
-        <h4>2. Color Spaces & CIELAB <i>b</i>* Axis</h4>
+
+        <h4>🎯 Why Undertones Matter</h4>
         <p>
-          <strong>CIELAB (<i>L</i>*<i>a</i>*<i>b</i>*)</strong> separates lightness (<i>L</i>*) from chromaticity (<i>a</i>*: green-red axis, <i>b</i>*: blue-yellow axis). 
-          Skin undertone is primarily governed by the yellow-blue balance:
+          Wearing clothing and makeup that harmonize with your biological skin undertone illuminates your complexion, enhances your natural glow, and brings symmetry to your features. Conflicting undertones can make skin look tired, dull, or washed out.
         </p>
+
+        <h4>🔬 How the AI Works</h4>
         <ul>
-          <li><strong>Warm Undertone:</strong> Elevated <i>b</i>* (<i>b</i>* &gt; 18.0) and high <i>b</i>*/<i>a</i>* ratio.</li>
-          <li><strong>Cool Undertone:</strong> Lower <i>b</i>* (<i>b</i>* &lt; 12.5) and dominant pink/erythema <i>a</i>*.</li>
-          <li><strong>Neutral Undertone:</strong> Balanced <i>a</i>* and <i>b</i>* with intermediate chromas.</li>
+          <li><strong>Quality Assessment:</strong> Validates lighting, contrast, and clarity before processing.</li>
+          <li><strong>Anatomical Landmarking:</strong> Precisely samples clean skin patches across the forehead, cheeks, and chin.</li>
+          <li><strong>CIELAB Colorimetry:</strong> Measures yellow-blue chromatic balance (<i>b</i>*), red erythema (<i>a</i>*), and ITA° phototype angle.</li>
+          <li><strong>Machine Learning:</strong> Classifies your undertone into <strong>Warm</strong>, <strong>Cool</strong>, or <strong>Neutral</strong> with high accuracy.</li>
+          <li><strong>Personalized Styling:</strong> Curation of clothing, makeup, metals, neutrals, and colors to avoid.</li>
         </ul>
 
-        <h4>3. Individual Typology Angle (ITA°)</h4>
-        <div class="code-box">
-          <strong>ITA°</strong> = arctan((<i>L</i>* - 50) / <i>b</i>*) &times; (180 / &pi;)
-        </div>
-        <p>Quantifies skin melanin phototype from Very Fair (Fitzpatrick I) to Dark (Fitzpatrick VI).</p>
-
-        <h4>4. Pipeline Summary</h4>
+        <h4>💡 Best Photo Tips</h4>
         <p>
-          Image Validation &rarr; Quality Score &rarr; Face & Landmark Localization &rarr; Multi-Region Extraction (Forehead, Cheeks, Jaw) &rarr; Outlier IQR Filtering &rarr; Statistical Moments (Mean, Std, Var, Medians) &rarr; Random Forest Inference &rarr; Recommendation Synthesis.
+          Upload a clear front-facing portrait taken in soft, natural daylight with no heavy filters or strong directional shadows.
         </p>
       </div>
     </div>
