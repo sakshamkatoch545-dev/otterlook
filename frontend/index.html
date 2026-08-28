@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0B0F17" id="theme-color-meta">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>AuraColor AI | Personal Colour Analysis & Palette Recommendation</title>
+  <meta name="description" content="AI-Powered Personal Colour Analysis and Machine-Learning Skin Undertone Classification System.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <!-- Header Navigation -->
+  <header class="site-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-badge">
+          <span class="pulse-dot"></span>
+          AI Colorimetry
+        </div>
+        <h1 class="brand-title">AURA<span>COLOR</span> <span class="brand-sub">AI</span></h1>
+      </div>
+      <div class="header-actions">
+        <button id="viva-modal-btn" class="btn btn-outline guide-btn" title="View Color Science & ML Pipeline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span class="btn-text-full">ML Architecture & Viva Guide</span>
+          <span class="btn-text-short">ML Guide</span>
+        </button>
+        <button id="theme-toggle-btn" class="theme-toggle" aria-label="Toggle theme">
+          <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-content">
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-tag">Computer Vision & Dermatological Colorimetry</div>
+      <h2 class="hero-headline">Discover Your Personal <em>Colour Harmony</em></h2>
+      <p class="hero-description">
+        AI-powered facial skin undertone analysis and tailored palette curation. Utilizing MediaPipe anatomical region extraction, CIELAB colorimetry, and Machine Learning classification.
+      </p>
+
+      <div class="hero-badges">
+        <div class="badge-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Multi-Region Skin Extraction
+        </div>
+        <div class="badge-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          CIELAB b* & ITA° Features
+        </div>
+        <div class="badge-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Random Forest Ensemble ML
+        </div>
+      </div>
+    </section>
+
+    <!-- Upload & Studio Section -->
+    <section class="studio-section">
+      <div class="studio-card">
+        <!-- Drag & Drop Zone -->
+        <div class="upload-container" id="drop-zone">
+          <input type="file" id="file-input" accept="image/jpeg,image/png,image/jpg,image/webp" hidden>
+          <input type="file" id="camera-input" accept="image/*" capture="user" hidden>
+          
+          <div class="upload-content" id="upload-prompt">
+            <div class="upload-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <h3>Upload or Capture Facial Portrait</h3>
+            <p>Drag & drop your portrait here, take a selfie, or browse from files</p>
+            
+            <div class="upload-actions">
+              <button type="button" class="btn btn-sm btn-camera" id="camera-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                Take Selfie
+              </button>
+              <button type="button" class="btn btn-sm btn-browse" id="browse-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Browse Files
+              </button>
+            </div>
+            
+            <span class="file-hint">Supports JPG, JPEG, PNG, WebP (max 15MB) • Front-facing with natural lighting</span>
+          </div>
+
+          <!-- Live Preview Box -->
+          <div class="preview-box hidden" id="preview-box">
+            <img id="preview-img" src="" alt="Uploaded Portrait Preview">
+            <button class="remove-btn" id="remove-img-btn" title="Remove image">×</button>
+          </div>
+        </div>
+
+        <!-- Quick Sample Presets -->
+        <div class="sample-presets">
+          <span class="preset-label">Or test with verified sample presets:</span>
+          <div class="preset-buttons">
+            <button type="button" class="preset-btn" data-sample="warm">
+              <span class="preset-dot" style="background:#E2725B;"></span>
+              Warm Undertone Preset
+            </button>
+            <button type="button" class="preset-btn" data-sample="cool">
+              <span class="preset-dot" style="background:#0F52BA;"></span>
+              Cool Undertone Preset
+            </button>
+            <button type="button" class="preset-btn" data-sample="neutral">
+              <span class="preset-dot" style="background:#008080;"></span>
+              Neutral Undertone Preset
+            </button>
+          </div>
+        </div>
+
+        <!-- Image Quality Diagnostics Bar -->
+        <div class="quality-bar hidden" id="quality-bar">
+          <div class="quality-header">
+            <span class="quality-title">Image Quality Check:</span>
+            <span class="quality-status" id="quality-status">Evaluating...</span>
+          </div>
+          <div class="quality-meter-track">
+            <div class="quality-meter-fill" id="quality-meter" style="width: 0%"></div>
+          </div>
+          <div class="quality-details" id="quality-details"></div>
+        </div>
+
+        <!-- Error Banner -->
+        <div class="error-banner hidden" id="error-banner">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div class="error-text" id="error-text"></div>
+        </div>
+
+        <!-- Analyze CTA -->
+        <div class="cta-container">
+          <button id="analyze-btn" class="btn btn-primary btn-glow" disabled>
+            <span class="btn-text-main">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+              Analyze Undertone & Generate Palette
+            </span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Processing Animation & Stepper -->
+    <section class="processing-section hidden" id="processing-section">
+      <div class="processing-card">
+        <div class="processing-spinner">
+          <div class="spinner-ring"></div>
+          <div class="spinner-core"></div>
+        </div>
+        <h3 class="processing-title">Analyzing Facial Colorimetry...</h3>
+        <p class="processing-subtitle">Executing computer vision pipeline and Random Forest classification</p>
+        
+        <div class="pipeline-stepper">
+          <div class="step-item" id="step-1">
+            <div class="step-icon">1</div>
+            <div class="step-label">Image Validation & Quality Check</div>
+          </div>
+          <div class="step-item" id="step-2">
+            <div class="step-icon">2</div>
+            <div class="step-label">Face Landmark Localization</div>
+          </div>
+          <div class="step-item" id="step-3">
+            <div class="step-icon">3</div>
+            <div class="step-label">Multi-Region Skin Extraction (Forehead, Cheeks, Jaw)</div>
+          </div>
+          <div class="step-item" id="step-4">
+            <div class="step-icon">4</div>
+            <div class="step-label">CIELAB, HSV & sRGB Feature Extraction</div>
+          </div>
+          <div class="step-item" id="step-5">
+            <div class="step-icon">5</div>
+            <div class="step-label">Machine Learning Undertone Prediction</div>
+          </div>
+          <div class="step-item" id="step-6">
+            <div class="step-icon">6</div>
+            <div class="step-label">Personalized Palette & Styling Synthesis</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results Showcase Section -->
+    <section class="results-section hidden" id="results-section">
+      <!-- Top Verdict Grid -->
+      <div class="verdict-grid">
+        <!-- Undertone Hero Card -->
+        <div class="card verdict-card" id="verdict-card">
+          <div class="card-tag">Predicted Skin Undertone</div>
+          <div class="undertone-badge-wrapper">
+            <div class="undertone-badge" id="undertone-badge">WARM</div>
+          </div>
+          <div class="confidence-container">
+            <div class="confidence-header">
+              <span>Model Confidence:</span>
+              <strong id="confidence-val">87%</strong>
+            </div>
+            <div class="confidence-track">
+              <div class="confidence-bar" id="confidence-bar" style="width: 87%"></div>
+            </div>
+            <div class="class-prob-breakdown" id="prob-breakdown"></div>
+          </div>
+          <p class="undertone-explanation" id="undertone-explanation"></p>
+          <div class="key-factors-list" id="key-factors"></div>
+        </div>
+
+        <!-- Skin Colorimetry & Landmark Visualizer Card -->
+        <div class="card visualizer-card">
+          <div class="card-tag">Facial Region Sampling & Color Metrics</div>
+          <div class="visualizer-container">
+            <div class="face-canvas-box">
+              <canvas id="face-canvas"></canvas>
+              <div class="canvas-caption">Anatomical skin sampling patches (Forehead, Cheeks, Chin)</div>
+            </div>
+            <div class="metrics-column">
+              <div class="rep-swatch-box">
+                <div class="rep-swatch" id="rep-swatch"></div>
+                <div class="rep-info">
+                  <span class="rep-label">Representative Skin Tone</span>
+                  <strong class="rep-hex" id="rep-hex">#E5B895</strong>
+                  <span class="rep-phototype" id="rep-phototype">Fitzpatrick Type III</span>
+                </div>
+              </div>
+              <div class="color-metrics-table">
+                <div class="metric-row">
+                  <span>CIELAB L* (Lightness)</span>
+                  <strong id="metric-lab-l">65.2</strong>
+                </div>
+                <div class="metric-row">
+                  <span>CIELAB a* (Red-Green)</span>
+                  <strong id="metric-lab-a">+14.2</strong>
+                </div>
+                <div class="metric-row">
+                  <span>CIELAB b* (Yellow-Blue)</span>
+                  <strong id="metric-lab-b" class="highlight-metric">+19.8</strong>
+                </div>
+                <div class="metric-row">
+                  <span>ITA° Typology Angle</span>
+                  <strong id="metric-ita">+37.5°</strong>
+                </div>
+                <div class="metric-row">
+                  <span>HSV Dominant Hue</span>
+                  <strong id="metric-hsv-h">32.0°</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Personalized Palette Section -->
+      <div class="card palette-showcase-card">
+        <div class="card-tag">Personalized Curated Palette</div>
+        <div class="palette-header">
+          <div>
+            <h3 class="palette-title">Your Signature Harmony</h3>
+            <p class="palette-desc" id="stylist-summary"></p>
+            <div class="swatch-tap-hint">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Tap any swatch to copy HEX</span>
+            </div>
+          </div>
+          <div class="season-badge" id="season-badge">
+            <span class="season-label">Seasonal Harmony:</span>
+            <strong id="season-title">Warm Autumn</strong>
+          </div>
+        </div>
+
+        <div class="swatches-grid" id="swatches-grid">
+          <!-- Swatches rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Recommendation Categories Tabs -->
+      <div class="recommendations-container">
+        <div class="tab-nav">
+          <button class="tab-btn active" data-tab="clothing">👔 Clothing & Wardrobe</button>
+          <button class="tab-btn" data-tab="makeup">💄 Makeup & Cosmetics</button>
+          <button class="tab-btn" data-tab="accessories">💍 Jewelry & Accessories</button>
+          <button class="tab-btn" data-tab="neutrals">⚪ Neutral Basics</button>
+          <button class="tab-btn tab-btn-avoid" data-tab="avoid">⚠️ Colors to Avoid</button>
+        </div>
+
+        <div class="tab-content active" id="tab-clothing">
+          <div class="rec-grid" id="rec-clothing-grid"></div>
+        </div>
+
+        <div class="tab-content" id="tab-makeup">
+          <div class="makeup-guide-box" id="foundation-advice-box">
+            <div class="guide-icon">💄</div>
+            <div>
+              <h4>Foundation & Base Guidance</h4>
+              <p id="foundation-advice-text"></p>
+            </div>
+          </div>
+          <div class="rec-grid" id="rec-makeup-grid"></div>
+        </div>
+
+        <div class="tab-content" id="tab-accessories">
+          <div class="rec-grid" id="rec-accessories-grid"></div>
+        </div>
+
+        <div class="tab-content" id="tab-neutrals">
+          <div class="rec-grid" id="rec-neutrals-grid"></div>
+        </div>
+
+        <div class="tab-content" id="tab-avoid">
+          <div class="avoid-intro">
+            <p>These colors feature conflicting color temperatures that can wash out your skin, exaggerate blemishes, or cause a sallow appearance.</p>
+          </div>
+          <div class="avoid-grid" id="rec-avoid-grid"></div>
+        </div>
+      </div>
+
+      <!-- Reset / Re-analyze Bar -->
+      <div class="restart-bar">
+        <button class="btn btn-outline" id="reanalyze-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+          Analyze Another Portrait
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Educational Viva Defense Modal -->
+  <div class="modal-overlay hidden" id="viva-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Color Science & Machine Learning Architecture</h3>
+        <button class="modal-close" id="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>1. Machine Learning Methodology</h4>
+        <p>
+          Unlike naive RGB-threshold apps, this system trains a genuine <strong>Random Forest Classifier</strong> pipeline comparing against <strong>Support Vector Machines (SVM)</strong> and <strong>Logistic Regression</strong> on colorimetric skin feature spaces.
+        </p>
+        
+        <h4>2. Color Spaces & CIELAB <i>b</i>* Axis</h4>
+        <p>
+          <strong>CIELAB (<i>L</i>*<i>a</i>*<i>b</i>*)</strong> separates lightness (<i>L</i>*) from chromaticity (<i>a</i>*: green-red axis, <i>b</i>*: blue-yellow axis). 
+          Skin undertone is primarily governed by the yellow-blue balance:
+        </p>
+        <ul>
+          <li><strong>Warm Undertone:</strong> Elevated <i>b</i>* (<i>b</i>* &gt; 18.0) and high <i>b</i>*/<i>a</i>* ratio.</li>
+          <li><strong>Cool Undertone:</strong> Lower <i>b</i>* (<i>b</i>* &lt; 12.5) and dominant pink/erythema <i>a</i>*.</li>
+          <li><strong>Neutral Undertone:</strong> Balanced <i>a</i>* and <i>b</i>* with intermediate chromas.</li>
+        </ul>
+
+        <h4>3. Individual Typology Angle (ITA°)</h4>
+        <div class="code-box">
+          <strong>ITA°</strong> = arctan((<i>L</i>* - 50) / <i>b</i>*) &times; (180 / &pi;)
+        </div>
+        <p>Quantifies skin melanin phototype from Very Fair (Fitzpatrick I) to Dark (Fitzpatrick VI).</p>
+
+        <h4>4. Pipeline Summary</h4>
+        <p>
+          Image Validation &rarr; Quality Score &rarr; Face & Landmark Localization &rarr; Multi-Region Extraction (Forehead, Cheeks, Jaw) &rarr; Outlier IQR Filtering &rarr; Statistical Moments (Mean, Std, Var, Medians) &rarr; Random Forest Inference &rarr; Recommendation Synthesis.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast hidden" id="toast">Copied HEX code to clipboard!</div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <p>AI-Based Personal Colour Analysis System • Major College Project • Built with FastAPI, Scikit-Learn & OpenCV</p>
+    </div>
+  </footer>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

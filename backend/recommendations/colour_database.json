@@ -1,0 +1,369 @@
+{
+  "colours": [
+    {
+      "name": "Terracotta",
+      "hex": "#E2725B",
+      "rgb": [226, 114, 91],
+      "undertones": ["Warm"],
+      "category": "Clothing",
+      "tags": ["core", "warm_earthy", "autumn"],
+      "description": "A rich, baked clay tone that illuminates warm skin undertones."
+    },
+    {
+      "name": "Olive Green",
+      "hex": "#708238",
+      "rgb": [112, 130, 56],
+      "undertones": ["Warm"],
+      "category": "Clothing",
+      "tags": ["core", "earthy", "autumn"],
+      "description": "An earthy green that creates natural harmony with golden undertones."
+    },
+    {
+      "name": "Mustard Gold",
+      "hex": "#E1AD01",
+      "rgb": [225, 173, 1],
+      "undertones": ["Warm"],
+      "category": "Clothing",
+      "tags": ["accent", "vibrant", "spring_autumn"],
+      "description": "Deep golden yellow that enhances warm golden complexions."
+    },
+    {
+      "name": "Burnt Orange",
+      "hex": "#CC5500",
+      "rgb": [204, 85, 0],
+      "undertones": ["Warm"],
+      "category": "Clothing",
+      "tags": ["core", "vibrant", "autumn"],
+      "description": "Energetic fiery hue that creates a vibrant, radiant contrast."
+    },
+    {
+      "name": "Warm Peach",
+      "hex": "#FDB99B",
+      "rgb": [253, 185, 155],
+      "undertones": ["Warm"],
+      "category": "Clothing",
+      "tags": ["core", "pastel", "spring"],
+      "description": "Soft apricot blush that brings a healthy flush to warm complexions."
+    },
+    {
+      "name": "Moss Green",
+      "hex": "#8A9A5B",
+      "rgb": [138, 154, 91],
+      "undertones": ["Warm"],
+      "category": "Clothing",
+      "tags": ["core", "earthy"],
+      "description": "Muted organic green suited for everyday smart-casual wear."
+    },
+    {
+      "name": "Rich Camel",
+      "hex": "#C19A6B",
+      "rgb": [193, 154, 107],
+      "undertones": ["Warm", "Neutral"],
+      "category": "Neutrals",
+      "tags": ["neutral", "essential", "outerwear"],
+      "description": "Luxurious warm neutral ideal for coats, knits, and tailored pieces."
+    },
+    {
+      "name": "Warm Cream / Ivory",
+      "hex": "#FFFFF0",
+      "rgb": [255, 255, 240],
+      "undertones": ["Warm", "Neutral"],
+      "category": "Neutrals",
+      "tags": ["neutral", "essential"],
+      "description": "Gentle buttery white that flatters warm skin better than harsh stark white."
+    },
+    {
+      "name": "Warm Chocolate Brown",
+      "hex": "#5C3A21",
+      "rgb": [92, 58, 33],
+      "undertones": ["Warm"],
+      "category": "Neutrals",
+      "tags": ["neutral", "anchor"],
+      "description": "Deep espresso brown serving as a richer alternative to jet black."
+    },
+    {
+      "name": "Warm Coral",
+      "hex": "#F88379",
+      "rgb": [248, 131, 121],
+      "undertones": ["Warm"],
+      "category": "Makeup",
+      "sub_category": "Blush & Lips",
+      "tags": ["makeup", "blush", "lipstick"],
+      "description": "Radiant coral blush and lip color that adds instant vitality."
+    },
+    {
+      "name": "Spiced Cinnamon",
+      "hex": "#D2691E",
+      "rgb": [210, 105, 30],
+      "undertones": ["Warm"],
+      "category": "Makeup",
+      "sub_category": "Lips & Eyes",
+      "tags": ["makeup", "lipstick", "eyeshadow"],
+      "description": "Warm brick and cinnamon tones for lips and smoky eye looks."
+    },
+    {
+      "name": "Yellow Gold (18k/14k)",
+      "hex": "#D4AF37",
+      "rgb": [212, 175, 55],
+      "undertones": ["Warm"],
+      "category": "Accessories",
+      "sub_category": "Metals",
+      "tags": ["metal", "jewelry", "essential"],
+      "description": "Yellow gold perfectly mirrors the amber and golden undertones of your skin."
+    },
+    {
+      "name": "Warm Amber & Tortoiseshell",
+      "hex": "#FFBF00",
+      "rgb": [255, 191, 0],
+      "undertones": ["Warm"],
+      "category": "Accessories",
+      "sub_category": "Eyewear & Gems",
+      "tags": ["accessories", "eyewear"],
+      "description": "Tortoiseshell frames and amber stones that enrich warm features."
+    },
+
+    {
+      "name": "Royal Sapphire Blue",
+      "hex": "#0F52BA",
+      "rgb": [15, 82, 186],
+      "undertones": ["Cool"],
+      "category": "Clothing",
+      "tags": ["core", "jewel", "winter"],
+      "description": "Deep saturated blue that brings out crisp radiance in cool complexions."
+    },
+    {
+      "name": "Soft Lavender",
+      "hex": "#E6E6FA",
+      "rgb": [230, 230, 250],
+      "undertones": ["Cool"],
+      "category": "Clothing",
+      "tags": ["core", "pastel", "summer"],
+      "description": "Delicate violet-tinged pastel that complements cool rosy tones."
+    },
+    {
+      "name": "Deep Plum / Berry",
+      "hex": "#5A2A40",
+      "rgb": [90, 42, 64],
+      "undertones": ["Cool"],
+      "category": "Clothing",
+      "tags": ["core", "jewel", "winter"],
+      "description": "A sophisticated berry shade providing depth and elegance."
+    },
+    {
+      "name": "Emerald Green",
+      "hex": "#50C878",
+      "rgb": [80, 200, 120],
+      "undertones": ["Cool"],
+      "category": "Clothing",
+      "tags": ["accent", "jewel", "winter"],
+      "description": "Vibrant cool-toned green with high visual impact."
+    },
+    {
+      "name": "Cool Rose Pink",
+      "hex": "#E8ADAA",
+      "rgb": [232, 173, 170],
+      "undertones": ["Cool"],
+      "category": "Clothing",
+      "tags": ["core", "pastel", "summer"],
+      "description": "Soft dusty pink with blue undertones that enhances a gentle glow."
+    },
+    {
+      "name": "Midnight Navy",
+      "hex": "#000080",
+      "rgb": [0, 0, 128],
+      "undertones": ["Cool", "Neutral"],
+      "category": "Neutrals",
+      "tags": ["neutral", "essential", "tailoring"],
+      "description": "Classic cool anchor neutral; sharp and universally sophisticated."
+    },
+    {
+      "name": "Pure Crisp White",
+      "hex": "#FFFFFF",
+      "rgb": [255, 255, 255],
+      "undertones": ["Cool"],
+      "category": "Neutrals",
+      "tags": ["neutral", "essential"],
+      "description": "High-contrast optic white that pops effortlessly against cool skin."
+    },
+    {
+      "name": "Cool Charcoal Gray",
+      "hex": "#36454F",
+      "rgb": [54, 69, 79],
+      "undertones": ["Cool"],
+      "category": "Neutrals",
+      "tags": ["neutral", "anchor"],
+      "description": "Sleek slate gray that provides a clean, modern framework."
+    },
+    {
+      "name": "Cool Berry Pink",
+      "hex": "#C71585",
+      "rgb": [199, 21, 133],
+      "undertones": ["Cool"],
+      "category": "Makeup",
+      "sub_category": "Lips & Blush",
+      "tags": ["makeup", "lipstick", "blush"],
+      "description": "Blue-based raspberry and magenta lip shades that brighten your smile."
+    },
+    {
+      "name": "Mauve Rose",
+      "hex": "#915F6D",
+      "rgb": [145, 95, 109],
+      "undertones": ["Cool"],
+      "category": "Makeup",
+      "sub_category": "Eyes & Blush",
+      "tags": ["makeup", "eyeshadow", "blush"],
+      "description": "Subtle cool mauve eyeshadows and cheek stains."
+    },
+    {
+      "name": "Sterling Silver & Platinum",
+      "hex": "#C0C0C0",
+      "rgb": [192, 192, 192],
+      "undertones": ["Cool"],
+      "category": "Accessories",
+      "sub_category": "Metals",
+      "tags": ["metal", "jewelry", "essential"],
+      "description": "Bright silver, white gold, and platinum harmonize with cool undertones."
+    },
+    {
+      "name": "Sapphire & Clear Diamond",
+      "hex": "#0066CC",
+      "rgb": [0, 102, 204],
+      "undertones": ["Cool"],
+      "category": "Accessories",
+      "sub_category": "Gemstones",
+      "tags": ["accessories", "gems"],
+      "description": "Cool-toned precious stones like blue sapphire, aquamarine, and clear diamonds."
+    },
+
+    {
+      "name": "Classic Teal",
+      "hex": "#008080",
+      "rgb": [0, 128, 128],
+      "undertones": ["Neutral", "Warm", "Cool"],
+      "category": "Clothing",
+      "tags": ["universal", "core"],
+      "description": "A universal balance of blue and green that complements all skin tones."
+    },
+    {
+      "name": "Dusty Rose",
+      "hex": "#DCAE96",
+      "rgb": [220, 174, 150],
+      "undertones": ["Neutral"],
+      "category": "Clothing",
+      "tags": ["core", "muted"],
+      "description": "A balanced, desaturated pink-nude with equal warm and cool pigments."
+    },
+    {
+      "name": "Soft Sage",
+      "hex": "#9CAF88",
+      "rgb": [156, 175, 136],
+      "undertones": ["Neutral"],
+      "category": "Clothing",
+      "tags": ["core", "muted"],
+      "description": "Understated gray-green that sits elegantly in the neutral spectrum."
+    },
+    {
+      "name": "French Blue",
+      "hex": "#318CE7",
+      "rgb": [49, 140, 231],
+      "undertones": ["Neutral"],
+      "category": "Clothing",
+      "tags": ["core", "vibrant"],
+      "description": "Medium soft blue with balanced temperature."
+    },
+    {
+      "name": "Warm Taupe",
+      "hex": "#B38B6D",
+      "rgb": [179, 139, 109],
+      "undertones": ["Neutral"],
+      "category": "Neutrals",
+      "tags": ["neutral", "essential"],
+      "description": "A bridge between brown and gray, creating flawless neutral styling."
+    },
+    {
+      "name": "Heather Soft Gray",
+      "hex": "#A8A8A8",
+      "rgb": [168, 168, 168],
+      "undertones": ["Neutral"],
+      "category": "Neutrals",
+      "tags": ["neutral", "essential"],
+      "description": "Medium neutral gray that pairs effortlessly with warm or cool accents."
+    },
+    {
+      "name": "Nude Rose",
+      "hex": "#C58F84",
+      "rgb": [197, 143, 132],
+      "undertones": ["Neutral"],
+      "category": "Makeup",
+      "sub_category": "Lips & Blush",
+      "tags": ["makeup", "lipstick", "nude"],
+      "description": "Your ultimate 'my lips but better' balanced neutral pink-brown."
+    },
+    {
+      "name": "Rose Gold & Mixed Metals",
+      "hex": "#B76E79",
+      "rgb": [183, 110, 121],
+      "undertones": ["Neutral"],
+      "category": "Accessories",
+      "sub_category": "Metals",
+      "tags": ["metal", "jewelry", "versatile"],
+      "description": "Rose gold, champagne gold, or layered mixed metals look stunning on neutral undertones."
+    }
+  ],
+  "avoid_rules": {
+    "Warm": [
+      {
+        "name": "Icy Stark Blue",
+        "hex": "#B0E0E6",
+        "rgb": [176, 224, 230],
+        "reason": "Cold blue tones clash with golden skin pigments, creating a sallow or drained look."
+      },
+      {
+        "name": "Stark Optic White",
+        "hex": "#FFFFFF",
+        "rgb": [255, 255, 255],
+        "reason": "Pure white can make warm skin appear overly yellow or washed out; opt for warm cream/ivory."
+      },
+      {
+        "name": "Cool Magenta / Fuchsia",
+        "hex": "#FF00FF",
+        "rgb": [255, 0, 255],
+        "reason": "Blue-dominant bright magentas overwhelm warm complexions."
+      }
+    ],
+    "Cool": [
+      {
+        "name": "Mustard Yellow / Ocher",
+        "hex": "#B8860B",
+        "rgb": [184, 134, 11],
+        "reason": "Heavy yellow-browns accentuate redness or make cool undertones appear dull."
+      },
+      {
+        "name": "Warm Orange / Rust",
+        "hex": "#D35400",
+        "rgb": [211, 84, 0],
+        "reason": "Warm oranges fight with pink/blue skin undertones, causing a muddy complexion effect."
+      },
+      {
+        "name": "Warm Camel Tan",
+        "hex": "#D2B48C",
+        "rgb": [210, 180, 140],
+        "reason": "Yellow-tinged beiges can wash out cool skin; swap for crisp charcoal or midnight navy."
+      }
+    ],
+    "Neutral": [
+      {
+        "name": "Extreme Neon Yellow",
+        "hex": "#CCFF00",
+        "rgb": [204, 255, 0],
+        "reason": "Ultra-saturated acid neon tones can overpower balanced neutral skin harmonies."
+      },
+      {
+        "name": "Overly Acidic Lime",
+        "hex": "#32CD32",
+        "rgb": [50, 205, 50],
+        "reason": "High-saturation lime greens pull focus away from facial features; choose soft sage instead."
+      }
+    ]
+  }
+}

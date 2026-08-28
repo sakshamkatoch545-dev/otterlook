@@ -1,0 +1,109 @@
+{
+  "model_name": "Random Forest Classifier",
+  "classes": [
+    "Cool",
+    "Neutral",
+    "Warm"
+  ],
+  "total_samples": 1350,
+  "overall_accuracy": 0.9822,
+  "confusion_matrix": {
+    "labels": [
+      "Cool",
+      "Neutral",
+      "Warm"
+    ],
+    "matrix": [
+      [
+        439,
+        11,
+        0
+      ],
+      [
+        3,
+        443,
+        4
+      ],
+      [
+        0,
+        6,
+        444
+      ]
+    ]
+  },
+  "per_class_metrics": {
+    "Cool": {
+      "precision": 0.9932126696832579,
+      "recall": 0.9755555555555555,
+      "f1-score": 0.984304932735426,
+      "support": 450.0
+    },
+    "Neutral": {
+      "precision": 0.9630434782608696,
+      "recall": 0.9844444444444445,
+      "f1-score": 0.9736263736263736,
+      "support": 450.0
+    },
+    "Warm": {
+      "precision": 0.9910714285714286,
+      "recall": 0.9866666666666667,
+      "f1-score": 0.9888641425389755,
+      "support": 450.0
+    },
+    "accuracy": 0.9822222222222222,
+    "macro avg": {
+      "precision": 0.9824425255051853,
+      "recall": 0.9822222222222222,
+      "f1-score": 0.9822651496335917,
+      "support": 1350.0
+    },
+    "weighted avg": {
+      "precision": 0.9824425255051854,
+      "recall": 0.9822222222222222,
+      "f1-score": 0.9822651496335918,
+      "support": 1350.0
+    }
+  },
+  "top_features": [
+    {
+      "feature": "mean_h",
+      "importance": 0.2301
+    },
+    {
+      "feature": "b_to_a_ratio",
+      "importance": 0.2042
+    },
+    {
+      "feature": "mean_lab_b",
+      "importance": 0.2018
+    },
+    {
+      "feature": "rg_ratio",
+      "importance": 0.0574
+    },
+    {
+      "feature": "mean_a",
+      "importance": 0.0454
+    },
+    {
+      "feature": "rb_ratio",
+      "importance": 0.0331
+    },
+    {
+      "feature": "mean_s",
+      "importance": 0.032
+    },
+    {
+      "feature": "ita",
+      "importance": 0.0263
+    },
+    {
+      "feature": "mean_b",
+      "importance": 0.0175
+    },
+    {
+      "feature": "median_b",
+      "importance": 0.0169
+    }
+  ]
+}
