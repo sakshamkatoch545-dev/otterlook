@@ -636,11 +636,11 @@ def get_cached_html():
         const maxDim = 640;
         let w = img.width;
         let h = img.height;
-        if (w > maxDim || h > maxDim) {
+        if (w > maxDim || h > maxDim) {{
           const scale = maxDim / Math.max(w, h);
           w = Math.round(w * scale);
           h = Math.round(h * scale);
-        }
+        }}
         
         canvas.width = w;
         canvas.height = h;
