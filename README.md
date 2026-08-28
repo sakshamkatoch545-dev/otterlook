@@ -9,7 +9,7 @@
 ---
 
 ## 1. Project Title & Overview
-**AI-Based Personal Colour Analysis and Personalized Colour Palette Recommendation System** (AuraColor AI) is a major engineering project that bridges computer vision, dermatological colorimetry, and genuine machine learning to detect facial features, isolate anatomical skin regions, extract multi-space colorimetric feature moments, classify the user's skin undertone (**Warm**, **Cool**, or **Neutral**), and generate tailored styling palettes for clothing, makeup, and accessories.
+**AI-Based Personal Colour Analysis and Personalized Colour Palette Recommendation System** (Otterlook AI) is a major engineering project that bridges computer vision, dermatological colorimetry, and genuine machine learning to detect facial features, isolate anatomical skin regions, extract multi-space colorimetric feature moments, classify the user's skin undertone (**Warm**, **Cool**, or **Neutral**), and generate tailored styling palettes for clothing, makeup, and accessories.
 
 ---
 

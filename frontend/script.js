@@ -1,5 +1,5 @@
 /**
- * AURACOLOR AI - Frontend Application Controller
+ * OTTERLOOK AI - Frontend Application Controller
  * Handles image upload, pipeline animations, API communication,
  * landmark canvas overlay, and dynamic palette rendering.
  */
@@ -49,14 +49,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  const savedTheme = localStorage.getItem("auracolor-theme") || "dark";
+  const savedTheme = localStorage.getItem("otterlook-theme") || "dark";
   applyTheme(savedTheme);
 
   themeToggleBtn.addEventListener("click", () => {
     const currentTheme = document.documentElement.getAttribute("data-theme");
     const newTheme = currentTheme === "dark" ? "light" : "dark";
     applyTheme(newTheme);
-    localStorage.setItem("auracolor-theme", newTheme);
+    localStorage.setItem("otterlook-theme", newTheme);
   });
 
   // --- Modal Controller ---

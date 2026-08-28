@@ -1,5 +1,5 @@
 """
-AuraColor AI - Streamlit Community Cloud Application
+Otterlook AI - Streamlit Community Cloud Application
 Delivers the exact pixel-perfect luxury frontend experience from localhost,
 including the dark-gold design system, mobile selfie camera trigger, animated pipeline stepper,
 interactive facial colorimetry visualizer, dynamic seasonal palette, and categorized styling tabs.
@@ -13,7 +13,7 @@ import streamlit.components.v1 as components
 
 # Page Configuration
 st.set_page_config(
-    page_title="AuraColor AI | Personal Colour Analysis & Palette Recommendation",
+    page_title="Otterlook AI | Personal Colour Analysis & Palette Recommendation",
     page_icon="✨",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -86,12 +86,12 @@ def get_cached_html():
           <span class="pulse-dot"></span>
           AI Colorimetry
         </div>
-        <h1 class="brand-title">AURA<span>COLOR</span> <span class="brand-sub">AI</span></h1>
+        <h1 class="brand-title">OTTER<span>LOOK</span> <span class="brand-sub">AI</span></h1>
       </div>
       <div class="header-actions">
-        <button id="viva-modal-btn" class="btn btn-outline guide-btn" title="About AuraColor AI">
+        <button id="viva-modal-btn" class="btn btn-outline guide-btn" title="About Otterlook AI">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          <span class="btn-text-full">About AuraColor AI</span>
+          <span class="btn-text-full">About Otterlook AI</span>
           <span class="btn-text-short">About</span>
         </button>
         <button id="theme-toggle-btn" class="theme-toggle" aria-label="Toggle theme">
@@ -458,13 +458,13 @@ def get_cached_html():
   <div class="modal-overlay hidden" id="viva-modal">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>About AuraColor AI</h3>
+        <h3>About Otterlook AI</h3>
         <button class="modal-close" id="modal-close-btn">&times;</button>
       </div>
       <div class="modal-body">
-        <h4>✨ What is AuraColor AI?</h4>
+        <h4>✨ What is Otterlook AI?</h4>
         <p>
-          <strong>AuraColor AI</strong> is an intelligent Personal Colour Analysis platform designed to discover your natural skin undertone and generate tailored colour palettes for styling, wardrobe selection, cosmetics, and jewelry.
+          <strong>Otterlook AI</strong> is an intelligent Personal Colour Analysis platform designed to discover your natural skin undertone and generate tailored colour palettes for styling, wardrobe selection, cosmetics, and jewelry.
         </p>
 
         <h4>🎯 Why Undertones Matter</h4>
@@ -550,14 +550,14 @@ def get_cached_html():
           themeColorMeta.setAttribute("content", theme === "dark" ? "#0B0F17" : "#F8F9FC");
         }}
       }}
-      const savedTheme = localStorage.getItem("auracolor-theme") || "dark";
+      const savedTheme = localStorage.getItem("otterlook-theme") || "dark";
       applyTheme(savedTheme);
 
       themeToggleBtn.addEventListener("click", () => {{
         const current = document.documentElement.getAttribute("data-theme");
         const next = current === "dark" ? "light" : "dark";
         applyTheme(next);
-        localStorage.setItem("auracolor-theme", next);
+        localStorage.setItem("otterlook-theme", next);
       }});
 
       // Modal
