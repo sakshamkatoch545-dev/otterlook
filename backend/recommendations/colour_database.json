@@ -3,311 +3,2792 @@
     {
       "name": "Terracotta",
       "hex": "#E2725B",
-      "rgb": [226, 114, 91],
-      "undertones": ["Warm"],
+      "rgb": [
+        226,
+        114,
+        91
+      ],
+      "family": "red",
+      "undertones": [
+        "Warm"
+      ],
       "category": "Clothing",
-      "tags": ["core", "warm_earthy", "autumn"],
-      "description": "A rich, baked clay tone that illuminates warm skin undertones."
-    },
-    {
-      "name": "Olive Green",
-      "hex": "#708238",
-      "rgb": [112, 130, 56],
-      "undertones": ["Warm"],
-      "category": "Clothing",
-      "tags": ["core", "earthy", "autumn"],
-      "description": "An earthy green that creates natural harmony with golden undertones."
-    },
-    {
-      "name": "Mustard Gold",
-      "hex": "#E1AD01",
-      "rgb": [225, 173, 1],
-      "undertones": ["Warm"],
-      "category": "Clothing",
-      "tags": ["accent", "vibrant", "spring_autumn"],
-      "description": "Deep golden yellow that enhances warm golden complexions."
+      "tags": [
+        "core",
+        "warm_earthy",
+        "autumn"
+      ],
+      "description": "A rich, baked Mediterranean clay tone that illuminates golden skin undertones."
     },
     {
       "name": "Burnt Orange",
       "hex": "#CC5500",
-      "rgb": [204, 85, 0],
-      "undertones": ["Warm"],
+      "rgb": [
+        204,
+        85,
+        0
+      ],
+      "family": "orange",
+      "undertones": [
+        "Warm"
+      ],
       "category": "Clothing",
-      "tags": ["core", "vibrant", "autumn"],
-      "description": "Energetic fiery hue that creates a vibrant, radiant contrast."
+      "tags": [
+        "core",
+        "vibrant",
+        "autumn"
+      ],
+      "description": "Energetic fiery hue with deep red undertones that creates a vibrant, radiant contrast."
+    },
+    {
+      "name": "Mustard Gold",
+      "hex": "#E1AD01",
+      "rgb": [
+        225,
+        173,
+        1
+      ],
+      "family": "yellow",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "core",
+        "accent",
+        "vibrant",
+        "autumn",
+        "spring"
+      ],
+      "description": "Deep golden yellow that enhances warm, sun-kissed and golden complexions."
+    },
+    {
+      "name": "Olive Green",
+      "hex": "#708238",
+      "rgb": [
+        112,
+        130,
+        56
+      ],
+      "family": "green",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "core",
+        "earthy",
+        "autumn"
+      ],
+      "description": "An earthy Mediterranean green that creates natural balance with golden dermis pigments."
     },
     {
       "name": "Warm Peach",
       "hex": "#FDB99B",
-      "rgb": [253, 185, 155],
-      "undertones": ["Warm"],
+      "rgb": [
+        253,
+        185,
+        155
+      ],
+      "family": "orange",
+      "undertones": [
+        "Warm"
+      ],
       "category": "Clothing",
-      "tags": ["core", "pastel", "spring"],
-      "description": "Soft apricot blush that brings a healthy flush to warm complexions."
+      "tags": [
+        "core",
+        "pastel",
+        "spring"
+      ],
+      "description": "Soft apricot blush that brings a youthful, healthy luminescence to warm complexions."
+    },
+    {
+      "name": "Rust Red",
+      "hex": "#B7410E",
+      "rgb": [
+        183,
+        65,
+        14
+      ],
+      "family": "red",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "core",
+        "deep",
+        "autumn"
+      ],
+      "description": "An intense oxidized iron hue delivering sophisticated warmth and autumnal presence."
+    },
+    {
+      "name": "Warm Coral",
+      "hex": "#FF6F61",
+      "rgb": [
+        255,
+        111,
+        97
+      ],
+      "family": "red",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "core",
+        "vibrant",
+        "spring"
+      ],
+      "description": "Living coral tone with high vibrancy that enlivens warm skin during day and evening."
     },
     {
       "name": "Moss Green",
       "hex": "#8A9A5B",
-      "rgb": [138, 154, 91],
-      "undertones": ["Warm"],
+      "rgb": [
+        138,
+        154,
+        91
+      ],
+      "family": "green",
+      "undertones": [
+        "Warm"
+      ],
       "category": "Clothing",
-      "tags": ["core", "earthy"],
-      "description": "Muted organic green suited for everyday smart-casual wear."
+      "tags": [
+        "core",
+        "earthy",
+        "autumn"
+      ],
+      "description": "Muted organic forest green suited for everyday smart-casual tailoring."
+    },
+    {
+      "name": "Amber Gold",
+      "hex": "#FFBF00",
+      "rgb": [
+        255,
+        191,
+        0
+      ],
+      "family": "yellow",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "accent",
+        "vibrant",
+        "autumn"
+      ],
+      "description": "Fossilized resin glow providing rich warmth for jackets, knitwear, and evening silk."
+    },
+    {
+      "name": "Paprika",
+      "hex": "#8D021F",
+      "rgb": [
+        141,
+        2,
+        31
+      ],
+      "family": "red",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "core",
+        "deep",
+        "autumn"
+      ],
+      "description": "A deep Hungarian spiced red with smoldering warmth for statement outerwear."
+    },
+    {
+      "name": "Saffron Yellow",
+      "hex": "#F4C430",
+      "rgb": [
+        244,
+        196,
+        48
+      ],
+      "family": "yellow",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "vibrant",
+        "spring",
+        "festive"
+      ],
+      "description": "Prized spice pigment bringing brilliant, majestic solar warmth."
+    },
+    {
+      "name": "Warm Cinnamon",
+      "hex": "#D2691E",
+      "rgb": [
+        210,
+        105,
+        30
+      ],
+      "family": "brown",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "earthy",
+        "autumn"
+      ],
+      "description": "Spiced chocolate-tan shade delivering cozy, flattering warmth for knitwear and coats."
+    },
+    {
+      "name": "Marigold",
+      "hex": "#EAA221",
+      "rgb": [
+        234,
+        162,
+        33
+      ],
+      "family": "yellow",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "vibrant",
+        "festive",
+        "spring"
+      ],
+      "description": "Golden floral sunshine tone ideal for celebratory and summer outfits."
+    },
+    {
+      "name": "Forest Fern Green",
+      "hex": "#4F7942",
+      "rgb": [
+        79,
+        121,
+        66
+      ],
+      "family": "green",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "deep",
+        "nature"
+      ],
+      "description": "Lush evergreen foliage tone harmonizing with peachy and golden dermal undertones."
+    },
+    {
+      "name": "Tuscan Ochre",
+      "hex": "#CC7722",
+      "rgb": [
+        204,
+        119,
+        34
+      ],
+      "family": "orange",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "earthy",
+        "autumn"
+      ],
+      "description": "Traditional Italian earth pigment capturing late afternoon golden hour luminescence."
+    },
+    {
+      "name": "Warm Tangerine",
+      "hex": "#F28500",
+      "rgb": [
+        242,
+        133,
+        0
+      ],
+      "family": "orange",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "vibrant",
+        "spring"
+      ],
+      "description": "Zesty citrus orange adding dynamic pop and energetic personality."
+    },
+    {
+      "name": "Copper Glow",
+      "hex": "#B87333",
+      "rgb": [
+        184,
+        115,
+        51
+      ],
+      "family": "orange",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "metallic",
+        "autumn"
+      ],
+      "description": "Reddish-metallic sheen flattering golden complexions across silk and satin."
+    },
+    {
+      "name": "Khaki Olive",
+      "hex": "#556B2F",
+      "rgb": [
+        85,
+        107,
+        47
+      ],
+      "family": "green",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "tailoring",
+        "military",
+        "autumn"
+      ],
+      "description": "Understated dark olive green for utilitarian jackets, trousers, and trench coats."
+    },
+    {
+      "name": "Warm Salmon",
+      "hex": "#FA8072",
+      "rgb": [
+        250,
+        128,
+        114
+      ],
+      "family": "red",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "spring",
+        "pastel"
+      ],
+      "description": "Soft pink-orange blend creating a delicate, graceful summer and spring presence."
+    },
+    {
+      "name": "Spiced Cognac",
+      "hex": "#9A463D",
+      "rgb": [
+        154,
+        70,
+        61
+      ],
+      "family": "brown",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "deep",
+        "tailoring"
+      ],
+      "description": "Aged French spirit hue for heritage leather, blazers, and luxury boots."
     },
     {
       "name": "Rich Camel",
       "hex": "#C19A6B",
-      "rgb": [193, 154, 107],
-      "undertones": ["Warm", "Neutral"],
+      "rgb": [
+        193,
+        154,
+        107
+      ],
+      "family": "brown",
+      "undertones": [
+        "Warm"
+      ],
       "category": "Neutrals",
-      "tags": ["neutral", "essential", "outerwear"],
-      "description": "Luxurious warm neutral ideal for coats, knits, and tailored pieces."
+      "tags": [
+        "neutral",
+        "luxury",
+        "core"
+      ],
+      "description": "The quintessential luxury coat and trench hue for warm undertones."
     },
     {
       "name": "Warm Cream / Ivory",
-      "hex": "#FFFFF0",
-      "rgb": [255, 255, 240],
-      "undertones": ["Warm", "Neutral"],
+      "hex": "#FFFDD0",
+      "rgb": [
+        255,
+        253,
+        208
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Warm"
+      ],
       "category": "Neutrals",
-      "tags": ["neutral", "essential"],
-      "description": "Gentle buttery white that flatters warm skin better than harsh stark white."
+      "tags": [
+        "neutral",
+        "essential"
+      ],
+      "description": "The ideal replacement for stark optic white; soft milk tone that flatters golden skin."
     },
     {
-      "name": "Warm Chocolate Brown",
-      "hex": "#5C3A21",
-      "rgb": [92, 58, 33],
-      "undertones": ["Warm"],
+      "name": "Dark Espresso Chocolate",
+      "hex": "#3D2B1F",
+      "rgb": [
+        61,
+        43,
+        31
+      ],
+      "family": "brown",
+      "undertones": [
+        "Warm"
+      ],
       "category": "Neutrals",
-      "tags": ["neutral", "anchor"],
-      "description": "Deep espresso brown serving as a richer alternative to jet black."
+      "tags": [
+        "neutral",
+        "deep"
+      ],
+      "description": "Rich roasted coffee bean tone serving as a softer, more harmonious alternative to black."
     },
     {
-      "name": "Warm Coral",
-      "hex": "#F88379",
-      "rgb": [248, 131, 121],
-      "undertones": ["Warm"],
+      "name": "Warm Sand",
+      "hex": "#C2B280",
+      "rgb": [
+        194,
+        178,
+        128
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "summer"
+      ],
+      "description": "Coastal dune neutrality perfect for linen blazers, chinos, and knitwear."
+    },
+    {
+      "name": "Almond Buff",
+      "hex": "#EED9C4",
+      "rgb": [
+        238,
+        217,
+        196
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "soft"
+      ],
+      "description": "Gentle nutty beige for effortless monochromatic base layers."
+    },
+    {
+      "name": "Terracotta & Warm Brick Lip",
+      "hex": "#B8533C",
+      "rgb": [
+        184,
+        83,
+        60
+      ],
+      "family": "red",
+      "undertones": [
+        "Warm"
+      ],
       "category": "Makeup",
-      "sub_category": "Blush & Lips",
-      "tags": ["makeup", "blush", "lipstick"],
-      "description": "Radiant coral blush and lip color that adds instant vitality."
+      "sub_category": "Lipstick",
+      "tags": [
+        "makeup",
+        "lip",
+        "autumn"
+      ],
+      "description": "Earthy red lipstick that brings out the golden radiance in your smile."
     },
     {
-      "name": "Spiced Cinnamon",
-      "hex": "#D2691E",
-      "rgb": [210, 105, 30],
-      "undertones": ["Warm"],
+      "name": "Golden Peach Blush",
+      "hex": "#F4A460",
+      "rgb": [
+        244,
+        164,
+        96
+      ],
+      "family": "orange",
+      "undertones": [
+        "Warm"
+      ],
       "category": "Makeup",
-      "sub_category": "Lips & Eyes",
-      "tags": ["makeup", "lipstick", "eyeshadow"],
-      "description": "Warm brick and cinnamon tones for lips and smoky eye looks."
+      "sub_category": "Blush",
+      "tags": [
+        "makeup",
+        "blush"
+      ],
+      "description": "Luminous apricot blush with golden micro-shimmer for cheekbones."
     },
     {
-      "name": "Yellow Gold (18k/14k)",
+      "name": "Warm Spice Coral Lip",
+      "hex": "#D9534F",
+      "rgb": [
+        217,
+        83,
+        79
+      ],
+      "family": "red",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Makeup",
+      "sub_category": "Lipstick",
+      "tags": [
+        "makeup",
+        "lip"
+      ],
+      "description": "Dynamic coral-red statement lipstick for evening galas."
+    },
+    {
+      "name": "Bronze & Amber Eyeshadow",
+      "hex": "#A97142",
+      "rgb": [
+        169,
+        113,
+        66
+      ],
+      "family": "brown",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Makeup",
+      "sub_category": "Eyeshadow",
+      "tags": [
+        "makeup",
+        "eye"
+      ],
+      "description": "Melted copper and bronze tones to define eyelid contours."
+    },
+    {
+      "name": "Warm Honey Gloss",
+      "hex": "#E6955B",
+      "rgb": [
+        230,
+        149,
+        91
+      ],
+      "family": "orange",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Makeup",
+      "sub_category": "Lipstick",
+      "tags": [
+        "makeup",
+        "lip"
+      ],
+      "description": "Translucent warm caramel-nude lip tint for everyday elegance."
+    },
+    {
+      "name": "18K Yellow Gold",
       "hex": "#D4AF37",
-      "rgb": [212, 175, 55],
-      "undertones": ["Warm"],
+      "rgb": [
+        212,
+        175,
+        55
+      ],
+      "family": "metal",
+      "undertones": [
+        "Warm"
+      ],
       "category": "Accessories",
-      "sub_category": "Metals",
-      "tags": ["metal", "jewelry", "essential"],
-      "description": "Yellow gold perfectly mirrors the amber and golden undertones of your skin."
+      "sub_category": "Metals & Gems",
+      "tags": [
+        "metal",
+        "jewelry",
+        "essential"
+      ],
+      "description": "The quintessential radiant precious metal for warm dermal colorimetry."
     },
     {
-      "name": "Warm Amber & Tortoiseshell",
-      "hex": "#FFBF00",
-      "rgb": [255, 191, 0],
-      "undertones": ["Warm"],
+      "name": "Antique Brass & Bronze",
+      "hex": "#B5A642",
+      "rgb": [
+        181,
+        166,
+        66
+      ],
+      "family": "metal",
+      "undertones": [
+        "Warm"
+      ],
       "category": "Accessories",
-      "sub_category": "Eyewear & Gems",
-      "tags": ["accessories", "eyewear"],
-      "description": "Tortoiseshell frames and amber stones that enrich warm features."
+      "sub_category": "Metals & Gems",
+      "tags": [
+        "metal",
+        "vintage"
+      ],
+      "description": "Understated heritage metal finish for watches, buckles, and cuff links."
     },
-
     {
-      "name": "Royal Sapphire Blue",
-      "hex": "#0F52BA",
-      "rgb": [15, 82, 186],
-      "undertones": ["Cool"],
+      "name": "Baltic Amber",
+      "hex": "#FF7E00",
+      "rgb": [
+        255,
+        126,
+        0
+      ],
+      "family": "orange",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Accessories",
+      "sub_category": "Metals & Gems",
+      "tags": [
+        "gem",
+        "jewelry"
+      ],
+      "description": "Translucent golden gemstone resonating with internal fire and warmth."
+    },
+    {
+      "name": "Saddle Brown Leather",
+      "hex": "#8B4513",
+      "rgb": [
+        139,
+        69,
+        19
+      ],
+      "family": "brown",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Accessories",
+      "sub_category": "Leather & Belts",
+      "tags": [
+        "leather",
+        "accessories"
+      ],
+      "description": "Full-grain vegetable-tanned leather for belts, weekender bags, and shoes."
+    },
+    {
+      "name": "Royal Blue",
+      "hex": "#4169E1",
+      "rgb": [
+        65,
+        105,
+        225
+      ],
+      "family": "blue",
+      "undertones": [
+        "Cool"
+      ],
       "category": "Clothing",
-      "tags": ["core", "jewel", "winter"],
-      "description": "Deep saturated blue that brings out crisp radiance in cool complexions."
+      "tags": [
+        "core",
+        "jewel",
+        "winter"
+      ],
+      "description": "Majestic saturated blue delivering stunning, high-contrast clarity to cool complexions."
+    },
+    {
+      "name": "Deep Plum",
+      "hex": "#673147",
+      "rgb": [
+        103,
+        49,
+        71
+      ],
+      "family": "purple",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "core",
+        "jewel",
+        "winter"
+      ],
+      "description": "Luxurious dark wine tone with cool blue undertones for evening suits and velvet."
     },
     {
       "name": "Soft Lavender",
-      "hex": "#E6E6FA",
-      "rgb": [230, 230, 250],
-      "undertones": ["Cool"],
+      "hex": "#BDB5D5",
+      "rgb": [
+        189,
+        181,
+        213
+      ],
+      "family": "purple",
+      "undertones": [
+        "Cool"
+      ],
       "category": "Clothing",
-      "tags": ["core", "pastel", "summer"],
-      "description": "Delicate violet-tinged pastel that complements cool rosy tones."
-    },
-    {
-      "name": "Deep Plum / Berry",
-      "hex": "#5A2A40",
-      "rgb": [90, 42, 64],
-      "undertones": ["Cool"],
-      "category": "Clothing",
-      "tags": ["core", "jewel", "winter"],
-      "description": "A sophisticated berry shade providing depth and elegance."
+      "tags": [
+        "core",
+        "pastel",
+        "summer"
+      ],
+      "description": "Powdery floral pastel imparting ethereal calmness and clarifying skin rosiness."
     },
     {
       "name": "Emerald Green",
       "hex": "#50C878",
-      "rgb": [80, 200, 120],
-      "undertones": ["Cool"],
+      "rgb": [
+        80,
+        200,
+        120
+      ],
+      "family": "green",
+      "undertones": [
+        "Cool"
+      ],
       "category": "Clothing",
-      "tags": ["accent", "jewel", "winter"],
-      "description": "Vibrant cool-toned green with high visual impact."
+      "tags": [
+        "core",
+        "jewel",
+        "winter"
+      ],
+      "description": "Precious beryl gemstone green with cool blue undertones that makes pink dermal tones sing."
     },
     {
-      "name": "Cool Rose Pink",
-      "hex": "#E8ADAA",
-      "rgb": [232, 173, 170],
-      "undertones": ["Cool"],
+      "name": "Cobalt Blue",
+      "hex": "#0047AB",
+      "rgb": [
+        0,
+        71,
+        171
+      ],
+      "family": "blue",
+      "undertones": [
+        "Cool"
+      ],
       "category": "Clothing",
-      "tags": ["core", "pastel", "summer"],
-      "description": "Soft dusty pink with blue undertones that enhances a gentle glow."
+      "tags": [
+        "core",
+        "vibrant",
+        "winter"
+      ],
+      "description": "Vivid deep mineral pigment that provides sharp, dramatic visual distinction."
+    },
+    {
+      "name": "Sapphire Blue",
+      "hex": "#0F52BA",
+      "rgb": [
+        15,
+        82,
+        186
+      ],
+      "family": "blue",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "core",
+        "jewel",
+        "winter"
+      ],
+      "description": "Classic royal gem hue giving an unmistakably crisp, luminous aura."
+    },
+    {
+      "name": "Icy Sky Blue",
+      "hex": "#87CEEB",
+      "rgb": [
+        135,
+        206,
+        235
+      ],
+      "family": "blue",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "core",
+        "pastel",
+        "summer"
+      ],
+      "description": "Crisp crystalline blue that refreshes pale and cool-toned skin like morning air."
+    },
+    {
+      "name": "Mulberry Berry",
+      "hex": "#C54B8C",
+      "rgb": [
+        197,
+        75,
+        140
+      ],
+      "family": "purple",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "core",
+        "vibrant",
+        "winter"
+      ],
+      "description": "Saturated cool berry hue bringing instant life to cheeks and wardrobe."
+    },
+    {
+      "name": "Ruby Red",
+      "hex": "#9B111E",
+      "rgb": [
+        155,
+        17,
+        30
+      ],
+      "family": "red",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "jewel",
+        "winter"
+      ],
+      "description": "Blue-based scarlet red for iconic black-tie gowns, overcoats, and evening ties."
+    },
+    {
+      "name": "Periwinkle",
+      "hex": "#CCCCFF",
+      "rgb": [
+        204,
+        204,
+        255
+      ],
+      "family": "blue",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "pastel",
+        "summer"
+      ],
+      "description": "Delicate blend of powdery blue and violet for soft summer tailoring."
+    },
+    {
+      "name": "Deep Aubergine",
+      "hex": "#3B0910",
+      "rgb": [
+        59,
+        9,
+        16
+      ],
+      "family": "purple",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "deep",
+        "winter"
+      ],
+      "description": "Midnight purple eggplant shade delivering dramatic couture mystery."
+    },
+    {
+      "name": "Magenta Fuchsia",
+      "hex": "#C154C1",
+      "rgb": [
+        193,
+        84,
+        193
+      ],
+      "family": "pink",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "vibrant",
+        "winter"
+      ],
+      "description": "Electrifying cool pink that pops brilliantly against cool complexions."
+    },
+    {
+      "name": "Ice Mint",
+      "hex": "#A0D6B4",
+      "rgb": [
+        160,
+        214,
+        180
+      ],
+      "family": "green",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "pastel",
+        "summer"
+      ],
+      "description": "Cool-tinged pastel green creating a refreshing, contemporary aesthetic."
+    },
+    {
+      "name": "Prussian Blue",
+      "hex": "#003153",
+      "rgb": [
+        0,
+        49,
+        83
+      ],
+      "family": "blue",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "deep",
+        "tailoring"
+      ],
+      "description": "Historic deep iron pigment providing supreme structure for sharp suiting."
+    },
+    {
+      "name": "Raspberry Red",
+      "hex": "#E30B5C",
+      "rgb": [
+        227,
+        11,
+        92
+      ],
+      "family": "red",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "vibrant",
+        "summer"
+      ],
+      "description": "Tart cool berry-red with zero orange pigment, ideal for dresses and silk scarves."
+    },
+    {
+      "name": "Wisteria Violet",
+      "hex": "#C9A0DC",
+      "rgb": [
+        201,
+        160,
+        220
+      ],
+      "family": "purple",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "pastel",
+        "summer"
+      ],
+      "description": "Cascading spring blossom tone with serene, gentle grace."
+    },
+    {
+      "name": "Pine Needle Green",
+      "hex": "#01796F",
+      "rgb": [
+        1,
+        121,
+        111
+      ],
+      "family": "green",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "deep",
+        "winter"
+      ],
+      "description": "Crisp boreal forest evergreen with teal undertones."
+    },
+    {
+      "name": "Cornflower Blue",
+      "hex": "#6495ED",
+      "rgb": [
+        100,
+        149,
+        237
+      ],
+      "family": "blue",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "summer",
+        "casual"
+      ],
+      "description": "Medium floral blue that makes blue, grey, and dark eyes sparkle."
+    },
+    {
+      "name": "Bordeaux Wine",
+      "hex": "#4C1C24",
+      "rgb": [
+        76,
+        28,
+        36
+      ],
+      "family": "red",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "deep",
+        "winter"
+      ],
+      "description": "Vintage French vineyard shade offering rich, full-bodied elegance."
+    },
+    {
+      "name": "Electric Indigo",
+      "hex": "#4B0082",
+      "rgb": [
+        75,
+        0,
+        130
+      ],
+      "family": "purple",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "vibrant",
+        "winter"
+      ],
+      "description": "Vibrant violet-blue bridging nighttime drama with daylight brilliance."
     },
     {
       "name": "Midnight Navy",
       "hex": "#000080",
-      "rgb": [0, 0, 128],
-      "undertones": ["Cool", "Neutral"],
+      "rgb": [
+        0,
+        0,
+        128
+      ],
+      "family": "blue",
+      "undertones": [
+        "Cool"
+      ],
       "category": "Neutrals",
-      "tags": ["neutral", "essential", "tailoring"],
-      "description": "Classic cool anchor neutral; sharp and universally sophisticated."
+      "tags": [
+        "neutral",
+        "core",
+        "essential"
+      ],
+      "description": "The authoritative foundational neutral for cool skin; commanding and deeply flattering."
     },
     {
-      "name": "Pure Crisp White",
-      "hex": "#FFFFFF",
-      "rgb": [255, 255, 255],
-      "undertones": ["Cool"],
-      "category": "Neutrals",
-      "tags": ["neutral", "essential"],
-      "description": "High-contrast optic white that pops effortlessly against cool skin."
-    },
-    {
-      "name": "Cool Charcoal Gray",
+      "name": "Crisp Charcoal Grey",
       "hex": "#36454F",
-      "rgb": [54, 69, 79],
-      "undertones": ["Cool"],
+      "rgb": [
+        54,
+        69,
+        79
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Cool"
+      ],
       "category": "Neutrals",
-      "tags": ["neutral", "anchor"],
-      "description": "Sleek slate gray that provides a clean, modern framework."
+      "tags": [
+        "neutral",
+        "core"
+      ],
+      "description": "Sophisticated slate-carbon shade sharper and more nuanced than standard black."
     },
     {
-      "name": "Cool Berry Pink",
-      "hex": "#C71585",
-      "rgb": [199, 21, 133],
-      "undertones": ["Cool"],
+      "name": "Optic Pure White",
+      "hex": "#F8F9FA",
+      "rgb": [
+        248,
+        249,
+        250
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "winter"
+      ],
+      "description": "Bright crisp white that creates high-definition contrast against cool rosiness."
+    },
+    {
+      "name": "Slate Cool Grey",
+      "hex": "#708090",
+      "rgb": [
+        112,
+        128,
+        144
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "summer"
+      ],
+      "description": "Architectural medium grey providing a balanced, modern backdrop."
+    },
+    {
+      "name": "Jet Black",
+      "hex": "#0A0A0A",
+      "rgb": [
+        10,
+        10,
+        10
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "winter"
+      ],
+      "description": "True deep onyx black that cool winter complexions carry with supreme poise."
+    },
+    {
+      "name": "Berry Plum Lipstick",
+      "hex": "#8E3179",
+      "rgb": [
+        142,
+        49,
+        121
+      ],
+      "family": "purple",
+      "undertones": [
+        "Cool"
+      ],
       "category": "Makeup",
-      "sub_category": "Lips & Blush",
-      "tags": ["makeup", "lipstick", "blush"],
-      "description": "Blue-based raspberry and magenta lip shades that brighten your smile."
+      "sub_category": "Lipstick",
+      "tags": [
+        "makeup",
+        "lip",
+        "winter"
+      ],
+      "description": "Rich crushed-berry lipstick delivering vibrant, healthy depth."
     },
     {
-      "name": "Mauve Rose",
-      "hex": "#915F6D",
-      "rgb": [145, 95, 109],
-      "undertones": ["Cool"],
+      "name": "Soft Rose Blush",
+      "hex": "#D8A1B6",
+      "rgb": [
+        216,
+        161,
+        182
+      ],
+      "family": "pink",
+      "undertones": [
+        "Cool"
+      ],
       "category": "Makeup",
-      "sub_category": "Eyes & Blush",
-      "tags": ["makeup", "eyeshadow", "blush"],
-      "description": "Subtle cool mauve eyeshadows and cheek stains."
+      "sub_category": "Blush",
+      "tags": [
+        "makeup",
+        "blush",
+        "summer"
+      ],
+      "description": "English rose cheek tint that mirrors the natural flush of cool undertones."
     },
     {
-      "name": "Sterling Silver & Platinum",
+      "name": "Cool Blue-Red Lipstick",
+      "hex": "#B22222",
+      "rgb": [
+        178,
+        34,
+        34
+      ],
+      "family": "red",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Makeup",
+      "sub_category": "Lipstick",
+      "tags": [
+        "makeup",
+        "lip",
+        "statement"
+      ],
+      "description": "Classic Hollywood blue-based red that makes teeth look whiter."
+    },
+    {
+      "name": "Taupe & Slate Eyeshadow",
+      "hex": "#786D5F",
+      "rgb": [
+        120,
+        109,
+        95
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Makeup",
+      "sub_category": "Eyeshadow",
+      "tags": [
+        "makeup",
+        "eye"
+      ],
+      "description": "Cool mushroom-taupe and smokey granite shadow for defined gaze."
+    },
+    {
+      "name": "Mauve Berry Gloss",
+      "hex": "#A26C88",
+      "rgb": [
+        162,
+        108,
+        136
+      ],
+      "family": "purple",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Makeup",
+      "sub_category": "Lipstick",
+      "tags": [
+        "makeup",
+        "lip"
+      ],
+      "description": "Sheer cool mauve gloss for understated boardroom and daylight chic."
+    },
+    {
+      "name": "Sterling Silver",
       "hex": "#C0C0C0",
-      "rgb": [192, 192, 192],
-      "undertones": ["Cool"],
+      "rgb": [
+        192,
+        192,
+        192
+      ],
+      "family": "metal",
+      "undertones": [
+        "Cool"
+      ],
       "category": "Accessories",
-      "sub_category": "Metals",
-      "tags": ["metal", "jewelry", "essential"],
-      "description": "Bright silver, white gold, and platinum harmonize with cool undertones."
+      "sub_category": "Metals & Gems",
+      "tags": [
+        "metal",
+        "jewelry",
+        "essential"
+      ],
+      "description": "Bright, lustrous silver reflecting cool light without yellow cast."
     },
     {
-      "name": "Sapphire & Clear Diamond",
-      "hex": "#0066CC",
-      "rgb": [0, 102, 204],
-      "undertones": ["Cool"],
+      "name": "Polished Platinum",
+      "hex": "#E5E4E2",
+      "rgb": [
+        229,
+        228,
+        226
+      ],
+      "family": "metal",
+      "undertones": [
+        "Cool"
+      ],
       "category": "Accessories",
-      "sub_category": "Gemstones",
-      "tags": ["accessories", "gems"],
-      "description": "Cool-toned precious stones like blue sapphire, aquamarine, and clear diamonds."
+      "sub_category": "Metals & Gems",
+      "tags": [
+        "metal",
+        "luxury"
+      ],
+      "description": "Enduring white-metal perfection for heirlooms and luxury horology."
     },
-
+    {
+      "name": "Ceylon Sapphire Gem",
+      "hex": "#1034A6",
+      "rgb": [
+        16,
+        52,
+        166
+      ],
+      "family": "blue",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Accessories",
+      "sub_category": "Metals & Gems",
+      "tags": [
+        "gem",
+        "jewelry"
+      ],
+      "description": "Cornflower-to-royal gemstone setting off cool necklines and earlobes."
+    },
+    {
+      "name": "Black Onyx & Leather",
+      "hex": "#1B1B1B",
+      "rgb": [
+        27,
+        27,
+        27
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Accessories",
+      "sub_category": "Leather & Belts",
+      "tags": [
+        "accessories",
+        "leather"
+      ],
+      "description": "Deep black calfskin and polished onyx cufflinks for formal wear."
+    },
     {
       "name": "Classic Teal",
       "hex": "#008080",
-      "rgb": [0, 128, 128],
-      "undertones": ["Neutral", "Warm", "Cool"],
+      "rgb": [
+        0,
+        128,
+        128
+      ],
+      "family": "teal",
+      "undertones": [
+        "Neutral",
+        "Warm",
+        "Cool"
+      ],
       "category": "Clothing",
-      "tags": ["universal", "core"],
-      "description": "A universal balance of blue and green that complements all skin tones."
+      "tags": [
+        "core",
+        "universal",
+        "versatile"
+      ],
+      "description": "The world's most universally flattering shade, balancing warm green and cool blue."
     },
     {
       "name": "Dusty Rose",
       "hex": "#DCAE96",
-      "rgb": [220, 174, 150],
-      "undertones": ["Neutral"],
+      "rgb": [
+        220,
+        174,
+        150
+      ],
+      "family": "pink",
+      "undertones": [
+        "Neutral"
+      ],
       "category": "Clothing",
-      "tags": ["core", "muted"],
-      "description": "A balanced, desaturated pink-nude with equal warm and cool pigments."
+      "tags": [
+        "core",
+        "soft",
+        "versatile"
+      ],
+      "description": "Sophisticated muted mauve-pink that balances skin with quiet luxury."
     },
     {
-      "name": "Soft Sage",
-      "hex": "#9CAF88",
-      "rgb": [156, 175, 136],
-      "undertones": ["Neutral"],
+      "name": "Soft Jade Green",
+      "hex": "#00A86B",
+      "rgb": [
+        0,
+        168,
+        107
+      ],
+      "family": "green",
+      "undertones": [
+        "Neutral"
+      ],
       "category": "Clothing",
-      "tags": ["core", "muted"],
-      "description": "Understated gray-green that sits elegantly in the neutral spectrum."
-    },
-    {
-      "name": "French Blue",
-      "hex": "#318CE7",
-      "rgb": [49, 140, 231],
-      "undertones": ["Neutral"],
-      "category": "Clothing",
-      "tags": ["core", "vibrant"],
-      "description": "Medium soft blue with balanced temperature."
+      "tags": [
+        "core",
+        "jewel",
+        "spring"
+      ],
+      "description": "Serene green gemstone hue with equal blue and yellow pigments."
     },
     {
       "name": "Warm Taupe",
       "hex": "#B38B6D",
-      "rgb": [179, 139, 109],
-      "undertones": ["Neutral"],
-      "category": "Neutrals",
-      "tags": ["neutral", "essential"],
-      "description": "A bridge between brown and gray, creating flawless neutral styling."
+      "rgb": [
+        179,
+        139,
+        109
+      ],
+      "family": "brown",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "core",
+        "neutral",
+        "luxury"
+      ],
+      "description": "A balanced grey-brown that creates effortless, low-contrast sophistication."
     },
     {
-      "name": "Heather Soft Gray",
-      "hex": "#A8A8A8",
-      "rgb": [168, 168, 168],
-      "undertones": ["Neutral"],
-      "category": "Neutrals",
-      "tags": ["neutral", "essential"],
-      "description": "Medium neutral gray that pairs effortlessly with warm or cool accents."
+      "name": "Muted Sage Green",
+      "hex": "#9CAF88",
+      "rgb": [
+        156,
+        175,
+        136
+      ],
+      "family": "green",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "core",
+        "nature",
+        "soft"
+      ],
+      "description": "Dried herb tone offering a gentle, understated aesthetic for casual and smart tailoring."
     },
     {
-      "name": "Nude Rose",
-      "hex": "#C58F84",
-      "rgb": [197, 143, 132],
-      "undertones": ["Neutral"],
+      "name": "Dusty Periwinkle",
+      "hex": "#798EA4",
+      "rgb": [
+        121,
+        142,
+        164
+      ],
+      "family": "blue",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "core",
+        "soft"
+      ],
+      "description": "A grey-tinged blue that adapts effortlessly to both warm and cool ambient light."
+    },
+    {
+      "name": "Antique Rose",
+      "hex": "#C08081",
+      "rgb": [
+        192,
+        128,
+        129
+      ],
+      "family": "pink",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "core",
+        "romantic"
+      ],
+      "description": "Heirloom floral pink with dusty undertones that avoids saccharine brightness."
+    },
+    {
+      "name": "Deep Petrol Blue",
+      "hex": "#1D4851",
+      "rgb": [
+        29,
+        72,
+        81
+      ],
+      "family": "teal",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "core",
+        "deep"
+      ],
+      "description": "Subtle oil-on-water blue-green that bridges casual and black-tie versatility."
+    },
+    {
+      "name": "True Neutral Red",
+      "hex": "#DC143C",
+      "rgb": [
+        220,
+        20,
+        60
+      ],
+      "family": "red",
+      "undertones": [
+        "Neutral",
+        "Warm",
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "core",
+        "universal",
+        "statement"
+      ],
+      "description": "Crimson red with equalized yellow and blue pigments, universally flattering on all humans."
+    },
+    {
+      "name": "Seafoam Aqua",
+      "hex": "#71BC78",
+      "rgb": [
+        113,
+        188,
+        120
+      ],
+      "family": "green",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "summer",
+        "pastel"
+      ],
+      "description": "Gentle coastal wave green-blue bringing a refreshing, tranquil poise."
+    },
+    {
+      "name": "Auburn Chestnut",
+      "hex": "#954535",
+      "rgb": [
+        149,
+        69,
+        53
+      ],
+      "family": "brown",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "autumn",
+        "tailoring"
+      ],
+      "description": "Rich red-brown tone grounded with balanced intermediate warmth."
+    },
+    {
+      "name": "Smokey Amethyst",
+      "hex": "#6C5B7B",
+      "rgb": [
+        108,
+        91,
+        123
+      ],
+      "family": "purple",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "soft",
+        "evening"
+      ],
+      "description": "Misty twilight violet with grey saturation for subtle evening elegance."
+    },
+    {
+      "name": "Earthy Olive Clay",
+      "hex": "#6B6A56",
+      "rgb": [
+        107,
+        106,
+        86
+      ],
+      "family": "green",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "earthy",
+        "casual"
+      ],
+      "description": "Subdued mineral khaki suited for everyday overshirts and chinos."
+    },
+    {
+      "name": "Blush Coral Pink",
+      "hex": "#E8927C",
+      "rgb": [
+        232,
+        146,
+        124
+      ],
+      "family": "pink",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "spring",
+        "warm-leaning"
+      ],
+      "description": "Friendly hybrid tone carrying peachy warmth without clashing with neutral bases."
+    },
+    {
+      "name": "Blue-Green Lagoon",
+      "hex": "#2E8B57",
+      "rgb": [
+        46,
+        139,
+        87
+      ],
+      "family": "green",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "nature",
+        "jewel"
+      ],
+      "description": "Deep maritime green that enhances neutral facial undertones."
+    },
+    {
+      "name": "Mulberry Mist",
+      "hex": "#8B5F65",
+      "rgb": [
+        139,
+        95,
+        101
+      ],
+      "family": "purple",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "autumn",
+        "soft"
+      ],
+      "description": "Dusty berry-brown tone for refined knitwear and scarf layers."
+    },
+    {
+      "name": "Celadon Glaze",
+      "hex": "#ACE1AF",
+      "rgb": [
+        172,
+        225,
+        175
+      ],
+      "family": "green",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "pastel",
+        "porcelain"
+      ],
+      "description": "Ancient Chinese porcelain jade-grey hue offering peaceful poise."
+    },
+    {
+      "name": "Deep Marine Blue",
+      "hex": "#273C75",
+      "rgb": [
+        39,
+        60,
+        117
+      ],
+      "family": "blue",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "tailoring",
+        "versatile"
+      ],
+      "description": "Balanced deep maritime shade that works across every lighting temperature."
+    },
+    {
+      "name": "French Greige",
+      "hex": "#A89F91",
+      "rgb": [
+        168,
+        159,
+        145
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "luxury",
+        "core"
+      ],
+      "description": "The exact midpoint between grey and beige; the ultimate understated neutral."
+    },
+    {
+      "name": "Soft Oyster Ivory",
+      "hex": "#F0EAD6",
+      "rgb": [
+        240,
+        234,
+        214
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "core"
+      ],
+      "description": "Gentle pearlescent off-white that creates seamless flattering luminosity."
+    },
+    {
+      "name": "Pewter Grey",
+      "hex": "#899499",
+      "rgb": [
+        137,
+        148,
+        153
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "tailoring"
+      ],
+      "description": "Metallic intermediate grey that neither warms nor cools the skin tone."
+    },
+    {
+      "name": "Mushroom Taupe",
+      "hex": "#8A7968",
+      "rgb": [
+        138,
+        121,
+        104
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "autumn"
+      ],
+      "description": "Deep earthy taupe giving grounded elegance to trousers and light jackets."
+    },
+    {
+      "name": "Charcoal Espresso",
+      "hex": "#2B2625",
+      "rgb": [
+        43,
+        38,
+        37
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "deep"
+      ],
+      "description": "Balanced near-black blending warm roast and cool soot pigments."
+    },
+    {
+      "name": "Neutral Rose Nude Lip",
+      "hex": "#C27D72",
+      "rgb": [
+        194,
+        125,
+        114
+      ],
+      "family": "pink",
+      "undertones": [
+        "Neutral"
+      ],
       "category": "Makeup",
-      "sub_category": "Lips & Blush",
-      "tags": ["makeup", "lipstick", "nude"],
-      "description": "Your ultimate 'my lips but better' balanced neutral pink-brown."
+      "sub_category": "Lipstick",
+      "tags": [
+        "makeup",
+        "lip",
+        "core"
+      ],
+      "description": "The premier 'your lips but better' balanced neutral pink-brown lipstick."
+    },
+    {
+      "name": "Dusty Rose Blush",
+      "hex": "#CF8A87",
+      "rgb": [
+        207,
+        138,
+        135
+      ],
+      "family": "pink",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Makeup",
+      "sub_category": "Blush",
+      "tags": [
+        "makeup",
+        "blush"
+      ],
+      "description": "Balanced petal-flush for cheeks that harmonizes with any eye makeup."
+    },
+    {
+      "name": "Neutral Sand & Taupe Eyeshadow",
+      "hex": "#A49280",
+      "rgb": [
+        164,
+        146,
+        128
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Makeup",
+      "sub_category": "Eyeshadow",
+      "tags": [
+        "makeup",
+        "eye"
+      ],
+      "description": "Velvety neutral matte shadows creating sculptured eyelid depth."
+    },
+    {
+      "name": "Spiced Mauve Lip",
+      "hex": "#9B5D68",
+      "rgb": [
+        155,
+        93,
+        104
+      ],
+      "family": "pink",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Makeup",
+      "sub_category": "Lipstick",
+      "tags": [
+        "makeup",
+        "lip"
+      ],
+      "description": "Deeper evening rose-brown for captivating neutral lip definition."
     },
     {
       "name": "Rose Gold & Mixed Metals",
       "hex": "#B76E79",
-      "rgb": [183, 110, 121],
-      "undertones": ["Neutral"],
+      "rgb": [
+        183,
+        110,
+        121
+      ],
+      "family": "metal",
+      "undertones": [
+        "Neutral"
+      ],
       "category": "Accessories",
-      "sub_category": "Metals",
-      "tags": ["metal", "jewelry", "versatile"],
-      "description": "Rose gold, champagne gold, or layered mixed metals look stunning on neutral undertones."
+      "sub_category": "Metals & Gems",
+      "tags": [
+        "metal",
+        "jewelry",
+        "essential"
+      ],
+      "description": "Rose gold, champagne gold, or stacked two-tone metals that look spectacular on neutral skin."
+    },
+    {
+      "name": "Champagne Gold",
+      "hex": "#EEDC82",
+      "rgb": [
+        238,
+        220,
+        130
+      ],
+      "family": "metal",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Accessories",
+      "sub_category": "Metals & Gems",
+      "tags": [
+        "metal",
+        "luxury"
+      ],
+      "description": "A pale, delicate gold that bridges yellow gold and white platinum."
+    },
+    {
+      "name": "Natural Pearl",
+      "hex": "#EAE6DF",
+      "rgb": [
+        234,
+        230,
+        223
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Neutral",
+        "Warm",
+        "Cool"
+      ],
+      "category": "Accessories",
+      "sub_category": "Metals & Gems",
+      "tags": [
+        "gem",
+        "jewelry",
+        "universal"
+      ],
+      "description": "Organic luminescent freshwater pearls that absorb and reflect the wearer's skin glow."
+    },
+    {
+      "name": "Smokey Quartz & Rose Quartz",
+      "hex": "#AA8877",
+      "rgb": [
+        170,
+        136,
+        119
+      ],
+      "family": "brown",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Accessories",
+      "sub_category": "Metals & Gems",
+      "tags": [
+        "gem",
+        "jewelry"
+      ],
+      "description": "Subtle crystalline gemstones that elevate neutral attire."
+    },
+    {
+      "name": "Turmeric Gold",
+      "hex": "#FEBA4F",
+      "rgb": [
+        254,
+        186,
+        79
+      ],
+      "family": "yellow",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "vibrant",
+        "festive",
+        "autumn"
+      ],
+      "description": "Deep golden spice hue that flatters rich and golden undertones with warmth."
+    },
+    {
+      "name": "Henna Rust",
+      "hex": "#8B3103",
+      "rgb": [
+        139,
+        49,
+        3
+      ],
+      "family": "red",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "deep",
+        "earthy",
+        "autumn"
+      ],
+      "description": "Ancient botanical herbal dye offering intense copper-red warmth."
+    },
+    {
+      "name": "Cayenne Red",
+      "hex": "#941100",
+      "rgb": [
+        148,
+        17,
+        0
+      ],
+      "family": "red",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "spicy",
+        "vibrant"
+      ],
+      "description": "Fiery chili pigment bringing intense dynamism and bold confidence."
+    },
+    {
+      "name": "Golden Ochre",
+      "hex": "#B8860B",
+      "rgb": [
+        184,
+        134,
+        11
+      ],
+      "family": "yellow",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "earthy",
+        "autumn"
+      ],
+      "description": "Natural earth gold with deep mineral richness for heritage knitwear."
+    },
+    {
+      "name": "Raw Sienna",
+      "hex": "#D68A59",
+      "rgb": [
+        214,
+        138,
+        89
+      ],
+      "family": "orange",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "earthy",
+        "core"
+      ],
+      "description": "Natural unburnt clay offering gentle, grounding amber radiance."
+    },
+    {
+      "name": "Mango Sun",
+      "hex": "#FF8243",
+      "rgb": [
+        255,
+        130,
+        67
+      ],
+      "family": "orange",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "vibrant",
+        "summer"
+      ],
+      "description": "Lush tropical fruit tone full of sunlight and vacation radiance."
+    },
+    {
+      "name": "Golden Buttercup",
+      "hex": "#FFD700",
+      "rgb": [
+        255,
+        215,
+        0
+      ],
+      "family": "yellow",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "spring",
+        "vibrant"
+      ],
+      "description": "Sunny wildflower yellow bringing high cheerfulness and optimism."
+    },
+    {
+      "name": "Olive Drab",
+      "hex": "#6B8E23",
+      "rgb": [
+        107,
+        142,
+        35
+      ],
+      "family": "green",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "military",
+        "earthy"
+      ],
+      "description": "Traditional utilitarian field green complementing olive and warm complexions."
+    },
+    {
+      "name": "Chartreuse Olive",
+      "hex": "#7FFF00",
+      "rgb": [
+        127,
+        255,
+        0
+      ],
+      "family": "green",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "accent",
+        "spring"
+      ],
+      "description": "Yellow-green vibrant foliage pop for scarves and accent accessories."
+    },
+    {
+      "name": "Pecan Brown",
+      "hex": "#734A12",
+      "rgb": [
+        115,
+        74,
+        18
+      ],
+      "family": "brown",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "deep"
+      ],
+      "description": "Warm nutwood brown for tailored trousers and wool overcoats."
+    },
+    {
+      "name": "Golden Champagne",
+      "hex": "#F7E7CE",
+      "rgb": [
+        247,
+        231,
+        206
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Warm",
+        "Neutral"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "luxury"
+      ],
+      "description": "Sparkling wine hue for luminous bridal and gala attire."
+    },
+    {
+      "name": "Warm Alabaster",
+      "hex": "#F2F0E6",
+      "rgb": [
+        242,
+        240,
+        230
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "core"
+      ],
+      "description": "Soft carved gypsum tone that glows gracefully without cold glare."
+    },
+    {
+      "name": "Warm Citrine Gem",
+      "hex": "#E4D00A",
+      "rgb": [
+        228,
+        208,
+        10
+      ],
+      "family": "yellow",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Accessories",
+      "sub_category": "Metals & Gems",
+      "tags": [
+        "gem",
+        "jewelry"
+      ],
+      "description": "Sparkling yellow quartz gemstone for statement rings and pendants."
+    },
+    {
+      "name": "Carnelian Stone",
+      "hex": "#B31B1B",
+      "rgb": [
+        179,
+        27,
+        27
+      ],
+      "family": "red",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Accessories",
+      "sub_category": "Metals & Gems",
+      "tags": [
+        "gem",
+        "jewelry"
+      ],
+      "description": "Sunset-orange chalcedony stone treasured since antiquity."
+    },
+    {
+      "name": "Warm Paprika Lip",
+      "hex": "#C04000",
+      "rgb": [
+        192,
+        64,
+        0
+      ],
+      "family": "red",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Makeup",
+      "sub_category": "Lipstick",
+      "tags": [
+        "makeup",
+        "lip"
+      ],
+      "description": "Bold chili-orange lipstick that makes golden skin glow."
+    },
+    {
+      "name": "Apricot Glow Blush",
+      "hex": "#FBCEB1",
+      "rgb": [
+        251,
+        206,
+        177
+      ],
+      "family": "orange",
+      "undertones": [
+        "Warm"
+      ],
+      "category": "Makeup",
+      "sub_category": "Blush",
+      "tags": [
+        "makeup",
+        "blush"
+      ],
+      "description": "Soft morning peach-apricot dusting for a youthful fresh look."
+    },
+    {
+      "name": "Ultramarine Blue",
+      "hex": "#120A8F",
+      "rgb": [
+        18,
+        10,
+        143
+      ],
+      "family": "blue",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "jewel",
+        "renaissance",
+        "winter"
+      ],
+      "description": "Historic lapis lazuli deep blue pigment revered by Renaissance masters."
+    },
+    {
+      "name": "Cerulean Blue",
+      "hex": "#007BA7",
+      "rgb": [
+        0,
+        123,
+        167
+      ],
+      "family": "blue",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "vibrant",
+        "summer"
+      ],
+      "description": "Clear azure sky hue delivering high luminosity and crisp clarity."
+    },
+    {
+      "name": "Venetian Crimson",
+      "hex": "#990000",
+      "rgb": [
+        153,
+        0,
+        0
+      ],
+      "family": "red",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "deep",
+        "winter"
+      ],
+      "description": "Deep blue-shaded crimson from northern Italian artisan dye houses."
+    },
+    {
+      "name": "Malachite Green",
+      "hex": "#0BDA51",
+      "rgb": [
+        11,
+        218,
+        81
+      ],
+      "family": "green",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "vibrant",
+        "jewel"
+      ],
+      "description": "Rich vivid copper carbonate mineral green for breathtaking silk and satin."
+    },
+    {
+      "name": "Byzantine Purple",
+      "hex": "#702963",
+      "rgb": [
+        112,
+        41,
+        99
+      ],
+      "family": "purple",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "royal",
+        "winter"
+      ],
+      "description": "Imperial Mediterranean violet associated with royalty and leadership."
+    },
+    {
+      "name": "Electric Violet",
+      "hex": "#8F00FF",
+      "rgb": [
+        143,
+        0,
+        255
+      ],
+      "family": "purple",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "vibrant",
+        "winter"
+      ],
+      "description": "Electrifying violet delivering dramatic high-fashion visual punch."
+    },
+    {
+      "name": "French Powder Blue",
+      "hex": "#B0C4DE",
+      "rgb": [
+        176,
+        196,
+        222
+      ],
+      "family": "blue",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "pastel",
+        "summer"
+      ],
+      "description": "Delicate historical Marie-Antoinette blue for linen shirts and summer blazers."
+    },
+    {
+      "name": "Winterberry",
+      "hex": "#8B0000",
+      "rgb": [
+        139,
+        0,
+        0
+      ],
+      "family": "red",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "deep",
+        "winter"
+      ],
+      "description": "Deep cold berry red providing regal luxury for coats and knitwear."
+    },
+    {
+      "name": "Cool Seafoam Mint",
+      "hex": "#98FF98",
+      "rgb": [
+        152,
+        255,
+        152
+      ],
+      "family": "green",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "pastel",
+        "summer"
+      ],
+      "description": "Luminescent mint pastel that cools down summer days and flatters fair skin."
+    },
+    {
+      "name": "Deep Iris Violet",
+      "hex": "#5A4FCF",
+      "rgb": [
+        90,
+        79,
+        207
+      ],
+      "family": "purple",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "floral",
+        "winter"
+      ],
+      "description": "Vibrant perennial flower petal hue with blue-violet dominance."
+    },
+    {
+      "name": "Glacial Ice Blue",
+      "hex": "#D0F0FD",
+      "rgb": [
+        208,
+        240,
+        253
+      ],
+      "family": "blue",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "icy",
+        "winter",
+        "pastel"
+      ],
+      "description": "Ultra-pale polar ice tint creating crisp, clean visual lines."
+    },
+    {
+      "name": "Tanzanite Gem",
+      "hex": "#4A3B7C",
+      "rgb": [
+        74,
+        59,
+        124
+      ],
+      "family": "purple",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Accessories",
+      "sub_category": "Metals & Gems",
+      "tags": [
+        "gem",
+        "jewelry"
+      ],
+      "description": "Rare East African gemstone shimmering between royal blue and violet."
+    },
+    {
+      "name": "White Gold",
+      "hex": "#F5F5F5",
+      "rgb": [
+        245,
+        245,
+        245
+      ],
+      "family": "metal",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Accessories",
+      "sub_category": "Metals & Gems",
+      "tags": [
+        "metal",
+        "jewelry"
+      ],
+      "description": "Nickel/palladium-alloyed white gold radiating cool crisp sophistication."
+    },
+    {
+      "name": "Cool Magenta Lip",
+      "hex": "#D10068",
+      "rgb": [
+        209,
+        0,
+        104
+      ],
+      "family": "pink",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Makeup",
+      "sub_category": "Lipstick",
+      "tags": [
+        "makeup",
+        "lip"
+      ],
+      "description": "High-impact vivid fuchsia-magenta lipstick for unforgettable entrances."
+    },
+    {
+      "name": "Frosted Lilac Eyeshadow",
+      "hex": "#C8A2C8",
+      "rgb": [
+        200,
+        162,
+        200
+      ],
+      "family": "purple",
+      "undertones": [
+        "Cool"
+      ],
+      "category": "Makeup",
+      "sub_category": "Eyeshadow",
+      "tags": [
+        "makeup",
+        "eye"
+      ],
+      "description": "Shimmering pastel lilac shadow illuminating cool eye colors."
+    },
+    {
+      "name": "Teal Marine",
+      "hex": "#005F73",
+      "rgb": [
+        0,
+        95,
+        115
+      ],
+      "family": "teal",
+      "undertones": [
+        "Neutral",
+        "Cool"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "core",
+        "deep",
+        "universal"
+      ],
+      "description": "Deep oceanic teal balancing both warm sunlight and cool deep water."
+    },
+    {
+      "name": "Viridian Pine",
+      "hex": "#007F5F",
+      "rgb": [
+        0,
+        127,
+        95
+      ],
+      "family": "green",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "deep",
+        "nature"
+      ],
+      "description": "Balanced mineral green carrying both warmth and cooling depth."
+    },
+    {
+      "name": "Desert Khaki",
+      "hex": "#C3B091",
+      "rgb": [
+        195,
+        176,
+        145
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "safari"
+      ],
+      "description": "Neutral-balanced sand hue for structured chinos and field jackets."
+    },
+    {
+      "name": "Cool Greige Tweed",
+      "hex": "#9E978E",
+      "rgb": [
+        158,
+        151,
+        142
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "textile"
+      ],
+      "description": "Textured wool neutral suited for year-round blazer tailoring."
+    },
+    {
+      "name": "Rich Rosewood",
+      "hex": "#65000B",
+      "rgb": [
+        101,
+        0,
+        11
+      ],
+      "family": "red",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "deep",
+        "luxury"
+      ],
+      "description": "Precious hardwood deep red-brown that complements neutral complexions."
+    },
+    {
+      "name": "Ocean Spray Aqua",
+      "hex": "#48CAE4",
+      "rgb": [
+        72,
+        202,
+        228
+      ],
+      "family": "teal",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "vibrant",
+        "summer"
+      ],
+      "description": "Clear lagoon waters tone creating an uplifting, vacation aura."
+    },
+    {
+      "name": "Heather Mist",
+      "hex": "#9E7B9B",
+      "rgb": [
+        158,
+        123,
+        155
+      ],
+      "family": "purple",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Clothing",
+      "tags": [
+        "soft",
+        "autumn"
+      ],
+      "description": "Highland moor blossom tint delivering poetic, understated quietness."
+    },
+    {
+      "name": "Mocha Truffle",
+      "hex": "#4A3728",
+      "rgb": [
+        74,
+        55,
+        40
+      ],
+      "family": "brown",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "deep"
+      ],
+      "description": "Belgian cocoa bean shade for grounding leather accessories."
+    },
+    {
+      "name": "Almond Silk",
+      "hex": "#EAD7C5",
+      "rgb": [
+        234,
+        215,
+        197
+      ],
+      "family": "neutral",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Neutrals",
+      "tags": [
+        "neutral",
+        "soft"
+      ],
+      "description": "Gently warm-neutral cream for silk camisoles and cashmere."
+    },
+    {
+      "name": "Aquamarine Gem",
+      "hex": "#7FFFD4",
+      "rgb": [
+        127,
+        255,
+        212
+      ],
+      "family": "teal",
+      "undertones": [
+        "Neutral",
+        "Cool"
+      ],
+      "category": "Accessories",
+      "sub_category": "Metals & Gems",
+      "tags": [
+        "gem",
+        "jewelry"
+      ],
+      "description": "Beryl gemstone shimmering with tranquil sea-green radiance."
+    },
+    {
+      "name": "Neutral Nude Blush",
+      "hex": "#D9A08B",
+      "rgb": [
+        217,
+        160,
+        139
+      ],
+      "family": "pink",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Makeup",
+      "sub_category": "Blush",
+      "tags": [
+        "makeup",
+        "blush"
+      ],
+      "description": "Balanced warm-cool cheek sculptor for seamless dimensional flush."
+    },
+    {
+      "name": "Velvet Plum Lip",
+      "hex": "#722F37",
+      "rgb": [
+        114,
+        47,
+        55
+      ],
+      "family": "red",
+      "undertones": [
+        "Neutral"
+      ],
+      "category": "Makeup",
+      "sub_category": "Lipstick",
+      "tags": [
+        "makeup",
+        "lip"
+      ],
+      "description": "Deep wine-plum lipstick delivering evening magnetic presence."
     }
   ],
   "avoid_rules": {
@@ -315,54 +2796,116 @@
       {
         "name": "Icy Stark Blue",
         "hex": "#B0E0E6",
-        "rgb": [176, 224, 230],
-        "reason": "Cold blue tones clash with golden skin pigments, creating a sallow or drained look."
+        "rgb": [
+          176,
+          224,
+          230
+        ],
+        "reason": "Cold blue tones clash with golden dermal pigments, creating a sallow or drained look."
       },
       {
         "name": "Stark Optic White",
         "hex": "#FFFFFF",
-        "rgb": [255, 255, 255],
-        "reason": "Pure white can make warm skin appear overly yellow or washed out; opt for warm cream/ivory."
+        "rgb": [
+          255,
+          255,
+          255
+        ],
+        "reason": "Pure fluorescent white can make warm skin appear overly yellow or washed out; opt for warm cream/ivory."
       },
       {
         "name": "Cool Magenta / Fuchsia",
         "hex": "#FF00FF",
-        "rgb": [255, 0, 255],
-        "reason": "Blue-dominant bright magentas overwhelm warm complexions."
+        "rgb": [
+          255,
+          0,
+          255
+        ],
+        "reason": "Blue-dominant bright magentas overwhelm warm complexions and emphasize facial shadows."
+      },
+      {
+        "name": "Cool Steel Grey",
+        "hex": "#71797E",
+        "rgb": [
+          113,
+          121,
+          126
+        ],
+        "reason": "Blue-leaning greys neutralize warm radiance and make skin appear fatigued."
       }
     ],
     "Cool": [
       {
         "name": "Mustard Yellow / Ocher",
         "hex": "#B8860B",
-        "rgb": [184, 134, 11],
+        "rgb": [
+          184,
+          134,
+          11
+        ],
         "reason": "Heavy yellow-browns accentuate redness or make cool undertones appear dull."
       },
       {
         "name": "Warm Orange / Rust",
         "hex": "#D35400",
-        "rgb": [211, 84, 0],
-        "reason": "Warm oranges fight with pink/blue skin undertones, causing a muddy complexion effect."
+        "rgb": [
+          211,
+          84,
+          0
+        ],
+        "reason": "Warm oranges fight directly with pink/blue skin undertones, causing a muddy complexion effect."
       },
       {
         "name": "Warm Camel Tan",
         "hex": "#D2B48C",
-        "rgb": [210, 180, 140],
-        "reason": "Yellow-tinged beiges can wash out cool skin; swap for crisp charcoal or midnight navy."
+        "rgb": [
+          210,
+          180,
+          140
+        ],
+        "reason": "Yellow-tinged beiges wash out cool skin; swap for crisp charcoal or midnight navy."
+      },
+      {
+        "name": "Olive Gold",
+        "hex": "#6B6022",
+        "rgb": [
+          107,
+          96,
+          34
+        ],
+        "reason": "Dull yellow-green tones conflict with pink dermal undertones, draining vibrancy."
       }
     ],
     "Neutral": [
       {
         "name": "Extreme Neon Yellow",
         "hex": "#CCFF00",
-        "rgb": [204, 255, 0],
-        "reason": "Ultra-saturated acid neon tones can overpower balanced neutral skin harmonies."
+        "rgb": [
+          204,
+          255,
+          0
+        ],
+        "reason": "Ultra-saturated acid neon tones overpower balanced neutral skin harmonies."
       },
       {
         "name": "Overly Acidic Lime",
         "hex": "#32CD32",
-        "rgb": [50, 205, 50],
-        "reason": "High-saturation lime greens pull focus away from facial features; choose soft sage instead."
+        "rgb": [
+          50,
+          205,
+          50
+        ],
+        "reason": "High-saturation electric lime greens pull focus away from facial features; choose soft sage instead."
+      },
+      {
+        "name": "Harsh Fluo Orange",
+        "hex": "#FF5F00",
+        "rgb": [
+          255,
+          95,
+          0
+        ],
+        "reason": "Uncalibrated hyper-warm neon hues disrupt the delicate equilibrium of neutral undertones."
       }
     ]
   }

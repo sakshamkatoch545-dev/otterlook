@@ -6,6 +6,7 @@ Neutrals, and Colors to Avoid based on predicted undertone and skin metrics.
 
 import os
 import json
+import colorsys
 from typing import Dict, Any, List, Optional
 
 class PaletteGenerator:
@@ -30,18 +31,105 @@ class PaletteGenerator:
         else:
             print(f"[PaletteGenerator] Database file not found at {self.db_path}")
 
-    def generate_recommendations(self, undertone: str, skin_metrics: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    @staticmethod
+    def _hex_to_rgb(hex_code: str) -> List[int]:
+        hex_code = hex_code.lstrip("#")
+        if len(hex_code) == 6:
+            return [int(hex_code[i:i+2], 16) for i in (0, 2, 4)]
+        return [200, 160, 130]
+
+    @staticmethod
+    def _hsv_to_hex(h: float, s: float, v: float) -> str:
+        r, g, b = colorsys.hsv_to_rgb(h / 360.0, max(0.0, min(1.0, s)), max(0.0, min(1.0, v)))
+        return f"#{int(round(r * 255)):02X}{int(round(g * 255)):02X}{int(round(b * 255)):02X}"
+
+    def _generate_skin_harmonies(self, skin_metrics: Optional[Dict[str, Any]], undertone: str) -> List[Dict[str, Any]]:
         """
-        Generates structured palette and style recommendations tailored to the user's undertone.
+        Dynamically derives mathematical color wheel harmonies directly from the user's analyzed face skin color.
+        """
+        # Extract base skin RGB
+        rep_hex = "#D4AF37"
+        if skin_metrics and "representative_hex" in skin_metrics:
+            rep_hex = skin_metrics["representative_hex"]
+        
+        rgb = self._hex_to_rgb(rep_hex)
+        r_norm, g_norm, b_norm = [c / 255.0 for c in rgb]
+        h, s, v = colorsys.rgb_to_hsv(r_norm, g_norm, b_norm)
+        base_h = h * 360.0
+
+        # Adjust target value/lightness based on skin depth
+        is_light_skin = v > 0.70
+        is_deep_skin = v < 0.45
+
+        val_accent = 0.55 if is_light_skin else (0.90 if is_deep_skin else 0.72)
+        sat_accent = min(1.0, max(0.50, s * 1.5))
+
+        harmonies = [
+            {
+                "name": "Skin Complementary Accent",
+                "hex": self._hsv_to_hex((base_h + 180.0) % 360.0, sat_accent, val_accent),
+                "rgb": self._hex_to_rgb(self._hsv_to_hex((base_h + 180.0) % 360.0, sat_accent, val_accent)),
+                "harmony_type": "Complementary Contrast",
+                "badge": "⚡ Optical Contrast",
+                "description": f"Calculated exact optical 180° complement to your facial tone ({rep_hex}). Creates striking vibrancy without washing out skin."
+            },
+            {
+                "name": "Analogous Golden Radiance",
+                "hex": self._hsv_to_hex((base_h + 35.0) % 360.0, min(1.0, sat_accent * 0.9), min(1.0, val_accent * 1.15)),
+                "rgb": self._hex_to_rgb(self._hsv_to_hex((base_h + 35.0) % 360.0, min(1.0, sat_accent * 0.9), min(1.0, val_accent * 1.15))),
+                "harmony_type": "Analogous Glow",
+                "badge": "✨ Dermal Glow",
+                "description": "Neighboring warm-golden spectrum hue that amplifies the natural luminescence of your complexion."
+            },
+            {
+                "name": "Analogous Coral/Rose Flush",
+                "hex": self._hsv_to_hex((base_h - 30.0 + 360.0) % 360.0, min(1.0, sat_accent * 0.95), min(1.0, val_accent * 1.05)),
+                "rgb": self._hex_to_rgb(self._hsv_to_hex((base_h - 30.0 + 360.0) % 360.0, min(1.0, sat_accent * 0.95), min(1.0, val_accent * 1.05))),
+                "harmony_type": "Analogous Flush",
+                "badge": "🌸 Rosy Flush",
+                "description": "Harmonizes with cutaneous hemoglobin blush to provide a healthy, youthful aura."
+            },
+            {
+                "name": "Triadic Gemstone Harmony",
+                "hex": self._hsv_to_hex((base_h + 120.0) % 360.0, sat_accent * 0.85, val_accent),
+                "rgb": self._hex_to_rgb(self._hsv_to_hex((base_h + 120.0) % 360.0, sat_accent * 0.85, val_accent)),
+                "harmony_type": "Triadic Balance",
+                "badge": "💎 Triadic Balance",
+                "description": "A 120° equidistant vibrancy point creating high-fashion editorial balance with your facial skin."
+            },
+            {
+                "name": "Triadic Royal Statement",
+                "hex": self._hsv_to_hex((base_h + 240.0) % 360.0, min(1.0, sat_accent * 0.90), val_accent),
+                "rgb": self._hex_to_rgb(self._hsv_to_hex((base_h + 240.0) % 360.0, min(1.0, sat_accent * 0.90), val_accent)),
+                "harmony_type": "Triadic Statement",
+                "badge": "👑 Royal Statement",
+                "description": "A balanced 240° jewel point designed for statement blazers, evening gowns, and silk scarves."
+            },
+            {
+                "name": "Monochromatic Tonal Depth",
+                "hex": self._hsv_to_hex(base_h, min(1.0, s * 1.35), max(0.15, v * 0.48)),
+                "rgb": self._hex_to_rgb(self._hsv_to_hex(base_h, min(1.0, s * 1.35), max(0.15, v * 0.48))),
+                "harmony_type": "Tonal Dressing",
+                "badge": "🧥 Tonal Chic",
+                "description": "Matches the exact hue angle of your skin at a deep luxury value for effortlessly chic tonal dressing."
+            }
+        ]
+        return harmonies
+
+    def generate_recommendations(self, undertone: str, skin_metrics: Optional[Dict[str, Any]] = None, gender: Optional[str] = "all") -> Dict[str, Any]:
+        """
+        Generates structured palette and style recommendations tailored to the user's undertone and gender preference.
         
         Args:
             undertone: "Warm", "Cool", or "Neutral"
             skin_metrics: optional dict containing CIELAB L*, a*, b*, ITA
+            gender: "female", "male", or "all"
             
         Returns:
             Dict containing core palette swatches, categorized recommendations, and avoid list.
         """
         undertone_key = undertone.capitalize()
+        gender_mode = (gender or "all").lower().strip()
         
         # 1. Filter matching colors
         matching_colors = [
@@ -74,16 +162,19 @@ class PaletteGenerator:
             for c in matching_colors if c.get("category") == "Clothing"
         ]
 
-        makeup_recs = [
-            {
-                "name": c["name"],
-                "hex": c["hex"],
-                "rgb": c["rgb"],
-                "sub_category": c.get("sub_category", "General"),
-                "description": c.get("description", "")
-            }
-            for c in matching_colors if c.get("category") == "Makeup"
-        ]
+        # Makeup recommendations: only for female or all/unspecified
+        makeup_recs = []
+        if gender_mode in ("female", "all"):
+            makeup_recs = [
+                {
+                    "name": c["name"],
+                    "hex": c["hex"],
+                    "rgb": c["rgb"],
+                    "sub_category": c.get("sub_category", "General"),
+                    "description": c.get("description", "")
+                }
+                for c in matching_colors if c.get("category") == "Makeup"
+            ]
 
         accessory_recs = [
             {
@@ -109,7 +200,7 @@ class PaletteGenerator:
         # 4. Colors to Avoid
         avoid_list = self.avoid_rules.get(undertone_key, [])
 
-        # 5. Seasonal Color Harmony Insight (Optional Advanced Feature)
+        # 5. Seasonal Color Harmony Insight
         seasonal_info = self._calculate_seasonal_harmony(undertone_key, skin_metrics)
 
         # 6. Stylist Guidance Summary
@@ -132,16 +223,37 @@ class PaletteGenerator:
             )
             foundation_advice = "Select balanced neutral shades (e.g., 'Buff', 'Neutral Sand', 'Classic Tan') that avoid strong yellow or pink cast."
 
+        # 7. Dynamic Skin-Derived Harmonies (Directly computed from analyzed facial skin hex)
+        skin_harmonies = self._generate_skin_harmonies(skin_metrics, undertone_key)
+
+        # 8. Curated Matched World Colors (Filtered to user's skin undertone)
+        world_spectrum = [
+            {
+                "name": c["name"],
+                "hex": c["hex"],
+                "rgb": c["rgb"],
+                "family": c.get("family", "all"),
+                "category": c.get("category", "Clothing"),
+                "undertones": c.get("undertones", []),
+                "tags": c.get("tags", []),
+                "description": c.get("description", "")
+            }
+            for c in matching_colors
+        ]
+
         return {
             "undertone": undertone_key,
+            "gender": gender_mode,
             "stylist_summary": stylist_summary,
             "foundation_advice": foundation_advice,
             "palette": core_palette,
+            "skin_harmonies": skin_harmonies,
             "recommendations": {
                 "clothing": clothing_recs,
                 "makeup": makeup_recs,
                 "accessories": accessory_recs,
-                "neutrals": neutral_recs
+                "neutrals": neutral_recs,
+                "world_spectrum": world_spectrum
             },
             "less_recommended": avoid_list,
             "seasonal_harmony": seasonal_info

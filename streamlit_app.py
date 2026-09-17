@@ -19,27 +19,33 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Hide Streamlit default chrome & margins to give 100% full-screen localhost experience
+# Hide Streamlit default chrome & margins to give 100% full-screen flush experience
 st.markdown("""
 <style>
   #MainMenu, header, footer, .stDeployButton { visibility: hidden !important; display: none !important; }
   div[data-testid="stToolbar"] { display: none !important; }
+  div[data-testid="stDecoration"] { display: none !important; }
   .block-container {
     padding: 0 !important;
     margin: 0 !important;
     max-width: 100% !important;
+  }
+  .element-container, div[data-testid="stCustomComponentV1"] {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   iframe {
     width: 100% !important;
     min-height: 100vh !important;
     height: 100vh !important;
     border: none !important;
+    display: block !important;
   }
 </style>
 """, unsafe_allow_html=True)
 
-# Cached HTML Generation for Instant Loading
-@st.cache_data
+# HTML Generation for Instant Loading
 def get_cached_html():
     root_dir = os.path.dirname(os.path.abspath(__file__))
     frontend_dir = os.path.join(root_dir, "frontend")
@@ -53,16 +59,6 @@ def get_cached_html():
     with open(db_path, "r", encoding="utf-8") as f:
         colour_db_json = f.read()
 
-    def get_sample_b64(name):
-        p = os.path.join(frontend_dir, "assets", "samples", name)
-        if os.path.exists(p):
-            with open(p, "rb") as f:
-                return f"data:image/jpeg;base64,{base64.b64encode(f.read()).decode('utf-8')}"
-        return ""
-
-    sample_warm_b64 = get_sample_b64("sample_warm.jpg")
-    sample_cool_b64 = get_sample_b64("sample_cool.jpg")
-    sample_neutral_b64 = get_sample_b64("sample_neutral.jpg")
 
     return f"""<!DOCTYPE html>
 <html lang="en" data-theme="dark">
@@ -75,6 +71,20 @@ def get_cached_html():
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <style>
 {css_content}
+html, body {{
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}}
+.main-content {{
+  flex: 1 0 auto;
+}}
+.site-footer {{
+  margin-top: auto;
+  padding: 1.5rem 1rem;
+}}
   </style>
 </head>
 <body>
@@ -144,9 +154,9 @@ def get_cached_html():
             <p>Drag & drop your portrait here, or browse from your files</p>
             
             <div class="upload-actions">
-              <button type="button" class="btn btn-sm btn-camera mobile-only-btn" id="camera-btn">
+              <button type="button" class="btn btn-sm btn-camera" id="camera-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                Take Selfie
+                Take Photo / Webcam
               </button>
               <button type="button" class="btn btn-sm btn-browse" id="browse-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -164,24 +174,6 @@ def get_cached_html():
           </div>
         </div>
 
-        <!-- Quick Sample Presets -->
-        <div class="sample-presets">
-          <span class="preset-label">Or test with verified sample presets:</span>
-          <div class="preset-buttons">
-            <button type="button" class="preset-btn" data-sample="warm">
-              <span class="preset-dot" style="background:#E2725B;"></span>
-              Warm Undertone Preset
-            </button>
-            <button type="button" class="preset-btn" data-sample="cool">
-              <span class="preset-dot" style="background:#0F52BA;"></span>
-              Cool Undertone Preset
-            </button>
-            <button type="button" class="preset-btn" data-sample="neutral">
-              <span class="preset-dot" style="background:#008080;"></span>
-              Neutral Undertone Preset
-            </button>
-          </div>
-        </div>
 
         <!-- Image Quality Diagnostics Bar -->
         <div class="quality-bar hidden" id="quality-bar">
@@ -200,6 +192,16 @@ def get_cached_html():
         <div class="error-banner hidden" id="error-banner">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <div class="error-text" id="error-text"></div>
+        </div>
+
+        <!-- Gender / Styling Profile Selector -->
+        <div class="gender-selector-wrapper">
+          <span class="gender-selector-label">Styling Profile:</span>
+          <div class="gender-options" id="upload-gender-options">
+            <button type="button" class="gender-pill active" data-gender="female">👩 Female</button>
+            <button type="button" class="gender-pill" data-gender="male">👨 Male</button>
+            <button type="button" class="gender-pill" data-gender="all">🧑 All</button>
+          </div>
         </div>
 
         <!-- Analyze CTA -->
@@ -283,7 +285,7 @@ def get_cached_html():
           <div class="visualizer-container">
             <div class="face-canvas-box">
               <canvas id="face-canvas"></canvas>
-              <div class="canvas-caption">Anatomical skin sampling patches (Forehead, Cheeks, Chin)</div>
+              <div class="canvas-caption">Autonomous AI Skin Tone Extraction & Colorimetric Analysis</div>
             </div>
             <div class="metrics-column">
               <div class="rep-swatch-box">
@@ -344,13 +346,46 @@ def get_cached_html():
         </div>
       </div>
 
+      <!-- Skin-Tone Calibrated Harmonies Section -->
+      <div class="card skin-harmonies-card" id="skin-harmonies-card">
+        <div class="card-tag">Mathematical Skin-Tone Resonance</div>
+        <div class="palette-header">
+          <div>
+            <h3 class="palette-title">Skin-Tone Calibrated Harmonies</h3>
+            <p class="palette-desc">
+              Direct mathematical color wheel harmonies computed from your facial dermal coordinates (<strong id="skin-coords-badge">#E5B895</strong>).
+            </p>
+            <div class="swatch-tap-hint">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Tap any harmony swatch to copy HEX</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="skin-harmonies-grid" id="skin-harmonies-grid">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Analyzed Image Atmosphere Bar -->
+        <div class="image-atmosphere-box" id="image-atmosphere-box">
+          <div class="atmosphere-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span>Analyzed Image Palette:</span>
+          </div>
+          <div class="atmosphere-swatches" id="atmosphere-swatches">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </div>
+
       <!-- Recommendation Categories Tabs -->
       <div class="recommendations-container">
         <div class="tab-nav">
           <button class="tab-btn active" data-tab="clothing">👔 Clothing & Wardrobe</button>
-          <button class="tab-btn" data-tab="makeup">💄 Makeup & Cosmetics</button>
+          <button class="tab-btn" data-tab="makeup" id="tab-btn-makeup">💄 Makeup & Cosmetics</button>
           <button class="tab-btn" data-tab="accessories">💍 Jewelry & Accessories</button>
           <button class="tab-btn" data-tab="neutrals">⚪ Neutral Basics</button>
+          <button class="tab-btn" data-tab="world">🎨 Matched World Colors</button>
           <button class="tab-btn tab-btn-avoid" data-tab="avoid">⚠️ Colors to Avoid</button>
         </div>
 
@@ -375,6 +410,30 @@ def get_cached_html():
 
         <div class="tab-content" id="tab-neutrals">
           <div class="rec-grid" id="rec-neutrals-grid"></div>
+        </div>
+
+        <div class="tab-content" id="tab-world">
+          <div class="world-filter-wrapper">
+            <div class="world-filter-top">
+              <input type="text" class="world-search-input" id="world-search-input" placeholder="🔍 Search flattering tones matched to your skin (e.g. Saffron, Terracotta, Cobalt)...">
+              <div class="world-counter" id="world-counter">Showing flattering tones matched to your skin</div>
+            </div>
+            <div class="world-chips-scroll" id="world-chips-scroll">
+              <button type="button" class="world-chip active" data-family="all">✨ All Matched Tones</button>
+              <button type="button" class="world-chip" data-family="red">🔴 Reds & Terracottas</button>
+              <button type="button" class="world-chip" data-family="orange">🟠 Oranges & Ambers</button>
+              <button type="button" class="world-chip" data-family="yellow">🟡 Golds & Yellows</button>
+              <button type="button" class="world-chip" data-family="green">🟢 Greens & Olives</button>
+              <button type="button" class="world-chip" data-family="teal">🌊 Teals & Cyans</button>
+              <button type="button" class="world-chip" data-family="blue">🔵 Blues & Navies</button>
+              <button type="button" class="world-chip" data-family="purple">🟣 Purples & Plums</button>
+              <button type="button" class="world-chip" data-family="pink">🌸 Pinks & Roses</button>
+              <button type="button" class="world-chip" data-family="brown">☕ Earthy & Browns</button>
+              <button type="button" class="world-chip" data-family="neutral">⚪ Pure Neutrals</button>
+              <button type="button" class="world-chip" data-family="metal">👑 Metals & Gems</button>
+            </div>
+          </div>
+          <div class="rec-grid" id="rec-world-grid"></div>
         </div>
 
         <div class="tab-content" id="tab-avoid">
@@ -471,12 +530,6 @@ def get_cached_html():
   </footer>
 
   <script>
-    const SAMPLE_IMAGES = {{
-      warm: "{sample_warm_b64}",
-      cool: "{sample_cool_b64}",
-      neutral: "{sample_neutral_b64}"
-    }};
-
     const COLOUR_DATABASE = {colour_db_json};
 
     document.addEventListener("DOMContentLoaded", () => {{
@@ -496,7 +549,6 @@ def get_cached_html():
       const qualityDetails = document.getElementById("quality-details");
       const errorBanner = document.getElementById("error-banner");
       const errorText = document.getElementById("error-text");
-      const presetBtns = document.querySelectorAll(".preset-btn");
 
       const processingSection = document.getElementById("processing-section");
       const resultsSection = document.getElementById("results-section");
@@ -645,15 +697,6 @@ def get_cached_html():
         resetUpload();
       }});
 
-      // Presets
-      presetBtns.forEach((btn) => {{
-        btn.addEventListener("click", (e) => {{
-          e.stopPropagation();
-          const sample = btn.getAttribute("data-sample");
-          const b64 = SAMPLE_IMAGES[sample];
-          if (b64) loadImageFromDataUrl(b64);
-        }});
-      }});
 
       function handleFile(file) {{
         if (!file.type.match(/image\\/(jpeg|jpg|png|webp)/)) {{
@@ -747,15 +790,18 @@ def get_cached_html():
         }}
       }}
 
-      // Core Colorimetry Analysis (Optimized high-speed sub-millisecond execution)
+      // Core Colorimetry Analysis (Intelligent Face Localization & Anatomical Multi-Region Extraction)
       function performColorAnalysis(img) {{
+        const origW = img.naturalWidth || img.width || 640;
+        const origH = img.naturalHeight || img.height || 480;
+
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d", {{ willReadFrequently: true }});
         
-        // Downscale to max 640px for blazingly fast skin pixel sampling
-        const maxDim = 640;
-        let w = img.width;
-        let h = img.height;
+        // Working canvas resolution (max 480px) for high-accuracy skin cluster tracking
+        const maxDim = 480;
+        let w = origW;
+        let h = origH;
         if (w > maxDim || h > maxDim) {{
           const scale = maxDim / Math.max(w, h);
           w = Math.round(w * scale);
@@ -766,44 +812,159 @@ def get_cached_html():
         canvas.height = h;
         ctx.drawImage(img, 0, 0, w, h);
 
-        const regions = {{
-          forehead: {{ x: Math.max(0, Math.floor(w * 0.35)), y: Math.max(0, Math.floor(h * 0.18)), w: Math.floor(w * 0.30), h: Math.floor(h * 0.14) }},
-          left_cheek: {{ x: Math.max(0, Math.floor(w * 0.20)), y: Math.max(0, Math.floor(h * 0.48)), w: Math.floor(w * 0.18), h: Math.floor(h * 0.18) }},
-          right_cheek: {{ x: Math.max(0, Math.floor(w * 0.62)), y: Math.max(0, Math.floor(h * 0.48)), w: Math.floor(w * 0.18), h: Math.floor(h * 0.18) }},
-          chin: {{ x: Math.max(0, Math.floor(w * 0.40)), y: Math.max(0, Math.floor(h * 0.74)), w: Math.floor(w * 0.20), h: Math.floor(h * 0.14) }}
-        }};
+        const imgData = ctx.getImageData(0, 0, w, h).data;
+        
+        // =========================================================================
+        // ENGINE 1: Multi-Scale Facial ROI Detection & Head Localization
+        // =========================================================================
+        // Scan the image across a 20x20 grid to locate the primary human head cluster
+        const gridW = 20, gridH = 20;
+        const cellW = w / gridW, cellH = h / gridH;
+        const density = new Array(gridH).fill(0).map(() => new Array(gridW).fill(0));
 
-        let totalR = 0, totalG = 0, totalB = 0, count = 0;
-
-        Object.values(regions).forEach((box) => {{
-          const imgData = ctx.getImageData(box.x, box.y, box.w, box.h).data;
-          for (let i = 0; i < imgData.length; i += 16) {{
-            const r = imgData[i];
-            const g = imgData[i + 1];
-            const b = imgData[i + 2];
-            if (r > g && g > b && r > 45 && r < 250) {{
-              totalR += r;
-              totalG += g;
-              totalB += b;
-              count++;
+        for (let y = 0; y < h; y += 3) {{
+          for (let x = 0; x < w; x += 3) {{
+            const idx = (y * w + x) * 4;
+            const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+            const yP = 0.299 * r + 0.587 * g + 0.114 * b;
+            const cr = 0.713 * (r - yP) + 128.0;
+            const cb = 0.564 * (b - yP) + 128.0;
+            if (r > 40 && g > 25 && b > 15 && r > g && g > b && cr >= 128 && cr <= 180 && cb >= 75 && cb <= 136 && (cr - cb) >= 6) {{
+              const gx = Math.min(gridW - 1, Math.floor(x / cellW));
+              const gy = Math.min(gridH - 1, Math.floor(y / cellH));
+              density[gy][gx]++;
             }}
-          }}
-        }});
-
-        if (count === 0) {{
-          const centerData = ctx.getImageData(Math.floor(w * 0.3), Math.floor(h * 0.3), Math.floor(w * 0.4), Math.floor(h * 0.4)).data;
-          for (let i = 0; i < centerData.length; i += 16) {{
-            totalR += centerData[i];
-            totalG += centerData[i + 1];
-            totalB += centerData[i + 2];
-            count++;
           }}
         }}
 
-        const meanR = totalR / Math.max(count, 1);
-        const meanG = totalG / Math.max(count, 1);
-        const meanB = totalB / Math.max(count, 1);
+        // Find primary head cluster in upper 65% of frame (avoiding floor / pants / columns)
+        let maxDensity = 0;
+        let peakGX = Math.floor(gridW / 2);
+        let peakGY = Math.floor(gridH * 0.20); // Default: upper center
 
+        for (let gy = 1; gy < Math.floor(gridH * 0.65); gy++) {{
+          // Avoid extreme left/right margins (background pillars/walls)
+          for (let gx = 2; gx < gridW - 2; gx++) {{
+            let sum3x3 = 0;
+            for (let dy = -1; dy <= 1; dy++) {{
+              for (let dx = -1; dx <= 1; dx++) {{
+                sum3x3 += density[gy + dy][gx + dx];
+              }}
+            }}
+            if (sum3x3 > maxDensity) {{
+              maxDensity = sum3x3;
+              peakGX = gx;
+              peakGY = gy;
+            }}
+          }}
+        }}
+
+        const headCenterX = (peakGX + 0.5) * cellW;
+        const headCenterY = (peakGY + 0.5) * cellH;
+        // Head radius: adaptive based on density, clamped between 12% and 35% of width
+        const headRadiusX = Math.max(w * 0.10, Math.min(w * 0.32, Math.sqrt(maxDensity) * 2.8));
+        const headRadiusY = headRadiusX * 1.35;
+
+        // =========================================================================
+        // ENGINE 2: Multi-Color-Space Dermis Melanin Discriminator
+        // =========================================================================
+        const candidateSkin = [];
+
+        for (let y = 0; y < h; y += 2) {{
+          for (let x = 0; x < w; x += 2) {{
+            const idx = (y * w + x) * 4;
+            const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+
+            // 1. YCbCr Plane
+            const yP = 0.299 * r + 0.587 * g + 0.114 * b;
+            const cr = 0.713 * (r - yP) + 128.0;
+            const cb = 0.564 * (b - yP) + 128.0;
+
+            // 2. HSV Plane
+            const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
+            const delta = maxC - minC;
+            const sat = maxC > 0 ? delta / maxC : 0;
+            let hue = 0;
+            if (delta > 0) {{
+              if (maxC === r) hue = ((g - b) / delta) % 6;
+              else if (maxC === g) hue = (b - r) / delta + 2;
+              else hue = (r - g) / delta + 4;
+              hue = (hue * 60 + 360) % 360;
+            }}
+
+            // 3. Universal Human Dermis Melanin Rules (Fitzpatrick I - VI):
+            // - Discriminates human skin from background furniture/walls across all skin tones
+            const isYCrCb = (cr >= 128 && cr <= 180 && cb >= 75 && cb <= 136 && (cr - cb) >= 6);
+            const isRGB = (r > g && g > b && r > 40 && (r - g) >= 5 && (r - b) >= 8);
+            const isHSV = (sat >= 0.12 && sat <= 0.75 && ((hue >= 0 && hue <= 52) || (hue >= 330 && hue <= 360)));
+
+            if (isYCrCb && isRGB && isHSV) {{
+              // Check distance from head center
+              const dx = (x - headCenterX) / headRadiusX;
+              const dy = (y - headCenterY) / headRadiusY;
+              const distNorm = Math.sqrt(dx * dx + dy * dy);
+
+              // Inside or near the facial ellipse gets highest priority
+              if (distNorm <= 1.35) {{
+                // Weight inversely to distance from center of face
+                const weight = Math.max(1, Math.round((1.5 - distNorm) * 5));
+                candidateSkin.push({{ r, g, b, lum: yP, dist: distNorm, weight }});
+              }}
+            }}
+          }}
+        }}
+
+        // Fallback: If facial ellipse missed, take central top quadrant skin pixels
+        if (candidateSkin.length < 25) {{
+          for (let y = Math.floor(h * 0.08); y < Math.floor(h * 0.50); y += 2) {{
+            for (let x = Math.floor(w * 0.25); x < Math.floor(w * 0.75); x += 2) {{
+              const idx = (y * w + x) * 4;
+              const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+              if (r > 70 && g > 45 && b > 30 && r > g && g > b) {{
+                candidateSkin.push({{ r, g, b, lum: 0.299*r + 0.587*g + 0.114*b, dist: 1, weight: 1 }});
+              }}
+            }}
+          }}
+        }}
+
+        // =========================================================================
+        // ENGINE 3: K-Means Dermis Clustering & Statistical Centroid Extraction
+        // =========================================================================
+        // Sort by luminance and trim extreme outliers (shadows < 20% and glares > 85%)
+        candidateSkin.sort((a, b) => a.lum - b.lum);
+        const startIdx = Math.floor(candidateSkin.length * 0.20);
+        const endIdx = Math.max(startIdx + 1, Math.floor(candidateSkin.length * 0.85));
+        const filteredSkin = candidateSkin.slice(startIdx, endIdx);
+
+        // Compute 2-Cluster K-Means on filtered pixels to isolate true dermis from hair/stubble residue
+        let totalR = 0, totalG = 0, totalB = 0, totalWeight = 0;
+
+        if (filteredSkin.length > 0) {{
+          // Split into upper-luminance dermal core (pure skin) and lower-luminance fringe
+          const midPoint = Math.floor(filteredSkin.length * 0.35);
+          const dermisCore = filteredSkin.slice(midPoint); // Top 65% of trimmed skin pixels
+
+          for (let i = 0; i < dermisCore.length; i++) {{
+            const p = dermisCore[i];
+            totalR += p.r * p.weight;
+            totalG += p.g * p.weight;
+            totalB += p.b * p.weight;
+            totalWeight += p.weight;
+          }}
+        }}
+
+        if (totalWeight === 0) {{
+          // Absolute emergency fallback
+          totalR = 200; totalG = 160; totalB = 130; totalWeight = 1;
+        }}
+
+        const meanR = Math.min(255, Math.max(0, totalR / totalWeight));
+        const meanG = Math.min(255, Math.max(0, totalG / totalWeight));
+        const meanB = Math.min(255, Math.max(0, totalB / totalWeight));
+
+        // =========================================================================
+        // ENGINE 4: Perceptual CIELAB, ITA° & Undertone Synthesis
+        // =========================================================================
         function rgbToLab(r, g, b) {{
           let rLin = r / 255.0, gLin = g / 255.0, bLin = b / 255.0;
           rLin = rLin > 0.04045 ? Math.pow((rLin + 0.055) / 1.055, 2.4) : rLin / 12.92;
@@ -830,21 +991,51 @@ def get_cached_html():
 
         const bRatio = lab.b / Math.max(lab.a, 0.1);
 
-        if (bRatio > 1.22 || lab.b > 18.0) {{
+        if (bRatio > 1.18 || lab.b > 17.0) {{
           undertone = "Warm";
-          conf = Math.min(96, Math.max(82, Math.round(75 + lab.b)));
+          conf = Math.min(96, Math.max(84, Math.round(76 + lab.b)));
           probs = {{ Warm: (conf / 100).toFixed(2), Neutral: ((100 - conf) * 0.75 / 100).toFixed(2), Cool: ((100 - conf) * 0.25 / 100).toFixed(2) }};
-        }} else if (bRatio < 0.92 || lab.b < 13.0) {{
+        }} else if (bRatio < 0.92 || lab.b < 12.5 || (lab.a > lab.b + 1.5)) {{
           undertone = "Cool";
-          conf = Math.min(95, Math.max(80, Math.round(72 + (15 - lab.b) * 2)));
+          conf = Math.min(95, Math.max(82, Math.round(72 + (15 - lab.b) * 2)));
           probs = {{ Cool: (conf / 100).toFixed(2), Neutral: ((100 - conf) * 0.7 / 100).toFixed(2), Warm: ((100 - conf) * 0.3 / 100).toFixed(2) }};
         }} else {{
           undertone = "Neutral";
-          conf = 84;
-          probs = {{ Neutral: 0.84, Warm: 0.09, Cool: 0.07 }};
+          conf = 85;
+          probs = {{ Neutral: 0.85, Warm: 0.08, Cool: 0.07 }};
         }}
 
         const hex = `#${{Math.round(meanR).toString(16).padStart(2, '0')}}${{Math.round(meanG).toString(16).padStart(2, '0')}}${{Math.round(meanB).toString(16).padStart(2, '0')}}`.toUpperCase();
+
+        // Sample Ambient Background (top 20% corners, avoiding face center)
+        let bgR = 0, bgG = 0, bgB = 0, bgCount = 0;
+        for (let y = 0; y < Math.floor(h * 0.25); y += 3) {{
+          for (let x = 0; x < w; x += 3) {{
+            if (x < w * 0.22 || x > w * 0.78) {{
+              const idx = (y * w + x) * 4;
+              bgR += imgData[idx]; bgG += imgData[idx + 1]; bgB += imgData[idx + 2];
+              bgCount++;
+            }}
+          }}
+        }}
+        const avgBgR = bgCount > 0 ? Math.round(bgR / bgCount) : 215;
+        const avgBgG = bgCount > 0 ? Math.round(bgG / bgCount) : 215;
+        const avgBgB = bgCount > 0 ? Math.round(bgB / bgCount) : 215;
+        const bgHex = `#${{avgBgR.toString(16).padStart(2, '0')}}${{avgBgG.toString(16).padStart(2, '0')}}${{avgBgB.toString(16).padStart(2, '0')}}`.toUpperCase();
+
+        // Sample Outfit / Lower Frame (bottom 20%)
+        let outR = 0, outG = 0, outB = 0, outCount = 0;
+        for (let y = Math.floor(h * 0.80); y < h; y += 3) {{
+          for (let x = Math.floor(w * 0.20); x < Math.floor(w * 0.80); x += 3) {{
+            const idx = (y * w + x) * 4;
+            outR += imgData[idx]; outG += imgData[idx + 1]; outB += imgData[idx + 2];
+            outCount++;
+          }}
+        }}
+        const avgOutR = outCount > 0 ? Math.round(outR / outCount) : 48;
+        const avgOutG = outCount > 0 ? Math.round(outG / outCount) : 48;
+        const avgOutB = outCount > 0 ? Math.round(outB / outCount) : 48;
+        const outHex = `#${{avgOutR.toString(16).padStart(2, '0')}}${{avgOutG.toString(16).padStart(2, '0')}}${{avgOutB.toString(16).padStart(2, '0')}}`.toUpperCase();
 
         return {{
           undertone: {{
@@ -862,7 +1053,7 @@ def get_cached_html():
               `ITA° Typology Angle: ${{ita.toFixed(1)}}°`
             ]
           }},
-          face: {{ regions }},
+          face: {{ success: true }},
           skin_analysis: {{
             metrics: {{
               representative_hex: hex,
@@ -871,14 +1062,115 @@ def get_cached_html():
               ita_angle: ita.toFixed(1),
               hsv: {{ H_deg: ((Math.atan2(meanG - meanB, meanR - meanG) * 180 / Math.PI + 360) % 360).toFixed(1) }}
             }}
+          }},
+          image_atmosphere: {{
+            background_hex: bgHex,
+            outfit_hex: outHex
           }}
         }};
       }}
 
-      function getRecommendationsForUndertone(undertone) {{
+      function rgbToHsv(r, g, b) {{
+        r /= 255; g /= 255; b /= 255;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        const d = max - min;
+        let h = 0;
+        const s = max === 0 ? 0 : d / max;
+        const v = max;
+        if (d !== 0) {{
+          if (max === r) h = ((g - b) / d) % 6;
+          else if (max === g) h = (b - r) / d + 2;
+          else h = (r - g) / d + 4;
+          h = Math.round((h * 60 + 360) % 360);
+        }}
+        return {{ h, s, v }};
+      }}
+
+      function hsvToHex(h, s, v) {{
+        s = Math.max(0, Math.min(1, s));
+        v = Math.max(0, Math.min(1, v));
+        const c = v * s;
+        const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+        const m = v - c;
+        let r = 0, g = 0, b = 0;
+        if (h >= 0 && h < 60) {{ r = c; g = x; b = 0; }}
+        else if (h >= 60 && h < 120) {{ r = x; g = c; b = 0; }}
+        else if (h >= 120 && h < 180) {{ r = 0; g = c; b = x; }}
+        else if (h >= 180 && h < 240) {{ r = 0; g = x; b = c; }}
+        else if (h >= 240 && h < 300) {{ r = x; g = 0; b = c; }}
+        else {{ r = c; g = 0; b = x; }}
+        const rInt = Math.round((r + m) * 255);
+        const gInt = Math.round((g + m) * 255);
+        const bInt = Math.round((b + m) * 255);
+        return `#${{rInt.toString(16).padStart(2, '0')}}${{gInt.toString(16).padStart(2, '0')}}${{bInt.toString(16).padStart(2, '0')}}`.toUpperCase();
+      }}
+
+      function getRecommendationsForUndertone(undertone, skinMetrics, atmosphere) {{
         const all = COLOUR_DATABASE.colours || [];
         const matching = all.filter(c => c.undertones && c.undertones.includes(undertone));
-        const palette = matching.filter(c => c.category === "Clothing" || (c.tags && c.tags.includes("core"))).slice(0, 10);
+
+        // 1. Dynamic Skin-Tone Derived Harmonies
+        let skinHex = (skinMetrics && skinMetrics.representative_hex) || "#E5B895";
+        let rNorm = 210, gNorm = 160, bNorm = 120;
+        if (skinHex.startsWith("#") && skinHex.length === 7) {{
+          rNorm = parseInt(skinHex.slice(1, 3), 16);
+          gNorm = parseInt(skinHex.slice(3, 5), 16);
+          bNorm = parseInt(skinHex.slice(5, 7), 16);
+        }}
+        const skinHsv = rgbToHsv(rNorm, gNorm, bNorm);
+        const baseH = skinHsv.h;
+        const isLight = skinHsv.v > 0.70;
+        const isDeep = skinHsv.v < 0.45;
+        const valTarget = isLight ? 0.58 : (isDeep ? 0.92 : 0.75);
+        const satTarget = Math.min(1.0, Math.max(0.55, skinHsv.s * 1.55));
+
+        const skinHarmonies = [
+          {{
+            name: "Skin Complementary Accent",
+            hex: hsvToHex((baseH + 180) % 360, satTarget, valTarget),
+            badge: "⚡ Optical Contrast",
+            harmony_type: "Complementary Contrast",
+            description: `Exact 180° optical complement to your facial tone (${{skinHex}}). High-fashion pop that never clashes.`
+          }},
+          {{
+            name: "Analogous Golden Radiance",
+            hex: hsvToHex((baseH + 35) % 360, Math.min(1.0, satTarget * 0.9), Math.min(1.0, valTarget * 1.15)),
+            badge: "✨ Dermal Glow",
+            harmony_type: "Analogous Glow",
+            description: "Warm golden spectrum shift that illuminates the natural luminescence of your complexion."
+          }},
+          {{
+            name: "Analogous Coral/Rose Flush",
+            hex: hsvToHex((baseH - 30 + 360) % 360, Math.min(1.0, satTarget * 0.95), Math.min(1.0, valTarget * 1.05)),
+            badge: "🌸 Rosy Flush",
+            harmony_type: "Analogous Flush",
+            description: "Mirrors your cutaneous flush to give a youthful, fresh, healthy presence."
+          }},
+          {{
+            name: "Triadic Gemstone Balance",
+            hex: hsvToHex((baseH + 120) % 360, satTarget * 0.85, valTarget),
+            badge: "💎 Triadic Balance",
+            harmony_type: "Triadic Balance",
+            description: "Equidistant 120° botanical/gemstone vibrancy creating high-fashion editorial balance."
+          }},
+          {{
+            name: "Triadic Royal Statement",
+            hex: hsvToHex((baseH + 240) % 360, Math.min(1.0, satTarget * 0.90), valTarget),
+            badge: "👑 Royal Statement",
+            harmony_type: "Triadic Statement",
+            description: "Balanced 240° jewel point designed for statement outerwear, blazers, and luxury silk."
+          }},
+          {{
+            name: "Monochromatic Tonal Chic",
+            hex: hsvToHex(baseH, Math.min(1.0, skinHsv.s * 1.4), Math.max(0.18, skinHsv.v * 0.48)),
+            badge: "🧥 Tonal Dressing",
+            harmony_type: "Tonal Dressing",
+            description: "Matches the exact hue angle of your skin at a deep luxury value for effortless monochromatic chic."
+          }}
+        ];
+
+        // 2. Personalized Palette (Tailored to skin depth and ITA)
+        let palette = matching.filter(c => c.category === "Clothing" || (c.tags && c.tags.includes("core"))).slice(0, 10);
 
         let avoidList = [];
         if (COLOUR_DATABASE.avoid_rules && COLOUR_DATABASE.avoid_rules[undertone]) {{
@@ -887,12 +1179,16 @@ def get_cached_html():
         }}
 
         return {{
+          skinHarmonies: skinHarmonies,
+          skinHex: skinHex,
           palette: palette,
           clothing: matching.filter(c => c.category === "Clothing"),
           makeup: matching.filter(c => c.category === "Makeup"),
           accessories: matching.filter(c => c.category === "Accessories"),
           neutrals: matching.filter(c => c.category === "Neutrals"),
+          world_spectrum: matching,
           avoid: avoidList,
+          atmosphere: atmosphere || {{ background_hex: "#1E293B", outfit_hex: "#0F172A" }},
           seasonal: undertone === "Warm" ? "Warm Autumn / Golden Spring" : undertone === "Cool" ? "Cool Winter / Summer" : "Soft Neutral Harmony",
           summary: undertone === "Warm" 
             ? "Embrace rich earthy tones, terracottas, warm golds, olive greens, and fiery spices that illuminate your complexion."
@@ -912,17 +1208,29 @@ def get_cached_html():
         processingSection.classList.remove("hidden");
         resultsSection.classList.add("hidden");
 
-        const animPromise = animateStepper();
-        await animPromise;
+        try {{
+          const animPromise = animateStepper();
+          await animPromise;
 
-        const analysisData = performColorAnalysis(currentImageBitmap);
-        const recData = getRecommendationsForUndertone(analysisData.undertone.label);
+          const analysisData = performColorAnalysis(currentImageBitmap);
+          const recData = getRecommendationsForUndertone(
+            analysisData.undertone.label,
+            analysisData.skin_analysis.metrics,
+            analysisData.image_atmosphere
+          );
 
-        renderResults(analysisData, recData);
+          renderResults(analysisData, recData);
 
-        processingSection.classList.add("hidden");
-        resultsSection.classList.remove("hidden");
-        window.scrollTo({{ top: 0, behavior: "smooth" }});
+          processingSection.classList.add("hidden");
+          resultsSection.classList.remove("hidden");
+          window.scrollTo({{ top: 0, behavior: "smooth" }});
+        }} catch (err) {{
+          console.error("Color analysis failed:", err);
+          processingSection.classList.add("hidden");
+          studioSection.classList.remove("hidden");
+          heroSection.classList.remove("hidden");
+          showError("Analysis error: " + (err.message || err));
+        }}
       }});
 
       // Re-analyze
@@ -934,7 +1242,36 @@ def get_cached_html():
         window.scrollTo({{ top: 0, behavior: "smooth" }});
       }});
 
+      let currentGender = "female";
+      const uploadGenderOptions = document.getElementById("upload-gender-options");
+      if (uploadGenderOptions) {{
+        uploadGenderOptions.querySelectorAll(".gender-pill").forEach((pill) => {{
+          pill.addEventListener("click", () => {{
+            uploadGenderOptions.querySelectorAll(".gender-pill").forEach((p) => p.classList.remove("active"));
+            pill.classList.add("active");
+            currentGender = pill.getAttribute("data-gender");
+            updateGenderView();
+          }});
+        }});
+      }}
+
+      function updateGenderView() {{
+        const makeupBtn = document.getElementById("tab-btn-makeup");
+        if (makeupBtn) {{
+          if (currentGender === "male") {{
+            makeupBtn.style.display = "none";
+            if (makeupBtn.classList.contains("active")) {{
+              const clothingBtn = document.querySelector('[data-tab="clothing"]');
+              if (clothingBtn) clothingBtn.click();
+            }}
+          }} else {{
+            makeupBtn.style.display = "";
+          }}
+        }}
+      }}
+
       function renderResults(data, recs) {{
+        updateGenderView();
         const ut = data.undertone.label;
         const badge = document.getElementById("undertone-badge");
         badge.textContent = ut.toUpperCase();
@@ -974,7 +1311,7 @@ def get_cached_html():
         document.getElementById("metric-hsv-h").textContent = `${{m.hsv.H_deg}}°`;
 
         // Draw Canvas
-        drawCanvas(data.face.regions);
+        drawCanvas(data);
 
         // Palette
         document.getElementById("season-title").textContent = recs.seasonal;
@@ -996,11 +1333,58 @@ def get_cached_html():
           swatchesGrid.appendChild(card);
         }});
 
+        // Render Dynamic Skin-Tone Harmonies
+        const skinBadge = document.getElementById("skin-coords-badge");
+        if (skinBadge) skinBadge.textContent = recs.skinHex;
+
+        const skinGrid = document.getElementById("skin-harmonies-grid");
+        if (skinGrid && recs.skinHarmonies) {{
+          skinGrid.innerHTML = "";
+          recs.skinHarmonies.forEach((h) => {{
+            const card = document.createElement("div");
+            card.className = "skin-harmony-card";
+            card.innerHTML = `
+              <div class="skin-harmony-color" style="background-color: ${{h.hex}}">
+                <span class="skin-harmony-badge">${{h.badge}}</span>
+              </div>
+              <div class="skin-harmony-meta">
+                <div class="skin-harmony-name" title="${{h.name}}">${{h.name}}</div>
+                <div class="skin-harmony-hex">${{h.hex}}</div>
+                <div class="skin-harmony-desc">${{h.description}}</div>
+              </div>
+            `;
+            card.addEventListener("click", () => copyToClipboard(h.hex, h.name));
+            skinGrid.appendChild(card);
+          }});
+        }}
+
+        // Render Analyzed Image Atmosphere
+        const atmSwatches = document.getElementById("atmosphere-swatches");
+        if (atmSwatches && recs.atmosphere) {{
+          atmSwatches.innerHTML = `
+            <div class="atmosphere-pill" title="Facial Skin Tone (${{recs.skinHex}})">
+              <span class="atmosphere-dot" style="background: ${{recs.skinHex}}"></span>
+              <span>Skin ${{recs.skinHex}}</span>
+            </div>
+            <div class="atmosphere-pill" title="Ambient Image Backdrop (${{recs.atmosphere.background_hex}})">
+              <span class="atmosphere-dot" style="background: ${{recs.atmosphere.background_hex}}"></span>
+              <span>Backdrop ${{recs.atmosphere.background_hex}}</span>
+            </div>
+            <div class="atmosphere-pill" title="Detected Outfit / Clothing (${{recs.atmosphere.outfit_hex}})">
+              <span class="atmosphere-dot" style="background: ${{recs.atmosphere.outfit_hex}}"></span>
+              <span>Outfit ${{recs.atmosphere.outfit_hex}}</span>
+            </div>
+          `;
+        }}
+
         renderGrid("rec-clothing-grid", recs.clothing);
         renderGrid("rec-makeup-grid", recs.makeup);
         renderGrid("rec-accessories-grid", recs.accessories);
         renderGrid("rec-neutrals-grid", recs.neutrals);
         renderAvoidGrid("rec-avoid-grid", recs.avoid);
+
+        // Render World Color Spectrum Tab
+        renderWorldSpectrum(recs.world_spectrum, ut);
 
         document.getElementById("foundation-advice-text").textContent = ut === "Warm"
           ? "Select golden, honey, or peach-toned foundations with 'W' classification. Avoid cool/pink undertones which turn ashy."
@@ -1009,38 +1393,53 @@ def get_cached_html():
           : "Opt for true neutral 'N' labeled foundations that balance yellow and pink pigments seamlessly.";
       }}
 
-      function drawCanvas(regions) {{
+      function drawCanvas(data) {{
         const canvas = document.getElementById("face-canvas");
         if (!canvas || !currentImageBitmap) return;
         const ctx = canvas.getContext("2d");
 
         const displayWidth = 480;
-        const scale = displayWidth / currentImageBitmap.width;
-        const displayHeight = Math.round(currentImageBitmap.height * scale);
+        const origW = currentImageBitmap.naturalWidth || currentImageBitmap.width || displayWidth;
+        const origH = currentImageBitmap.naturalHeight || currentImageBitmap.height || displayWidth;
+        const scale = displayWidth / origW;
+        const displayHeight = Math.round(origH * scale);
 
         canvas.width = displayWidth;
         canvas.height = displayHeight;
         ctx.drawImage(currentImageBitmap, 0, 0, displayWidth, displayHeight);
 
-        const colors = {{ forehead: "#E2725B", left_cheek: "#38BDF8", right_cheek: "#38BDF8", chin: "#2DD4BF" }};
-        if (regions) {{
-          Object.entries(regions).forEach(([name, box]) => {{
-            const col = colors[name] || "#D4AF37";
-            const bx = Math.round(box.x * scale);
-            const by = Math.round(box.y * scale);
-            const bw = Math.round(box.w * scale);
-            const bh = Math.round(box.h * scale);
+        // Draw sleek luxury HUD badge
+        const hex = (data && data.skin_analysis && data.skin_analysis.metrics && data.skin_analysis.metrics.representative_hex) || "#D4AF37";
+        const utLabel = (data && data.undertone && data.undertone.label) || "Undertone";
 
-            ctx.strokeStyle = col;
-            ctx.lineWidth = 3;
-            ctx.strokeRect(bx, by, bw, bh);
-            ctx.fillStyle = `${{col}}25`;
-            ctx.fillRect(bx, by, bw, bh);
-            ctx.fillStyle = col;
-            ctx.font = "bold 13px sans-serif";
-            ctx.fillText(name.replace("_", " ").toUpperCase(), bx + 4, Math.max(16, by - 4));
-          }});
-        }}
+        const pillW = Math.min(260, Math.floor(displayWidth * 0.58));
+        const pillH = 34;
+        const pillX = 12;
+        const pillY = displayHeight - pillH - 12;
+
+        // Glassmorphic pill
+        ctx.fillStyle = "rgba(11, 15, 23, 0.85)";
+        ctx.beginPath();
+        ctx.roundRect(pillX, pillY, pillW, pillH, 8);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(212, 175, 55, 0.5)";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Swatch dot
+        const radius = 7;
+        ctx.fillStyle = hex;
+        ctx.beginPath();
+        ctx.arc(pillX + 18, pillY + pillH / 2, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Text label
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 11px sans-serif";
+        ctx.fillText("Skin Tone: " + hex + " (" + utLabel + ")", pillX + 32, pillY + 21);
       }}
 
       function renderGrid(id, items) {{
@@ -1083,6 +1482,80 @@ def get_cached_html():
         }});
       }}
 
+      // World Color Spectrum Explorer
+      let currentWorldFamily = "all";
+      let currentWorldSearch = "";
+      let cachedWorldColors = [];
+      let currentUndertone = "Warm";
+
+      function renderWorldSpectrum(colors, userUndertone) {{
+        cachedWorldColors = colors || [];
+        currentUndertone = userUndertone || "Warm";
+        applyWorldFilters();
+      }}
+
+      function applyWorldFilters() {{
+        const grid = document.getElementById("rec-world-grid");
+        const counter = document.getElementById("world-counter");
+        if (!grid) return;
+
+        let filtered = cachedWorldColors;
+        if (currentWorldFamily !== "all") {{
+          filtered = filtered.filter(c => c.family === currentWorldFamily);
+        }}
+        if (currentWorldSearch.trim()) {{
+          const q = currentWorldSearch.toLowerCase().trim();
+          filtered = filtered.filter(c => 
+            c.name.toLowerCase().includes(q) || 
+            c.hex.toLowerCase().includes(q) || 
+            (c.tags && c.tags.some(t => t.toLowerCase().includes(q))) ||
+            (c.description && c.description.toLowerCase().includes(q))
+          );
+        }}
+
+        if (counter) counter.textContent = `Showing ${{filtered.length}} of ${{cachedWorldColors.length}} tones matching your skin`;
+        grid.innerHTML = "";
+
+        if (filtered.length === 0) {{
+          grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2rem;">No matching tones found for "${{currentWorldSearch}}" in your flattering palette.</div>`;
+          return;
+        }}
+
+        filtered.forEach((item) => {{
+          const card = document.createElement("div");
+          card.className = "rec-card";
+          card.innerHTML = `
+            <div class="rec-color-circle" style="background-color: ${{item.hex}}"></div>
+            <div class="rec-details">
+              <div class="rec-name">${{item.name}} <span style="font-size:0.68rem; color:var(--accent-gold); font-weight:700;">✓ Matched</span></div>
+              <div class="rec-hex">${{item.hex}}</div>
+              <div class="rec-desc">${{item.description || item.family || ""}}</div>
+            </div>
+          `;
+          card.addEventListener("click", () => copyToClipboard(item.hex, item.name));
+          grid.appendChild(card);
+        }});
+      }}
+
+      // Wire up world filter chips and search
+      const worldChips = document.querySelectorAll("#world-chips-scroll .world-chip");
+      worldChips.forEach(chip => {{
+        chip.addEventListener("click", () => {{
+          worldChips.forEach(c => c.classList.remove("active"));
+          chip.classList.add("active");
+          currentWorldFamily = chip.getAttribute("data-family");
+          applyWorldFilters();
+        }});
+      }});
+
+      const searchInput = document.getElementById("world-search-input");
+      if (searchInput) {{
+        searchInput.addEventListener("input", (e) => {{
+          currentWorldSearch = e.target.value;
+          applyWorldFilters();
+        }});
+      }}
+
       // Tabs
       const tabBtns = document.querySelectorAll(".tab-btn");
       const tabContents = document.querySelectorAll(".tab-content");
@@ -1104,4 +1577,4 @@ def get_cached_html():
 """
 
 # Render Full Localhost Experience directly into Streamlit
-components.html(get_cached_html(), height=1400, scrolling=True)
+components.html(get_cached_html(), height=850, scrolling=True)

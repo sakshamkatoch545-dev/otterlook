@@ -80,9 +80,9 @@
             <p>Drag & drop your portrait here, or browse from your files</p>
             
             <div class="upload-actions">
-              <button type="button" class="btn btn-sm btn-camera mobile-only-btn" id="camera-btn">
+              <button type="button" class="btn btn-sm btn-camera" id="camera-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                Take Selfie
+                Take Photo / Webcam
               </button>
               <button type="button" class="btn btn-sm btn-browse" id="browse-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -100,24 +100,6 @@
           </div>
         </div>
 
-        <!-- Quick Sample Presets -->
-        <div class="sample-presets">
-          <span class="preset-label">Or test with verified sample presets:</span>
-          <div class="preset-buttons">
-            <button type="button" class="preset-btn" data-sample="warm">
-              <span class="preset-dot" style="background:#E2725B;"></span>
-              Warm Undertone Preset
-            </button>
-            <button type="button" class="preset-btn" data-sample="cool">
-              <span class="preset-dot" style="background:#0F52BA;"></span>
-              Cool Undertone Preset
-            </button>
-            <button type="button" class="preset-btn" data-sample="neutral">
-              <span class="preset-dot" style="background:#008080;"></span>
-              Neutral Undertone Preset
-            </button>
-          </div>
-        </div>
 
         <!-- Image Quality Diagnostics Bar -->
         <div class="quality-bar hidden" id="quality-bar">
@@ -136,6 +118,16 @@
         <div class="error-banner hidden" id="error-banner">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <div class="error-text" id="error-text"></div>
+        </div>
+        
+        <!-- Gender / Styling Profile Selector -->
+        <div class="gender-selector-wrapper">
+          <span class="gender-selector-label">Styling Profile:</span>
+          <div class="gender-options" id="upload-gender-options">
+            <button type="button" class="gender-pill active" data-gender="female">👩 Female</button>
+            <button type="button" class="gender-pill" data-gender="male">👨 Male</button>
+            <button type="button" class="gender-pill" data-gender="all">🧑 All</button>
+          </div>
         </div>
 
         <!-- Analyze CTA -->
@@ -219,7 +211,7 @@
           <div class="visualizer-container">
             <div class="face-canvas-box">
               <canvas id="face-canvas"></canvas>
-              <div class="canvas-caption">Anatomical skin sampling patches (Forehead, Cheeks, Chin)</div>
+              <div class="canvas-caption">Autonomous AI Skin Tone Extraction & Colorimetric Analysis</div>
             </div>
             <div class="metrics-column">
               <div class="rep-swatch-box">
@@ -280,13 +272,46 @@
         </div>
       </div>
 
+      <!-- Skin-Tone Calibrated Harmonies Section -->
+      <div class="card skin-harmonies-card" id="skin-harmonies-card">
+        <div class="card-tag">Mathematical Skin-Tone Resonance</div>
+        <div class="palette-header">
+          <div>
+            <h3 class="palette-title">Skin-Tone Calibrated Harmonies</h3>
+            <p class="palette-desc">
+              Direct mathematical color wheel harmonies computed from your facial dermal coordinates (<strong id="skin-coords-badge">#E5B895</strong>).
+            </p>
+            <div class="swatch-tap-hint">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Tap any harmony swatch to copy HEX</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="skin-harmonies-grid" id="skin-harmonies-grid">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Analyzed Image Atmosphere Bar -->
+        <div class="image-atmosphere-box" id="image-atmosphere-box">
+          <div class="atmosphere-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span>Analyzed Image Palette:</span>
+          </div>
+          <div class="atmosphere-swatches" id="atmosphere-swatches">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </div>
+
       <!-- Recommendation Categories Tabs -->
       <div class="recommendations-container">
         <div class="tab-nav">
           <button class="tab-btn active" data-tab="clothing">👔 Clothing & Wardrobe</button>
-          <button class="tab-btn" data-tab="makeup">💄 Makeup & Cosmetics</button>
+          <button class="tab-btn" data-tab="makeup" id="tab-btn-makeup">💄 Makeup & Cosmetics</button>
           <button class="tab-btn" data-tab="accessories">💍 Jewelry & Accessories</button>
           <button class="tab-btn" data-tab="neutrals">⚪ Neutral Basics</button>
+          <button class="tab-btn" data-tab="world">🎨 Matched World Colors</button>
           <button class="tab-btn tab-btn-avoid" data-tab="avoid">⚠️ Colors to Avoid</button>
         </div>
 
@@ -311,6 +336,30 @@
 
         <div class="tab-content" id="tab-neutrals">
           <div class="rec-grid" id="rec-neutrals-grid"></div>
+        </div>
+
+        <div class="tab-content" id="tab-world">
+          <div class="world-filter-wrapper">
+            <div class="world-filter-top">
+              <input type="text" class="world-search-input" id="world-search-input" placeholder="🔍 Search flattering tones matched to your skin (e.g. Saffron, Terracotta, Cobalt)...">
+              <div class="world-counter" id="world-counter">Showing flattering tones matched to your skin</div>
+            </div>
+            <div class="world-chips-scroll" id="world-chips-scroll">
+              <button type="button" class="world-chip active" data-family="all">✨ All Matched Tones</button>
+              <button type="button" class="world-chip" data-family="red">🔴 Reds & Terracottas</button>
+              <button type="button" class="world-chip" data-family="orange">🟠 Oranges & Ambers</button>
+              <button type="button" class="world-chip" data-family="yellow">🟡 Golds & Yellows</button>
+              <button type="button" class="world-chip" data-family="green">🟢 Greens & Olives</button>
+              <button type="button" class="world-chip" data-family="teal">🌊 Teals & Cyans</button>
+              <button type="button" class="world-chip" data-family="blue">🔵 Blues & Navies</button>
+              <button type="button" class="world-chip" data-family="purple">🟣 Purples & Plums</button>
+              <button type="button" class="world-chip" data-family="pink">🌸 Pinks & Roses</button>
+              <button type="button" class="world-chip" data-family="brown">☕ Earthy & Browns</button>
+              <button type="button" class="world-chip" data-family="neutral">⚪ Pure Neutrals</button>
+              <button type="button" class="world-chip" data-family="metal">👑 Metals & Gems</button>
+            </div>
+          </div>
+          <div class="rec-grid" id="rec-world-grid"></div>
         </div>
 
         <div class="tab-content" id="tab-avoid">

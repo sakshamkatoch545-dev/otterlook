@@ -441,19 +441,35 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.65rem;
-  margin: 1rem 0 0.85rem;
+  gap: 0.75rem;
+  margin: 1.15rem 0 0.85rem;
   flex-wrap: wrap;
 }
 
-.mobile-only-btn {
-  display: none !important;
+.btn-camera {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.25));
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold);
+  font-weight: 600;
 }
 
-@media (max-width: 768px) {
-  .mobile-only-btn {
-    display: inline-flex !important;
-  }
+.btn-camera:hover {
+  background: var(--accent-gold);
+  color: #000;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.35);
+}
+
+.btn-browse {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.btn-browse:hover {
+  border-color: var(--accent-gold);
+  transform: translateY(-1px);
 }
 
 .file-hint {
@@ -503,58 +519,6 @@ body {
   background: var(--danger);
 }
 
-/* Sample Presets */
-.sample-presets {
-  margin-top: 1.35rem;
-  text-align: center;
-}
-
-.preset-label {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  display: block;
-  margin-bottom: 0.65rem;
-}
-
-.preset-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.preset-btn {
-  background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  font-size: 0.78rem;
-  font-weight: 600;
-  padding: 0.45rem 0.85rem;
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  transition: var(--transition);
-  touch-action: manipulation;
-  min-height: 38px;
-}
-
-.preset-btn:hover {
-  border-color: var(--accent-gold);
-  transform: translateY(-1px);
-}
-
-.preset-btn:active {
-  transform: scale(0.96);
-}
-
-.preset-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
 
 /* Quality Bar */
 .quality-bar {
@@ -1172,6 +1136,56 @@ body {
   border-color: var(--danger);
 }
 
+/* Gender Profile Selector */
+.gender-selector-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin: 1rem auto 0.25rem;
+  padding: 0.55rem 0.9rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  max-width: 480px;
+}
+
+.gender-selector-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.gender-options {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.gender-pill {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.gender-pill:hover {
+  border-color: var(--accent-gold);
+  color: var(--text-primary);
+}
+
+.gender-pill.active {
+  background: rgba(212, 175, 55, 0.18);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  font-weight: 700;
+}
+
 .tab-content {
   display: none;
 }
@@ -1561,16 +1575,6 @@ body {
     width: 100%;
   }
 
-  .preset-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-
-  .preset-btn {
-    width: 100%;
-    justify-content: center;
-  }
 
   .cta-container {
     width: 100%;
@@ -1808,3 +1812,230 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* =========================================================================
+   SKIN-TONE CALIBRATED HARMONIES & WORLD COLOR SPECTRUM
+   ========================================================================= */
+
+.skin-harmonies-card {
+  margin-top: 1.35rem;
+}
+
+.skin-harmonies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  gap: 0.85rem;
+  margin-top: 0.85rem;
+}
+
+.skin-harmony-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  touch-action: manipulation;
+}
+
+.skin-harmony-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent-gold);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.skin-harmony-color {
+  height: 85px;
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 0.4rem;
+}
+
+.skin-harmony-badge {
+  font-size: 0.64rem;
+  font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  border-radius: var(--radius-full);
+  background: rgba(11, 15, 23, 0.85);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  letter-spacing: 0.2px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.skin-harmony-meta {
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.skin-harmony-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.skin-harmony-hex {
+  font-size: 0.74rem;
+  font-family: monospace;
+  color: var(--accent-gold);
+  margin-bottom: 0.3rem;
+}
+
+.skin-harmony-desc {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Image Atmosphere Bar */
+.image-atmosphere-box {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.atmosphere-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.atmosphere-swatches {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.atmosphere-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.65rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  font-family: monospace;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.atmosphere-pill:hover {
+  border-color: var(--accent-gold);
+}
+
+.atmosphere-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+
+/* World Color Spectrum Tab */
+.world-filter-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+  background: var(--bg-surface);
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.world-filter-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.world-search-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.55rem 0.95rem;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  outline: none;
+  transition: var(--transition);
+}
+
+.world-search-input:focus {
+  border-color: var(--accent-gold);
+}
+
+.world-counter {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.world-chips-scroll {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scrollbar-width: none;
+}
+
+.world-chips-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.world-chip {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+}
+
+.world-chip:hover {
+  border-color: var(--accent-gold);
+  color: var(--text-primary);
+}
+
+.world-chip.active {
+  background: var(--accent-gold);
+  color: #0B0F17;
+  border-color: var(--accent-gold);
+  font-weight: 700;
+}
+

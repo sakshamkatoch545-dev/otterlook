@@ -22,7 +22,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const qualityDetails = document.getElementById("quality-details");
   const errorBanner = document.getElementById("error-banner");
   const errorText = document.getElementById("error-text");
-  const presetBtns = document.querySelectorAll(".preset-btn");
 
   const processingSection = document.getElementById("processing-section");
   const resultsSection = document.getElementById("results-section");
@@ -200,23 +199,6 @@ document.addEventListener("DOMContentLoaded", () => {
     resetUploadState();
   });
 
-  // Preset Sample Click
-  presetBtns.forEach((btn) => {
-    btn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      const sampleType = btn.getAttribute("data-sample");
-      const sampleUrl = `/static/assets/samples/sample_${sampleType}.jpg`;
-      
-      try {
-        const response = await fetch(sampleUrl);
-        const blob = await response.blob();
-        const file = new File([blob], `sample_${sampleType}.jpg`, { type: "image/jpeg" });
-        handleFileSelection(file);
-      } catch (err) {
-        showError(`Could not load preset: ${err.message}`);
-      }
-    });
-  });
 
   function handleFileSelection(file) {
     if (!file.type.match(/image\/(jpeg|jpg|png|webp)/)) {
@@ -398,8 +380,38 @@ document.addEventListener("DOMContentLoaded", () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
+  // --- Gender / Styling Profile Tracking ---
+  let currentGender = "female";
+  const uploadGenderOptions = document.getElementById("upload-gender-options");
+  if (uploadGenderOptions) {
+    uploadGenderOptions.querySelectorAll(".gender-pill").forEach((pill) => {
+      pill.addEventListener("click", () => {
+        uploadGenderOptions.querySelectorAll(".gender-pill").forEach((p) => p.classList.remove("active"));
+        pill.classList.add("active");
+        currentGender = pill.getAttribute("data-gender");
+        updateGenderView();
+      });
+    });
+  }
+
+  function updateGenderView() {
+    const makeupBtn = document.getElementById("tab-btn-makeup");
+    if (makeupBtn) {
+      if (currentGender === "male") {
+        makeupBtn.style.display = "none";
+        if (makeupBtn.classList.contains("active")) {
+          const clothingBtn = document.querySelector('[data-tab="clothing"]');
+          if (clothingBtn) clothingBtn.click();
+        }
+      } else {
+        makeupBtn.style.display = "";
+      }
+    }
+  }
+
   // --- Render Results ---
   function renderResults(data) {
+    updateGenderView();
     const undertone = data.undertone.label;
     const confidencePct = data.undertone.confidence_percentage;
 
@@ -448,8 +460,8 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("metric-ita").textContent = `${skinMetrics.ita_angle >= 0 ? "+" : ""}${skinMetrics.ita_angle}°`;
     document.getElementById("metric-hsv-h").textContent = `${skinMetrics.hsv.H_deg}°`;
 
-    // 3. Draw Facial ROI Canvas
-    drawFacialLandmarksCanvas(data.face, data.skin_analysis.region_samples);
+    // 3. Draw Autonomous Skin Canvas
+    drawFacialLandmarksCanvas(skinMetrics.representative_hex, data.undertone.label);
 
     // 4. Personalized Core Palette
     document.getElementById("stylist-summary").textContent = data.stylist_summary;
@@ -475,12 +487,51 @@ document.addEventListener("DOMContentLoaded", () => {
       swatchesGrid.appendChild(card);
     });
 
+    // Render Dynamic Skin Harmonies
+    const skinBadge = document.getElementById("skin-coords-badge");
+    if (skinBadge) skinBadge.textContent = skinMetrics.representative_hex;
+
+    const skinGrid = document.getElementById("skin-harmonies-grid");
+    if (skinGrid && data.skin_harmonies) {
+      skinGrid.innerHTML = "";
+      data.skin_harmonies.forEach((h) => {
+        const card = document.createElement("div");
+        card.className = "skin-harmony-card";
+        card.innerHTML = `
+          <div class="skin-harmony-color" style="background-color: ${h.hex}">
+            <span class="skin-harmony-badge">${h.badge || "Harmony"}</span>
+          </div>
+          <div class="skin-harmony-meta">
+            <div class="skin-harmony-name" title="${h.name}">${h.name}</div>
+            <div class="skin-harmony-hex">${h.hex}</div>
+            <div class="skin-harmony-desc">${h.description}</div>
+          </div>
+        `;
+        card.addEventListener("click", () => copyToClipboard(h.hex, h.name));
+        skinGrid.appendChild(card);
+      });
+    }
+
+    // Render Analyzed Image Atmosphere
+    const atmSwatches = document.getElementById("atmosphere-swatches");
+    if (atmSwatches) {
+      atmSwatches.innerHTML = `
+        <div class="atmosphere-pill" title="Facial Skin Tone (${skinMetrics.representative_hex})">
+          <span class="atmosphere-dot" style="background: ${skinMetrics.representative_hex}"></span>
+          <span>Skin ${skinMetrics.representative_hex}</span>
+        </div>
+      `;
+    }
+
     // 5. Categorized Recommendations
     renderRecGrid("rec-clothing-grid", data.recommendations.clothing);
     renderRecGrid("rec-makeup-grid", data.recommendations.makeup);
     renderRecGrid("rec-accessories-grid", data.recommendations.accessories);
     renderRecGrid("rec-neutrals-grid", data.recommendations.neutrals);
     renderAvoidGrid("rec-avoid-grid", data.less_recommended);
+
+    // 6. World Color Spectrum
+    renderWorldSpectrum(data.recommendations.world_spectrum, data.undertone.label);
 
     document.getElementById("foundation-advice-text").textContent = data.foundation_advice;
   }
@@ -533,8 +584,84 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- Canvas Rendering for Landmarks & Skin ROIs ---
-  function drawFacialLandmarksCanvas(faceData, regionSamples) {
+  // --- World Color Spectrum Explorer ---
+  let currentWorldFamily = "all";
+  let currentWorldSearch = "";
+  let cachedWorldColors = [];
+  let currentUndertone = "Warm";
+
+  function renderWorldSpectrum(colors, userUndertone) {
+    currentUndertone = userUndertone || "Warm";
+    const raw = colors || [];
+    // Strictly filter to tones that match user undertone so only flattering colors are shown
+    cachedWorldColors = raw.filter(c => !c.undertones || c.undertones.includes(currentUndertone));
+    applyWorldFilters();
+  }
+
+  function applyWorldFilters() {
+    const grid = document.getElementById("rec-world-grid");
+    const counter = document.getElementById("world-counter");
+    if (!grid) return;
+
+    let filtered = cachedWorldColors;
+    if (currentWorldFamily !== "all") {
+      filtered = filtered.filter(c => c.family === currentWorldFamily);
+    }
+    if (currentWorldSearch.trim()) {
+      const q = currentWorldSearch.toLowerCase().trim();
+      filtered = filtered.filter(c => 
+        c.name.toLowerCase().includes(q) || 
+        c.hex.toLowerCase().includes(q) || 
+        (c.tags && c.tags.some(t => t.toLowerCase().includes(q))) ||
+        (c.description && c.description.toLowerCase().includes(q))
+      );
+    }
+
+    if (counter) counter.textContent = `Showing ${filtered.length} of ${cachedWorldColors.length} tones matching your skin`;
+    grid.innerHTML = "";
+
+    if (filtered.length === 0) {
+      grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2rem;">No matching tones found for "${currentWorldSearch}" in your flattering palette.</div>`;
+      return;
+    }
+
+    filtered.forEach((item) => {
+      const card = document.createElement("div");
+      card.className = "rec-card";
+      card.innerHTML = `
+        <div class="rec-color-circle" style="background-color: ${item.hex}"></div>
+        <div class="rec-details">
+          <div class="rec-name">${item.name} <span style="font-size:0.68rem; color:var(--accent-gold); font-weight:700;">✓ Matched</span></div>
+          <div class="rec-hex">${item.hex}</div>
+          <div class="rec-desc">${item.description || item.family || ""}</div>
+        </div>
+      `;
+      card.addEventListener("click", () => copyToClipboard(item.hex, item.name));
+      grid.appendChild(card);
+    });
+  }
+
+  // Wire up world filter chips and search
+  const worldChips = document.querySelectorAll("#world-chips-scroll .world-chip");
+  worldChips.forEach(chip => {
+    chip.addEventListener("click", () => {
+      worldChips.forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      currentWorldFamily = chip.getAttribute("data-family");
+      applyWorldFilters();
+    });
+  });
+
+  const searchInput = document.getElementById("world-search-input");
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      currentWorldSearch = e.target.value;
+      applyWorldFilters();
+    });
+  }
+
+  // --- Canvas Rendering for Autonomous Skin Colorimetry ---
+  function drawFacialLandmarksCanvas(skinHex, undertoneLabel) {
     const canvas = document.getElementById("face-canvas");
     const ctx = canvas.getContext("2d");
 
@@ -546,32 +673,38 @@ document.addEventListener("DOMContentLoaded", () => {
     // Draw base portrait
     ctx.drawImage(currentImageBitmap, 0, 0, canvas.width, canvas.height);
 
-    // Draw Anatomical Skin ROI Boxes
-    const regionColors = {
-      forehead: "#E2725B",
-      left_cheek: "#38BDF8",
-      right_cheek: "#38BDF8",
-      chin: "#2DD4BF",
-    };
+    // Draw sleek luxury HUD badge
+    const hex = skinHex || "#D4AF37";
+    const label = undertoneLabel || "Undertone";
 
-    if (faceData && faceData.regions) {
-      Object.entries(faceData.regions).forEach(([regName, box]) => {
-        const color = regionColors[regName] || "#D4AF37";
-        ctx.strokeStyle = color;
-        ctx.lineWidth = Math.max(2, Math.floor(canvas.width / 180));
-        ctx.strokeRect(box.x, box.y, box.w, box.h);
+    const pillW = Math.max(200, Math.floor(canvas.width * 0.45));
+    const pillH = Math.max(34, Math.floor(canvas.height * 0.07));
+    const pillX = Math.floor(canvas.width * 0.03);
+    const pillY = canvas.height - pillH - Math.floor(canvas.height * 0.03);
 
-        // Fill with slight translucent tint
-        ctx.fillStyle = `${color}25`;
-        ctx.fillRect(box.x, box.y, box.w, box.h);
+    // Glassmorphic pill
+    ctx.fillStyle = "rgba(11, 15, 23, 0.85)";
+    ctx.beginPath();
+    ctx.roundRect(pillX, pillY, pillW, pillH, 8);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(212, 175, 55, 0.5)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
 
-        // Label
-        ctx.fillStyle = color;
-        ctx.font = `bold ${Math.max(11, Math.floor(canvas.width / 35))}px sans-serif`;
-        const label = regName.replace("_", " ").toUpperCase();
-        ctx.fillText(label, box.x + 4, Math.max(14, box.y - 4));
-      });
-    }
+    // Swatch dot
+    const radius = Math.max(6, Math.floor(pillH * 0.28));
+    ctx.fillStyle = hex;
+    ctx.beginPath();
+    ctx.arc(pillX + radius + 10, pillY + pillH / 2, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Text label
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `bold ${Math.max(11, Math.floor(pillH * 0.38))}px sans-serif`;
+    ctx.fillText(`Skin Tone: ${hex} (${label})`, pillX + radius * 2 + 18, pillY + pillH / 2 + 4);
   }
 
   // --- Tab Navigation with Smooth Scrolling ---
