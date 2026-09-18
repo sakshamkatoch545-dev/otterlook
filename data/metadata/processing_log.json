@@ -1,0 +1,48 @@
+{
+  "face_processing_stats": {
+    "total_files_scanned": 253,
+    "duplicates_removed": 6,
+    "corrupted_or_unreadable": 0,
+    "face_detection_failed": 0,
+    "insufficient_skin_pixels": 0,
+    "successfully_processed": 247,
+    "rejection_details": [
+      {
+        "file": "data\\raw\\personal_color_faces\\train\\\uac00\uc744 \uc6dc\ud1a4\\fall (36).jpg",
+        "reason": "Duplicate image file (matching MD5 hash)"
+      },
+      {
+        "file": "data\\raw\\personal_color_faces\\train\\\ubd04 \uc6dc\ud1a4\\spr (1).JPG",
+        "reason": "Duplicate image file (matching MD5 hash)"
+      },
+      {
+        "file": "data\\raw\\personal_color_faces\\train\\\ubd04 \uc6dc\ud1a4\\spr (42).jpg",
+        "reason": "Duplicate image file (matching MD5 hash)"
+      },
+      {
+        "file": "data\\raw\\personal_color_faces\\train\\\ubd04 \uc6dc\ud1a4\\spr (44).jpg",
+        "reason": "Duplicate image file (matching MD5 hash)"
+      },
+      {
+        "file": "data\\raw\\personal_color_faces\\train\\\uc5ec\ub984 \ucfe8\ud1a4\\smr (33).jpg",
+        "reason": "Duplicate image file (matching MD5 hash)"
+      },
+      {
+        "file": "data\\raw\\personal_color_faces\\train\\\uc5ec\ub984 \ucfe8\ud1a4\\smr (38).JPG",
+        "reason": "Duplicate image file (matching MD5 hash)"
+      }
+    ]
+  },
+  "total_dataset_counts": {
+    "personal_color_faces": 247,
+    "pudding_foundation_shades": 5501,
+    "fitzpatrick_mst_benchmarks": 10,
+    "total_entries": 5758
+  },
+  "undertone_distribution": {
+    "warm": 2345,
+    "neutral": 2084,
+    "cool": 1319,
+    "unlabeled": 10
+  }
+}

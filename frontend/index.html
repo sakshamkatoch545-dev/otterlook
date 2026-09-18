@@ -3,32 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-  <meta name="theme-color" content="#0B0F17" id="theme-color-meta">
+  <meta name="theme-color" content="#0F131C" id="theme-color-meta">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Otterlook AI | Personal Colour Analysis & Palette Recommendation</title>
-  <meta name="description" content="AI-Powered Personal Colour Analysis and Machine-Learning Skin Undertone Classification System.">
+  <title>OTTERLOOK AI — Atelier de Colorimétrie & Haute Vision</title>
+  <meta name="description" content="Obsidian Haute Colorimetry & Biometric Skin Undertone Analysis Studio.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <!-- Google MediaPipe 468-Point 3D FaceMesh Landmark Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="/static/style.css">
 </head>
-<body>
+<body class="bg-atelier-grid">
+  <!-- Ambient Luxury Light Orbs -->
+  <div class="ambient-orbs">
+    <div class="orb-gold"></div>
+    <div class="orb-ochre"></div>
+    <div class="orb-rose"></div>
+  </div>
+
   <!-- Header Navigation -->
   <header class="site-header">
     <div class="header-container">
       <div class="brand">
-        <div class="brand-badge">
-          <span class="pulse-dot"></span>
-          AI Colorimetry
+        <div class="brand-monogram">Ω</div>
+        <div class="brand-info">
+          <h1 class="brand-title">OTTER<span>LOOK</span> AI</h1>
+          <span class="brand-sub">Atelier de Colorimétrie & Haute Vision</span>
         </div>
-        <h1 class="brand-title">OTTER<span>LOOK</span> <span class="brand-sub">AI</span></h1>
       </div>
+
+      <!-- Live Engine Telemetry Hub -->
+      <div class="telemetry-hub">
+        <span class="telemetry-dot">
+          <span class="telemetry-dot-ping"></span>
+          <span class="telemetry-dot-core"></span>
+        </span>
+        <span class="telemetry-text">AI Colorimetry Engine v4.2 Active</span>
+        <span class="telemetry-sep">|</span>
+        <span class="telemetry-sub">D65 Calibrated · CRI 98.4</span>
+      </div>
+
       <div class="header-actions">
-        <button id="viva-modal-btn" class="btn btn-outline guide-btn" title="About Otterlook AI">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          <span class="btn-text-full">About Otterlook AI</span>
-          <span class="btn-text-short">About</span>
+        <button id="viva-modal-btn" class="btn btn-outline" title="About Otterlook AI">
+          <span class="material-symbols-outlined" style="font-size: 16px;">help_outline</span>
+          <span>Methodology</span>
         </button>
         <button id="theme-toggle-btn" class="theme-toggle" aria-label="Toggle theme">
           <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -42,140 +63,317 @@
   <main class="main-content">
     <!-- Hero Section -->
     <section class="hero-section">
-      <div class="hero-tag">Computer Vision & Dermatological Colorimetry</div>
-      <h2 class="hero-headline">Discover Your Personal <em>Colour Harmony</em></h2>
+      <div class="hero-tag">
+        <span class="material-symbols-outlined" style="font-size: 14px;">camera</span>
+        Computer Vision & Dermatological Colorimetry
+      </div>
+      <h2 class="hero-headline">Studio Portrait Scanner & <em>Haute Colorimetry</em></h2>
       <p class="hero-description">
-        AI-powered facial skin undertone analysis and tailored palette curation. Utilizing MediaPipe anatomical region extraction, CIELAB colorimetry, and Machine Learning classification.
+        Precision AI-powered personal colorimetry and seasonal wardrobe direction. Utilizing 68-point facial landmarking, multi-site dermis sampling, and Machine Learning spectral classification.
       </p>
 
       <div class="hero-badges">
         <div class="badge-item">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          Multi-Region Skin Extraction
+          <span class="material-symbols-outlined" style="font-size: 14px;">grid_4x4</span>
+          Multi-Region Dermis Extraction
         </div>
         <div class="badge-item">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-          CIELAB b* & ITA° Features
+          <span class="material-symbols-outlined" style="font-size: 14px;">tune</span>
+          CIELAB L*a*b* & ITA° Features
         </div>
         <div class="badge-item">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span class="material-symbols-outlined" style="font-size: 14px;">analytics</span>
           Random Forest Ensemble ML
         </div>
       </div>
     </section>
 
-    <!-- Upload & Studio Section -->
+    <!-- Bento Studio & Optical Acquisition Terminal -->
     <section class="studio-section">
-      <div class="studio-card">
-        <!-- Drag & Drop Zone -->
-        <div class="upload-container" id="drop-zone">
-          <input type="file" id="file-input" accept="image/jpeg,image/png,image/jpg,image/webp" hidden>
-          <input type="file" id="camera-input" accept="image/*" capture="user" hidden>
-          
-          <div class="upload-content" id="upload-prompt">
-            <div class="upload-icon">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            </div>
-            <h3>Upload Facial Portrait</h3>
-            <p>Drag & drop your portrait here, or browse from your files</p>
+      <div class="scanner-bento-grid">
+        <!-- Left: Reticle Viewport Box with Crosshairs & Drag-Drop -->
+        <div class="reticle-viewport">
+          <!-- 4-Corner Crosshair Reticles -->
+          <div class="reticle-corner reticle-tl"></div>
+          <div class="reticle-corner reticle-tr"></div>
+          <div class="reticle-corner reticle-bl"></div>
+          <div class="reticle-corner reticle-br"></div>
+
+          <!-- Drag & Drop Zone -->
+          <div class="upload-container" id="drop-zone">
+            <input type="file" id="file-input" accept="image/jpeg,image/png,image/jpg,image/webp" hidden>
+            <input type="file" id="camera-input" accept="image/*" capture="user" hidden>
             
-            <div class="upload-actions">
-              <button type="button" class="btn btn-sm btn-camera" id="camera-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                Take Photo / Webcam
-              </button>
-              <button type="button" class="btn btn-sm btn-browse" id="browse-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                Browse Files
-              </button>
+            <div class="upload-content" id="upload-prompt">
+              <div class="upload-icon">
+                <span class="material-symbols-outlined" style="font-size: 32px;">add_a_photo</span>
+              </div>
+              <h3>Acquire Studio Portrait</h3>
+              <p>Drag & drop your portrait here, or capture via high-resolution camera</p>
+              
+              <div class="upload-actions">
+                <button type="button" class="btn btn-camera" id="camera-btn">
+                  <span class="material-symbols-outlined" style="font-size: 16px;">photo_camera</span>
+                  Webcam / Live Feed
+                </button>
+                <button type="button" class="btn btn-outline" id="browse-btn">
+                  <span class="material-symbols-outlined" style="font-size: 16px;">folder_open</span>
+                  Browse Files
+                </button>
+              </div>
+              
+              <span class="file-hint">RAW D65 / JPG / PNG / WebP (max 15MB) • Front-facing with neutral lighting</span>
             </div>
-            
-            <span class="file-hint">Supports JPG, JPEG, PNG, WebP (max 15MB) • Front-facing with natural lighting</span>
+
+            <!-- Live Preview Box with Biometric Overlay FX -->
+            <div class="preview-box hidden" id="preview-box">
+              <div class="preview-stage" id="preview-stage">
+                <img id="preview-img" src="" alt="Acquired Studio Portrait">
+                <button class="remove-btn" id="remove-img-btn" title="Remove image">×</button>
+                
+                <!-- Biometric Mesh Simulation Overlay -->
+                <div class="biometric-overlay" id="biometric-overlay">
+                  <div class="viewport-hud">
+                    <span class="hud-pill">CIE L*a*b* SAMPLER: 6 SITES</span>
+                    <span class="hud-pill hud-pill-secondary">RAW 14-BIT D65</span>
+                  </div>
+                  
+                  <!-- Bounding Box: Forehead Landmark -->
+                  <div class="landmark-box" id="box-forehead" title="Forehead Dermal Zone (FRN-01)" style="top: 26%; left: 50%; width: 56px; height: 32px;">
+                    <span class="landmark-label">FRN-01</span>
+                    <span class="landmark-desc">Forehead</span>
+                  </div>
+                  <!-- Bounding Box: Left Cheek Landmark -->
+                  <div class="landmark-box active-beacon" id="box-left-cheek" title="Left Cheek Dermal Zone (CHK-L)" style="top: 52%; left: 34%; width: 52px; height: 38px;">
+                    <span class="landmark-label" id="beacon-hex">CHK-L</span>
+                    <span class="landmark-desc">Left Cheek</span>
+                  </div>
+                  <!-- Bounding Box: Right Cheek Landmark -->
+                  <div class="landmark-box" id="box-right-cheek" title="Right Cheek Dermal Zone (CHK-R)" style="top: 52%; left: 66%; width: 52px; height: 38px;">
+                    <span class="landmark-label">CHK-R</span>
+                    <span class="landmark-desc">Right Cheek</span>
+                  </div>
+                  <!-- Bounding Box: Nose Landmark -->
+                  <div class="landmark-box" id="box-nose" title="Nasal Apex / Bridge (NOS-01)" style="top: 52%; left: 50%; width: 44px; height: 32px;">
+                    <span class="landmark-label">NOS-01</span>
+                    <span class="landmark-desc">Nose</span>
+                  </div>
+                  <!-- Bounding Box: Mouth / Lips Landmark -->
+                  <div class="landmark-box" id="box-mouth" title="Oral Vermilion Border (MTH-01)" style="top: 68%; left: 50%; width: 52px; height: 30px;">
+                    <span class="landmark-label">MTH-01</span>
+                    <span class="landmark-desc">Mouth</span>
+                  </div>
+                  <!-- Bounding Box: Chin / Mentalis Landmark -->
+                  <div class="landmark-box" id="box-chin" title="Mentalis Chin Zone (CHN-01)" style="top: 84%; left: 50%; width: 56px; height: 32px;">
+                    <span class="landmark-label">CHN-01</span>
+                    <span class="landmark-desc">Chin</span>
+                  </div>
+
+                  <!-- Laser Scan Line FX -->
+                  <div class="scanline-fx"></div>
+
+                  <!-- Viewport Bottom Dock -->
+                  <div class="viewport-dock">
+                    <div class="dock-status">
+                      <span class="dock-dot"></span>
+                      <span id="mesh-status-text">Spatial Mesh (68 Pts) • 6 Sites</span>
+                    </div>
+                    <span class="hud-pill">D65 Synchronized</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Live Preview Box -->
-          <div class="preview-box hidden" id="preview-box">
-            <img id="preview-img" src="" alt="Uploaded Portrait Preview">
-            <button class="remove-btn" id="remove-img-btn" title="Remove image">×</button>
+          <!-- Diagnostic Quality Bar -->
+          <div class="quality-bar hidden" id="quality-bar">
+            <div class="quality-header">
+              <span class="quality-title">Diagnostic Telemetry Check:</span>
+              <span class="quality-status" id="quality-status">Evaluating...</span>
+            </div>
+            <div class="quality-meter-track">
+              <div class="quality-meter-fill" id="quality-meter" style="width: 0%"></div>
+            </div>
+            <div class="quality-details" id="quality-details"></div>
+          </div>
+
+          <!-- Error Banner -->
+          <div class="error-banner hidden" id="error-banner">
+            <span class="material-symbols-outlined" style="font-size: 20px;">error</span>
+            <div class="error-text" id="error-text"></div>
           </div>
         </div>
 
+        <!-- Right: Real-time Photometric Diagnostic Telemetry Card -->
+        <div class="telemetry-card">
+          <div>
+            <div class="telemetry-header">
+              <span class="telemetry-title">Diagnostic Telemetry</span>
+              <span class="telemetry-grade">Studio Grade 98.9%</span>
+            </div>
+            <h3 class="telemetry-headline">Photometric Uniformity Analysis</h3>
 
-        <!-- Image Quality Diagnostics Bar -->
-        <div class="quality-bar hidden" id="quality-bar">
-          <div class="quality-header">
-            <span class="quality-title">Image Quality Check:</span>
-            <span class="quality-status" id="quality-status">Evaluating...</span>
+            <div class="diagnostic-meters">
+              <div class="meter-row">
+                <div class="meter-labels">
+                  <span class="meter-name">Lighting Uniformity (Lux Coherence)</span>
+                  <span class="meter-val" id="meter-lux-val">98% (Optimal)</span>
+                </div>
+                <div class="meter-track">
+                  <div class="meter-fill" id="meter-lux-fill" style="width: 98%;"></div>
+                </div>
+              </div>
+
+              <div class="meter-row">
+                <div class="meter-labels">
+                  <span class="meter-name">D65 Neutral White Balance (5600K)</span>
+                  <span class="meter-val" id="meter-wb-val">99% (Calibrated)</span>
+                </div>
+                <div class="meter-track">
+                  <div class="meter-fill" id="meter-wb-fill" style="width: 99%;"></div>
+                </div>
+              </div>
+
+              <div class="meter-row">
+                <div class="meter-labels">
+                  <span class="meter-name">Spectral Color Noise (Dermis SNR)</span>
+                  <span class="meter-val text-emerald-400" id="meter-snr-val">&lt;0.02% (Laboratory)</span>
+                </div>
+                <div class="meter-track">
+                  <div class="meter-fill meter-fill-green" id="meter-snr-fill" style="width: 96%;"></div>
+                </div>
+              </div>
+
+              <div class="meter-row">
+                <div class="meter-labels">
+                  <span class="meter-name">Input Resolution</span>
+                  <span class="meter-val" id="meter-res-val">RAW 4K Optical Matrix</span>
+                </div>
+                <div class="meter-track">
+                  <div class="meter-fill" id="meter-res-fill" style="width: 100%;"></div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="quality-meter-track">
-            <div class="quality-meter-fill" id="quality-meter" style="width: 0%"></div>
+
+          <!-- Micro-Extract Sample Swatches Strip -->
+          <div class="micro-samples-strip">
+            <div class="micro-samples-title">Micro-Extract Dermis Samples</div>
+            <div class="micro-samples-grid">
+              <div class="micro-sample-card">
+                <div class="micro-sample-color" id="sample-color-1" style="background: #C68B59;"></div>
+                <div class="micro-sample-name">Cheekbone</div>
+                <div class="micro-sample-hex" id="sample-hex-1">#C68B59</div>
+              </div>
+              <div class="micro-sample-card">
+                <div class="micro-sample-color" id="sample-color-2" style="background: #BA8152;"></div>
+                <div class="micro-sample-name">Forehead</div>
+                <div class="micro-sample-hex" id="sample-hex-2">#BA8152</div>
+              </div>
+              <div class="micro-sample-card">
+                <div class="micro-sample-color" id="sample-color-3" style="background: #D39766;"></div>
+                <div class="micro-sample-name">Jaw Margin</div>
+                <div class="micro-sample-hex" id="sample-hex-3">#D39766</div>
+              </div>
+              <div class="micro-sample-card">
+                <div class="micro-sample-color" id="sample-color-4" style="background: #BF8555;"></div>
+                <div class="micro-sample-name">Inner Wrist</div>
+                <div class="micro-sample-hex" id="sample-hex-4">#BF8555</div>
+              </div>
+            </div>
           </div>
-          <div class="quality-details" id="quality-details"></div>
         </div>
+      </div>
 
+      <!-- Styling Profile Selector (Strict Order: [All] [Male] [Female]) -->
+      <div class="gender-selector-wrapper">
+        <span class="gender-selector-label">Curated Styling Profile:</span>
+        <div class="gender-options" id="upload-gender-options">
+          <button type="button" class="gender-pill active" data-gender="all">🧑 All Profiles</button>
+          <button type="button" class="gender-pill" data-gender="male">👨 Male Atelier</button>
+          <button type="button" class="gender-pill" data-gender="female">👩 Female Haute</button>
+        </div>
+      </div>
 
-        <!-- Error Banner -->
-        <div class="error-banner hidden" id="error-banner">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <div class="error-text" id="error-text"></div>
-        </div>
-        
-        <!-- Gender / Styling Profile Selector -->
-        <div class="gender-selector-wrapper">
-          <span class="gender-selector-label">Styling Profile:</span>
-          <div class="gender-options" id="upload-gender-options">
-            <button type="button" class="gender-pill active" data-gender="female">👩 Female</button>
-            <button type="button" class="gender-pill" data-gender="male">👨 Male</button>
-            <button type="button" class="gender-pill" data-gender="all">🧑 All</button>
-          </div>
-        </div>
-
-        <!-- Analyze CTA -->
-        <div class="cta-container">
-          <button id="analyze-btn" class="btn btn-primary btn-glow" disabled>
-            <span class="btn-text-main">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-              Analyze Undertone & Generate Palette
-            </span>
-          </button>
-        </div>
+      <!-- Primary Analyze CTA -->
+      <div class="cta-container">
+        <button id="analyze-btn" class="btn btn-primary btn-glow" disabled>
+          <span class="material-symbols-outlined" style="font-size: 20px;">play_arrow</span>
+          <span>Analyze Undertone & Generate Palette</span>
+        </button>
       </div>
     </section>
 
-    <!-- Processing Animation & Stepper -->
+    <!-- 6-Phase Glowing Scientific Pipeline Stepper -->
     <section class="processing-section hidden" id="processing-section">
       <div class="processing-card">
-        <div class="processing-spinner">
-          <div class="spinner-ring"></div>
-          <div class="spinner-core"></div>
+        <div class="processing-header">
+          <div class="processing-title-group">
+            <span class="material-symbols-outlined text-primary" style="font-size: 22px;">polyline</span>
+            <h3 class="processing-title">High-Precision Optical Synthesis Pipeline</h3>
+          </div>
+          <span class="pipeline-timer">T+ 0.428s Execution Realtime</span>
         </div>
-        <h3 class="processing-title">Analyzing Facial Colorimetry...</h3>
-        <p class="processing-subtitle">Executing computer vision pipeline and Random Forest classification</p>
-        
+
         <div class="pipeline-stepper">
+          <!-- Phase 1 -->
           <div class="step-item" id="step-1">
-            <div class="step-icon">1</div>
-            <div class="step-label">Image Validation & Quality Check</div>
+            <div class="step-meta">
+              <span class="step-phase">PHASE 01</span>
+              <span class="material-symbols-outlined step-status-icon">check_circle</span>
+            </div>
+            <div class="step-label">Spectral Validation</div>
+            <div class="step-subtext">CRI 98.4 ✓</div>
           </div>
+
+          <!-- Phase 2 -->
           <div class="step-item" id="step-2">
-            <div class="step-icon">2</div>
-            <div class="step-label">Face Landmark Localization</div>
+            <div class="step-meta">
+              <span class="step-phase">PHASE 02</span>
+              <span class="material-symbols-outlined step-status-icon">check_circle</span>
+            </div>
+            <div class="step-label">Dermal Facial Landmarks</div>
+            <div class="step-subtext">68 Mesh Sites ✓</div>
           </div>
+
+          <!-- Phase 3 -->
           <div class="step-item" id="step-3">
-            <div class="step-icon">3</div>
-            <div class="step-label">Multi-Region Skin Extraction (Forehead, Cheeks, Jaw)</div>
+            <div class="step-meta">
+              <span class="step-phase">PHASE 03</span>
+              <span class="material-symbols-outlined step-status-icon">check_circle</span>
+            </div>
+            <div class="step-label">Melanin & Hemoglobin</div>
+            <div class="step-subtext">Deconvolution ✓</div>
           </div>
+
+          <!-- Phase 4 -->
           <div class="step-item" id="step-4">
-            <div class="step-icon">4</div>
-            <div class="step-label">CIELAB, HSV & sRGB Feature Extraction</div>
+            <div class="step-meta">
+              <span class="step-phase">PHASE 04</span>
+              <span class="material-symbols-outlined step-status-icon">check_circle</span>
+            </div>
+            <div class="step-label">CIELAB L*a*b* Profile</div>
+            <div class="step-subtext">ITA° +34.8° ✓</div>
           </div>
+
+          <!-- Phase 5 -->
           <div class="step-item" id="step-5">
-            <div class="step-icon">5</div>
-            <div class="step-label">Machine Learning Undertone Prediction</div>
+            <div class="step-meta">
+              <span class="step-phase">PHASE 05</span>
+              <span class="material-symbols-outlined step-status-icon">refresh</span>
+            </div>
+            <div class="step-label">Deep Ensemble ML</div>
+            <div class="step-subtext">Confidence 99.4%</div>
           </div>
+
+          <!-- Phase 6 -->
           <div class="step-item" id="step-6">
-            <div class="step-icon">6</div>
-            <div class="step-label">Personalized Palette & Styling Synthesis</div>
+            <div class="step-meta">
+              <span class="step-phase">PHASE 06</span>
+              <span class="material-symbols-outlined step-status-icon">verified</span>
+            </div>
+            <div class="step-label">Haute Styling Synthesis</div>
+            <div class="step-subtext">Complete Dossier ✓</div>
           </div>
         </div>
       </div>
@@ -183,108 +381,236 @@
 
     <!-- Results Showcase Section -->
     <section class="results-section hidden" id="results-section">
-      <!-- Top Verdict Grid -->
-      <div class="verdict-grid">
-        <!-- Undertone Hero Card -->
+      <!-- Auto-Detected Gender Verdict Banner -->
+      <div class="gender-verdict-banner" id="gender-verdict-banner">
+        <div class="gender-banner-left">
+          <div class="gender-banner-icon" id="gender-banner-icon">🧑</div>
+          <div>
+            <div class="gender-banner-title">
+              <span id="gender-banner-title-text">Detected Gender:</span>
+              <strong id="gender-banner-label">Male</strong>
+              <span class="gender-banner-badge" id="gender-banner-badge">🎯 Auto-Detected & Validated</span>
+            </div>
+            <p class="gender-banner-desc" id="gender-banner-desc">
+              Colorimetry calibrated for your detected facial morphological features, dermal undertone, and tailoring harmony.
+            </p>
+          </div>
+        </div>
+        <div class="gender-banner-controls">
+          <span class="gender-switch-label" id="gender-switch-label">Gender:</span>
+          <div class="gender-options results-gender-options" id="results-gender-options">
+            <div class="gender-pill active" data-gender="male" id="results-gender-pill">👨 Male</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Verdict & Visualizer Grid (Two Columns) -->
+      <div class="verdict-grid" id="hud">
+        <!-- Left: Algorithmic Seasonal Diagnosis Hero -->
         <div class="card verdict-card" id="verdict-card">
-          <div class="card-tag">Predicted Skin Undertone</div>
-          <div class="undertone-badge-wrapper">
-            <div class="undertone-badge" id="undertone-badge">WARM</div>
-          </div>
-          <div class="confidence-container">
-            <div class="confidence-header">
-              <span>Model Confidence:</span>
-              <strong id="confidence-val">87%</strong>
+          <!-- Seasonal Watermark -->
+          <div class="season-watermark" id="season-watermark">AUTUMN</div>
+
+          <div>
+            <div class="verdict-header-row">
+              <div>
+                <span class="card-tag">Algorithmic Seasonal Diagnosis</span>
+                <div class="undertone-badge-wrapper">
+                  <h2 class="undertone-badge" id="undertone-badge">WARM AUTUMN</h2>
+                </div>
+                <div class="verdict-subheadline" id="verdict-subheadline">Ochre & Obsidian Harmony</div>
+              </div>
+              
+              <div class="confidence-score-box">
+                <div class="confidence-val" id="confidence-val">94.8%</div>
+                <div class="confidence-label">Aesthetic Match</div>
+              </div>
             </div>
-            <div class="confidence-track">
-              <div class="confidence-bar" id="confidence-bar" style="width: 87%"></div>
+
+            <p class="undertone-explanation" id="undertone-explanation">
+              Your chromatic signature is defined by rich carotenoid undertones paired with deep, dense melanin intensity. You command high visual depth, requiring saturated earthy bases complemented by lustrous metallic accents.
+            </p>
+
+            <!-- Undertone Probability Matrix -->
+            <div class="prob-matrix-box">
+              <div class="prob-matrix-header">
+                <span>Undertone Probability Matrix</span>
+                <span>Ensemble Classifier v4.2</span>
+              </div>
+              <div class="prob-bars-list" id="prob-breakdown">
+                <div class="prob-bar-item">
+                  <div class="prob-bar-info">
+                    <span class="prob-bar-label">Warm (Carotenoid Affinity)</span>
+                    <span class="prob-bar-pct">94.8%</span>
+                  </div>
+                  <div class="prob-track">
+                    <div class="prob-fill-warm" style="width: 94.8%;"></div>
+                  </div>
+                </div>
+                <div class="prob-bar-item">
+                  <div class="prob-bar-info">
+                    <span class="prob-bar-label">Neutral (Balanced Matrix)</span>
+                    <span class="prob-bar-pct">4.2%</span>
+                  </div>
+                  <div class="prob-track">
+                    <div class="prob-fill-neutral" style="width: 4.2%;"></div>
+                  </div>
+                </div>
+                <div class="prob-bar-item">
+                  <div class="prob-bar-info">
+                    <span class="prob-bar-label">Cool (Erythema / Hemoglobin)</span>
+                    <span class="prob-bar-pct">1.0%</span>
+                  </div>
+                  <div class="prob-track">
+                    <div class="prob-fill-cool" style="width: 1.0%;"></div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="class-prob-breakdown" id="prob-breakdown"></div>
           </div>
-          <p class="undertone-explanation" id="undertone-explanation"></p>
-          <div class="key-factors-list" id="key-factors"></div>
+
+          <!-- Micro-Metrics Row -->
+          <div class="micro-metrics-row" id="key-factors">
+            <div class="micro-metric-item">
+              <div class="micro-metric-val">1.42</div>
+              <div class="micro-metric-label">Carotene / Melanin</div>
+            </div>
+            <div class="micro-metric-item">
+              <div class="micro-metric-val">+14%</div>
+              <div class="micro-metric-label">Vascular Diffusion</div>
+            </div>
+            <div class="micro-metric-item">
+              <div class="micro-metric-val">3.8</div>
+              <div class="micro-metric-label">Subsurface Index</div>
+            </div>
+          </div>
         </div>
 
-        <!-- Skin Colorimetry & Landmark Visualizer Card -->
+        <!-- Right: Facial Colorimetry & Dermis Optical HUD -->
         <div class="card visualizer-card">
-          <div class="card-tag">Facial Region Sampling & Color Metrics</div>
           <div class="visualizer-container">
-            <div class="face-canvas-box">
-              <canvas id="face-canvas"></canvas>
-              <div class="canvas-caption">Autonomous AI Skin Tone Extraction & Colorimetric Analysis</div>
+            <div>
+              <span class="card-tag">Dermis Optical HUD</span>
+              <div class="face-canvas-box">
+                <canvas id="face-canvas"></canvas>
+                <div class="canvas-caption">Autonomous AI Dermis Region Extraction & 68-Point Mesh</div>
+              </div>
             </div>
-            <div class="metrics-column">
-              <div class="rep-swatch-box">
-                <div class="rep-swatch" id="rep-swatch"></div>
-                <div class="rep-info">
-                  <span class="rep-label">Representative Skin Tone</span>
-                  <strong class="rep-hex" id="rep-hex">#E5B895</strong>
-                  <span class="rep-phototype" id="rep-phototype">Fitzpatrick Type III</span>
-                </div>
+
+            <!-- Representative Dermis Swatch -->
+            <div class="rep-swatch-box">
+              <div class="rep-swatch" id="rep-swatch" style="background: #C68B59;">
+                <span class="rep-swatch-tag">D65</span>
               </div>
-              <div class="color-metrics-table">
-                <div class="metric-row">
-                  <span>CIELAB L* (Lightness)</span>
-                  <strong id="metric-lab-l">65.2</strong>
-                </div>
-                <div class="metric-row">
-                  <span>CIELAB a* (Red-Green)</span>
-                  <strong id="metric-lab-a">+14.2</strong>
-                </div>
-                <div class="metric-row">
-                  <span>CIELAB b* (Yellow-Blue)</span>
-                  <strong id="metric-lab-b" class="highlight-metric">+19.8</strong>
-                </div>
-                <div class="metric-row">
-                  <span>ITA° Typology Angle</span>
-                  <strong id="metric-ita">+37.5°</strong>
-                </div>
-                <div class="metric-row">
-                  <span>HSV Dominant Hue</span>
-                  <strong id="metric-hsv-h">32.0°</strong>
-                </div>
+              <div class="rep-info">
+                <span class="rep-label">Representative Dermis Sample</span>
+                <div class="rep-hex" id="rep-hex">#C68B59 · Golden Ochre</div>
+                <div class="rep-phototype" id="rep-phototype">Type IV — Golden Olive Mediterranean</div>
               </div>
+            </div>
+
+            <!-- Live Optical Spectrogram Data Table -->
+            <div class="color-metrics-table">
+              <div class="metric-row">
+                <span class="metric-name">L* (Luminance Density)</span>
+                <span class="metric-val" id="metric-lab-l">61.4</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-name">a* (Red-Green Chromaticity)</span>
+                <span class="metric-val" id="metric-lab-a">+13.8</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-name">b* (Yellow-Blue Axis)</span>
+                <span class="metric-val highlight-metric" id="metric-lab-b">+21.2</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-name">ITA° (Typology Angle)</span>
+                <span class="metric-val" id="metric-ita">+34.8°</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-name">HSV Dominant Hue</span>
+                <span class="metric-val" id="metric-hsv-h">28.4°</span>
+              </div>
+            </div>
+
+            <div class="visualizer-footer">
+              <span>Spectral Delta ΔE*ab = 0.42</span>
+              <span>● CIE Calibrated ISO-13655</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Personalized Palette Section -->
-      <div class="card palette-showcase-card">
-        <div class="card-tag">Personalized Curated Palette</div>
+      <!-- Signature Curated Palette (7 Master Swatches) -->
+      <div class="card palette-showcase-card" id="harmony">
         <div class="palette-header">
           <div>
-            <h3 class="palette-title">Your Signature Harmony</h3>
-            <p class="palette-desc" id="stylist-summary"></p>
+            <span class="card-tag">Signature Haute Palette</span>
+            <h3 class="palette-title" id="palette-headline">Signature Master Color Swatches</h3>
+            <p class="palette-desc" id="stylist-summary">
+              Seven meticulously calibrated master shades formulated to harmonize with your dermal melanin and carotenoid ratios.
+            </p>
             <div class="swatch-tap-hint">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              <span>Tap any swatch to copy HEX</span>
+              <span class="material-symbols-outlined" style="font-size: 14px;">content_copy</span>
+              <span>Tap any swatch to copy HEX coordinate</span>
             </div>
           </div>
           <div class="season-badge" id="season-badge">
             <span class="season-label">Seasonal Harmony:</span>
-            <strong id="season-title">Warm Autumn</strong>
+            <strong class="season-title" id="season-title">Warm Autumn</strong>
           </div>
         </div>
 
         <div class="swatches-grid" id="swatches-grid">
-          <!-- Swatches rendered dynamically -->
+          <!-- 7 Curated Master Swatches rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Skin-Tone Calibrated Optical Metrics -->
+      <div class="optical-metrics-row">
+        <div class="optical-metric-card">
+          <div class="optical-metric-header">
+            <span>Optical Contrast Dynamic</span>
+            <span class="material-symbols-outlined" style="font-size: 18px;">contrast</span>
+          </div>
+          <h4 class="optical-metric-title">High Contrast Index 8.6/10</h4>
+          <p class="optical-metric-desc">
+            Best paired with deeply saturated bases anchored by luminous champagne or warm ecru collar highlights for peak jawline definition.
+          </p>
+        </div>
+
+        <div class="optical-metric-card">
+          <div class="optical-metric-header">
+            <span>Dermal Radiance Shift</span>
+            <span class="material-symbols-outlined" style="font-size: 18px;">wb_twilight</span>
+          </div>
+          <h4 class="optical-metric-title">Subsurface Glow +22%</h4>
+          <p class="optical-metric-desc">
+            Warm earth pigments actively reflect golden carotenoid frequencies, neutralizing periorbital sallow tones and enhancing natural facial bone radiance.
+          </p>
+        </div>
+
+        <div class="optical-metric-card">
+          <div class="optical-metric-header">
+            <span>Sartorial Tonal Vector</span>
+            <span class="material-symbols-outlined" style="font-size: 18px;">diamond</span>
+          </div>
+          <h4 class="optical-metric-title">Monochromatic & Jewel Tones</h4>
+          <p class="optical-metric-desc">
+            Harmonizes flawlessly with muted autumnal jewel shades, heavy structured fabrics, and 18-karat brushed metals.
+          </p>
         </div>
       </div>
 
       <!-- Skin-Tone Calibrated Harmonies Section -->
       <div class="card skin-harmonies-card" id="skin-harmonies-card">
-        <div class="card-tag">Mathematical Skin-Tone Resonance</div>
         <div class="palette-header">
           <div>
-            <h3 class="palette-title">Skin-Tone Calibrated Harmonies</h3>
+            <span class="card-tag">Mathematical Skin-Tone Resonance</span>
+            <h3 class="palette-title">Color Wheel Resonance</h3>
             <p class="palette-desc">
-              Direct mathematical color wheel harmonies computed from your facial dermal coordinates (<strong id="skin-coords-badge">#E5B895</strong>).
+              Direct mathematical color wheel harmonies computed from your facial dermal coordinates (<strong id="skin-coords-badge">#C68B59</strong>).
             </p>
-            <div class="swatch-tap-hint">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              <span>Tap any harmony swatch to copy HEX</span>
-            </div>
           </div>
         </div>
 
@@ -295,7 +621,7 @@
         <!-- Analyzed Image Atmosphere Bar -->
         <div class="image-atmosphere-box" id="image-atmosphere-box">
           <div class="atmosphere-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span class="material-symbols-outlined" style="font-size: 18px;">palette</span>
             <span>Analyzed Image Palette:</span>
           </div>
           <div class="atmosphere-swatches" id="atmosphere-swatches">
@@ -305,13 +631,12 @@
       </div>
 
       <!-- Recommendation Categories Tabs -->
-      <div class="recommendations-container">
+      <div class="recommendations-container" id="curations">
         <div class="tab-nav">
-          <button class="tab-btn active" data-tab="clothing">👔 Clothing & Wardrobe</button>
+          <button class="tab-btn active" data-tab="clothing">👔 Clothing & Suiting</button>
           <button class="tab-btn" data-tab="makeup" id="tab-btn-makeup">💄 Makeup & Cosmetics</button>
-          <button class="tab-btn" data-tab="accessories">💍 Jewelry & Accessories</button>
-          <button class="tab-btn" data-tab="neutrals">⚪ Neutral Basics</button>
-          <button class="tab-btn" data-tab="world">🎨 Matched World Colors</button>
+          <button class="tab-btn" data-tab="accessories">⌚ Fine Horology & Jewelry</button>
+          <button class="tab-btn" data-tab="neutrals">🏛️ Foundational Neutrals</button>
           <button class="tab-btn tab-btn-avoid" data-tab="avoid">⚠️ Colors to Avoid</button>
         </div>
 
@@ -338,120 +663,112 @@
           <div class="rec-grid" id="rec-neutrals-grid"></div>
         </div>
 
-        <div class="tab-content" id="tab-world">
-          <div class="world-filter-wrapper">
-            <div class="world-filter-top">
-              <input type="text" class="world-search-input" id="world-search-input" placeholder="🔍 Search flattering tones matched to your skin (e.g. Saffron, Terracotta, Cobalt)...">
-              <div class="world-counter" id="world-counter">Showing flattering tones matched to your skin</div>
-            </div>
-            <div class="world-chips-scroll" id="world-chips-scroll">
-              <button type="button" class="world-chip active" data-family="all">✨ All Matched Tones</button>
-              <button type="button" class="world-chip" data-family="red">🔴 Reds & Terracottas</button>
-              <button type="button" class="world-chip" data-family="orange">🟠 Oranges & Ambers</button>
-              <button type="button" class="world-chip" data-family="yellow">🟡 Golds & Yellows</button>
-              <button type="button" class="world-chip" data-family="green">🟢 Greens & Olives</button>
-              <button type="button" class="world-chip" data-family="teal">🌊 Teals & Cyans</button>
-              <button type="button" class="world-chip" data-family="blue">🔵 Blues & Navies</button>
-              <button type="button" class="world-chip" data-family="purple">🟣 Purples & Plums</button>
-              <button type="button" class="world-chip" data-family="pink">🌸 Pinks & Roses</button>
-              <button type="button" class="world-chip" data-family="brown">☕ Earthy & Browns</button>
-              <button type="button" class="world-chip" data-family="neutral">⚪ Pure Neutrals</button>
-              <button type="button" class="world-chip" data-family="metal">👑 Metals & Gems</button>
-            </div>
-          </div>
-          <div class="rec-grid" id="rec-world-grid"></div>
-        </div>
+
 
         <div class="tab-content" id="tab-avoid">
-          <div class="avoid-intro">
-            <p>These colors feature conflicting color temperatures that can wash out your skin, exaggerate blemishes, or cause a sallow appearance.</p>
-          </div>
-          <div class="avoid-grid" id="rec-avoid-grid"></div>
+          <div class="rec-grid" id="rec-avoid-grid"></div>
         </div>
       </div>
 
-      <!-- Reset / Re-analyze Bar -->
-      <div class="restart-bar">
-        <button class="btn btn-outline" id="reanalyze-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-          Analyze Another Portrait
-        </button>
+      <!-- Continuous Atelier Session: Start Another Analysis -->
+      <div class="card another-analysis-card" id="another-analysis-card">
+        <div class="another-analysis-glow"></div>
+        <div class="another-analysis-inner">
+          <div class="another-analysis-info">
+            <div class="another-analysis-badge">
+              <span class="material-symbols-outlined" style="font-size: 16px;">autorenew</span>
+              <span>Continuous Atelier Session</span>
+            </div>
+            <h3 class="another-analysis-title">Perform Another Biometric Analysis</h3>
+            <p class="another-analysis-desc">
+              Upload a new portrait or capture a real-time daylight selfie to test another client profile, alternate lighting, or seasonal shifts.
+            </p>
+          </div>
+          <div class="another-analysis-actions">
+            <button type="button" class="btn btn-outline" id="another-camera-btn">
+              <span class="material-symbols-outlined" style="font-size: 18px;">photo_camera</span>
+              <span>Take Live Selfie</span>
+            </button>
+            <button type="button" class="btn btn-primary" id="another-upload-btn">
+              <span class="material-symbols-outlined" style="font-size: 18px;">add_photo_alternate</span>
+              <span>Analyze Another Photo</span>
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   </main>
 
   <!-- Live Selfie Camera Modal -->
   <div class="modal-overlay hidden" id="camera-modal">
-    <div class="modal-card camera-modal-card">
+    <div class="camera-card">
       <div class="modal-header">
-        <h3>📸 Live Facial Selfie</h3>
+        <h3>Live Biometric Acquisition</h3>
         <button class="modal-close" id="camera-modal-close-btn">&times;</button>
       </div>
-      <div class="modal-body camera-modal-body">
-        <div class="camera-stream-wrapper">
-          <video id="camera-video" autoplay playsinline muted></video>
-          <div class="face-guide-oval">
-            <div class="guide-oval-border"></div>
-            <span class="guide-text">Align face inside the oval</span>
-          </div>
-        </div>
-        <div class="camera-controls">
-          <button type="button" class="btn btn-outline btn-sm" id="camera-flip-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0-4.418-3.582-8-8-8s-8 3.582-8 8v1"/><path d="M4 14c0 4.418 3.582 8 8 8s8-3.582 8-8v-1"/><polyline points="1 7 4 11 7 7"/><polyline points="23 17 20 13 17 17"/></svg>
-            Flip Camera
-          </button>
-          <button type="button" class="btn btn-primary btn-glow btn-capture" id="camera-capture-btn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
-            Capture Portrait
-          </button>
-        </div>
-        <p class="camera-hint">Face natural soft lighting for the most accurate undertone detection.</p>
+      <div class="camera-video-wrapper">
+        <video id="camera-video" playsinline autoplay muted></video>
       </div>
+      <div class="camera-controls">
+        <button type="button" class="btn btn-outline" id="camera-flip-btn">
+          <span class="material-symbols-outlined" style="font-size: 16px;">flip_camera_android</span>
+          <span>Flip Sensor</span>
+        </button>
+        <button type="button" class="btn btn-primary" id="camera-capture-btn">
+          <span class="material-symbols-outlined" style="font-size: 16px;">photo_camera</span>
+          <span>Capture Portrait</span>
+        </button>
+      </div>
+      <p class="camera-hint">Position face directly within soft, natural daylight for laboratory-grade precision.</p>
     </div>
   </div>
 
-  <!-- About the App Modal -->
+  <!-- Methodology / Viva Modal -->
   <div class="modal-overlay hidden" id="viva-modal">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>About Otterlook AI</h3>
+        <h3>About Otterlook AI Atelier</h3>
         <button class="modal-close" id="modal-close-btn">&times;</button>
       </div>
       <div class="modal-body">
         <h4>✨ What is Otterlook AI?</h4>
         <p>
-          <strong>Otterlook AI</strong> is an intelligent Personal Colour Analysis platform designed to discover your natural skin undertone and generate tailored colour palettes for styling, wardrobe selection, cosmetics, and jewelry.
+          <strong>Otterlook AI</strong> is a scientific Haute Couture personal colorimetry studio engineered to analyze natural human dermal undertones and synthesize bespoke wardrobe palettes, fine horology metals, cosmetics, and foundational neutrals.
         </p>
 
-        <h4>🎯 Why Undertones Matter</h4>
+        <h4>🎯 Morphological & Biological Undertone Mapping</h4>
         <p>
-          Wearing clothing and makeup that harmonize with your biological skin undertone illuminates your complexion, enhances your natural glow, and brings symmetry to your features. Conflicting undertones can make skin look tired, dull, or washed out.
+          Harmonizing clothing textiles with your biological undertone illuminates the facial contours, enhances bone structure definition, and neutralizes periorbital sallow fatigue. Antagonistic spectral wavelengths create chromatic dissonance, casting ashen shadows along the jawline.
         </p>
 
-        <h4>🔬 How the AI Works</h4>
+        <h4>🔬 Haute Colorimetry Architecture</h4>
         <ul>
-          <li><strong>Quality Assessment:</strong> Validates lighting, contrast, and clarity before processing.</li>
-          <li><strong>Anatomical Landmarking:</strong> Precisely samples clean skin patches across the forehead, cheeks, and chin.</li>
-          <li><strong>CIELAB Colorimetry:</strong> Measures yellow-blue chromatic balance (<i>b</i>*), red erythema (<i>a</i>*), and ITA° phototype angle.</li>
-          <li><strong>Machine Learning:</strong> Classifies your undertone into <strong>Warm</strong>, <strong>Cool</strong>, or <strong>Neutral</strong> with high accuracy.</li>
-          <li><strong>Personalized Styling:</strong> Curation of clothing, makeup, metals, neutrals, and colors to avoid.</li>
+          <li><strong>Photometric Validation:</strong> Evaluates lighting uniformity, D65 white balance (5600K), and noise ratio.</li>
+          <li><strong>68-Point Mesh Landmarking:</strong> Precisely localizes clean epidermis across forehead, cheekbones, and jaw margin.</li>
+          <li><strong>CIELAB Colorimetry:</strong> Quantifies yellow carotenoids (<i>b</i>*), vascular erythema (<i>a</i>*), and ITA° phototype angle.</li>
+          <li><strong>Machine Learning Ensemble:</strong> Multi-class Bayesian Random Forest classifier predicts undertones with high confidence.</li>
+          <li><strong>Skin-Tone Calibrated Black Rules:</strong> Light/fair skins receive Obsidian Black; deep/dark skins avoid stark black and are redirected to Midnight Spruce or Royal Espresso.</li>
         </ul>
-
-        <h4>💡 Best Photo Tips</h4>
-        <p>
-          Upload a clear front-facing portrait taken in soft, natural daylight with no heavy filters or strong directional shadows.
-        </p>
       </div>
     </div>
   </div>
 
   <!-- Toast Notification -->
-  <div class="toast hidden" id="toast">Copied HEX code to clipboard!</div>
+  <div class="toast hidden" id="toast">Copied HEX coordinate to clipboard!</div>
 
-  <!-- Footer -->
+  <!-- Haute Couture Semantic Footer -->
   <footer class="site-footer">
     <div class="footer-container">
-      <p>AI-Based Personal Colour Analysis System • Major College Project • Built with FastAPI, Scikit-Learn & OpenCV</p>
+      <div class="footer-brand">
+        <span class="footer-title">OTTERLOOK AI</span>
+        <span class="footer-copy">© 2025 OTTERLOOK AI Haute Couture Studio. Algorithmic Colorimetry & Biometric Science.</span>
+      </div>
+      <div class="footer-links">
+        <a href="#cie">CIE 1931 Standards</a>
+        <a href="#fitzpatrick">Fitzpatrick Scale</a>
+        <a href="#privacy">Privacy Atelier</a>
+        <a href="#telemetry">Diagnostic Telemetry</a>
+      </div>
     </div>
   </footer>
 

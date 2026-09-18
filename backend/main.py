@@ -160,10 +160,14 @@ async def analyze_portrait(file: UploadFile = File(...)):
     ml_prediction = undertone_predictor.predict(color_features["ml_features"])
     predicted_undertone = ml_prediction["label"]
 
-    # Step 6: Personalized Palette & Styling Recommendation Engine
+    detected_gender_info = face_result.get("gender", {"detected": "All", "confidence": 0.5, "confidence_percentage": 50})
+    detected_gender = detected_gender_info.get("detected", "All")
+
+    # Step 6: Personalized Palette & Styling Recommendation Engine (Tailored to Detected Gender)
     recommendations_result = palette_generator.generate_recommendations(
         undertone=predicted_undertone,
-        skin_metrics=color_features["display_metrics"]
+        skin_metrics=color_features["display_metrics"],
+        gender=detected_gender.lower()
     )
 
     # Return comprehensive structured response
@@ -178,8 +182,10 @@ async def analyze_portrait(file: UploadFile = File(...)):
             "face_count": face_result["face_count"],
             "bounding_box": face_result["bounding_box"],
             "regions": face_result["regions"],
-            "has_landmarks": face_result.get("landmarks") is not None
+            "has_landmarks": face_result.get("landmarks") is not None,
+            "gender": detected_gender_info
         },
+        "gender": detected_gender_info,
         "skin_analysis": {
             "total_sampled_pixels": skin_result["total_pixels"],
             "region_samples": skin_result["region_samples"],

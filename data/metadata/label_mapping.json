@@ -1,0 +1,49 @@
+{
+  "version": "1.0.0",
+  "project": "Otterlook AI Personal Colour Analysis",
+  "target_classes": ["warm", "cool", "neutral"],
+  "unlabeled_token": "unlabeled",
+  "sources": {
+    "personal_color_faces": {
+      "type": "human_portrait_faces",
+      "mapping_rationale": "In seasonal personal color theory, Spring (봄) and Autumn (가을) palettes represent yellow-carotenoid dominant Warm undertones; Summer (여름) and Winter (겨울) palettes represent blue-hemoglobin dominant Cool undertones.",
+      "mappings": {
+        "봄 웜톤": "warm",
+        "가을 웜톤": "warm",
+        "여름 쿨톤": "cool",
+        "겨울 쿨톤": "cool"
+      }
+    },
+    "pudding_foundation_shades": {
+      "type": "cosmetic_complexion_swatches",
+      "mapping_rationale": "Cosmetic manufacturers annotate undertone direction explicitly. For MAC Cosmetics, naming convention is inverted (NC neutralizes pink for warm skin, NW neutralizes yellow for cool skin). Contradictory descriptions are omitted.",
+      "mappings": {
+        "Warm": "warm",
+        "Cool": "cool",
+        "Neutral": "neutral"
+      }
+    },
+    "fitzpatrick_mst_benchmarks": {
+      "type": "skin_lightness_benchmarks",
+      "mapping_rationale": "Fitzpatrick I-VI and Monk Skin Tone 1-10 measure melanin density / apparent skin lightness, not biological erythema/carotenoid balance (undertone). Per project safety guidelines, they are marked 'unlabeled' for undertone prediction.",
+      "mappings": {
+        "Type I": "unlabeled",
+        "Type II": "unlabeled",
+        "Type III": "unlabeled",
+        "Type IV": "unlabeled",
+        "Type V": "unlabeled",
+        "Type VI": "unlabeled",
+        "MST 1": "unlabeled",
+        "MST 2": "unlabeled",
+        "MST 3": "unlabeled",
+        "MST 4": "unlabeled",
+        "MST 5": "unlabeled",
+        "MST 6": "unlabeled",
+        "MST 7": "unlabeled",
+        "MST 8": "unlabeled",
+        "MST 9": "unlabeled",
+        "MST 10": "unlabeled"
+      }
+    }
+  }
+}

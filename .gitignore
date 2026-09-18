@@ -17,3 +17,21 @@ build/
 Thumbs.db
 cloudflared.exe
 *.exe
+
+# Large dataset archives and raw image downloads (reproducible via download_datasets.py)
+data/raw/
+data/*.zip
+data/*.tar.gz
+data/*.tar
+*.pkl.bak
+results/*.png
+
+# Large downloaded model binaries (auto-downloaded at runtime if missing)
+models/gender/gender_net.caffemodel
+models/undertone_model_backup.pkl
+
+# Scratch data files
+data/raw_all_shades.csv
+data/training_synthetic_backup.csv
+download_datasets.py
+requirements-data.txt
