@@ -29,6 +29,8 @@ results/*.png
 # Large downloaded model binaries (auto-downloaded at runtime if missing)
 models/gender/gender_net.caffemodel
 models/undertone_model_backup.pkl
+backend/vision/models/*.yaml
+backend/vision/models/*.caffemodel
 
 # Scratch data files
 data/raw_all_shades.csv
