@@ -1112,43 +1112,43 @@ body {{
             id: "box-forehead",
             x: clampPct(regions.frnX),
             y: clampPct(regions.frnY),
-            wPct: Math.max(6, Math.min(24, fW * 0.70)),
-            hPct: Math.max(3.2, Math.min(12, fH * 0.25))
+            wPct: Math.max(4.0, Math.min(22, fW * 0.38)),
+            hPct: Math.max(2.5, Math.min(12, fH * 0.16))
           }},
           {{
             id: "box-left-cheek",
             x: clampPct(regions.chkLX),
             y: clampPct(regions.chkLY),
-            wPct: Math.max(5.5, Math.min(20, fW * 0.52)),
-            hPct: Math.max(3.5, Math.min(13, fH * 0.30))
+            wPct: Math.max(3.5, Math.min(16, fW * 0.22)),
+            hPct: Math.max(3.0, Math.min(14, fH * 0.20))
           }},
           {{
             id: "box-right-cheek",
             x: clampPct(regions.chkRX),
             y: clampPct(regions.chkRY),
-            wPct: Math.max(5.5, Math.min(20, fW * 0.52)),
-            hPct: Math.max(3.5, Math.min(13, fH * 0.30))
+            wPct: Math.max(3.5, Math.min(16, fW * 0.22)),
+            hPct: Math.max(3.0, Math.min(14, fH * 0.20))
           }},
           {{
             id: "box-nose",
             x: clampPct(regions.nosX),
             y: clampPct(regions.nosY),
-            wPct: Math.max(4.5, Math.min(16, fW * 0.40)),
-            hPct: Math.max(3.2, Math.min(12, fH * 0.24))
+            wPct: Math.max(3.0, Math.min(15, fW * 0.18)),
+            hPct: Math.max(2.8, Math.min(13, fH * 0.18))
           }},
           {{
             id: "box-mouth",
             x: clampPct(regions.mthX),
             y: clampPct(regions.mthY),
-            wPct: Math.max(5.5, Math.min(22, fW * 0.55)),
-            hPct: Math.max(3.0, Math.min(10, fH * 0.20))
+            wPct: Math.max(4.0, Math.min(20, fW * 0.32)),
+            hPct: Math.max(2.2, Math.min(10, fH * 0.14))
           }},
           {{
             id: "box-chin",
             x: clampPct(regions.chnX),
             y: clampPct(regions.chnY),
-            wPct: Math.max(5.5, Math.min(22, fW * 0.58)),
-            hPct: Math.max(3.2, Math.min(11, fH * 0.22))
+            wPct: Math.max(3.5, Math.min(18, fW * 0.26)),
+            hPct: Math.max(2.5, Math.min(12, fH * 0.16))
           }}
         ];
 
@@ -1159,8 +1159,8 @@ body {{
             el.style.top = `${{r.y.toFixed(1)}}%`;
             
             // Dynamic proportional pixel sizing based on face scale
-            const pixelW = Math.max(20, Math.round((r.wPct / 100) * stageW));
-            const pixelH = Math.max(14, Math.round((r.hPct / 100) * stageH));
+            const pixelW = Math.max(16, Math.round((r.wPct / 100) * stageW));
+            const pixelH = Math.max(12, Math.round((r.hPct / 100) * stageH));
             el.style.width = `${{pixelW}}px`;
             el.style.height = `${{pixelH}}px`;
             el.style.transform = `translate(-50%, -50%) rotate(${{rollDeg.toFixed(1)}}deg)`;
@@ -1168,14 +1168,14 @@ body {{
             // Adaptive label & typography scaling for small vs large faces
             const labelEl = el.querySelector(".landmark-label");
             const descEl = el.querySelector(".landmark-desc");
-            if (pixelW < 44 || pixelH < 26) {{
-              if (labelEl) labelEl.style.fontSize = "0.50rem";
+            if (pixelW < 38 || pixelH < 22) {{
+              if (labelEl) labelEl.style.fontSize = "0.45rem";
               if (descEl) descEl.style.display = "none";
               el.style.padding = "1px 2px";
             }} else {{
-              if (labelEl) labelEl.style.fontSize = "0.62rem";
+              if (labelEl) labelEl.style.fontSize = "0.60rem";
               if (descEl) descEl.style.display = "";
-              el.style.padding = "3px 6px";
+              el.style.padding = "2px 5px";
             }}
           }}
         }});
@@ -1218,98 +1218,198 @@ body {{
         const statusEl = document.getElementById("mesh-status-text");
         if (statusEl) statusEl.textContent = "AI Scanning Facial Morphology...";
 
-        const {{ canvas: inferCanvas, origW, origH, w: sW, h: sH }} = getFastInferenceCanvas(img, 360);
+        const {{ canvas: inferCanvas, origW, origH, w: sW, h: sH }} = getFastInferenceCanvas(img, 320);
         const scanCtx = inferCanvas.getContext("2d", {{ willReadFrequently: true }});
         const imgData = scanCtx.getImageData(0, 0, sW, sH).data;
 
-        // 1. High-speed multi-space skin chromatic segmentation
-        let minX = sW, maxX = 0, minY = sH, maxY = 0;
-        let skinCount = 0;
+        // 1. Build 2D Integral Images for Grayscale Luminance and Chromatic Skin Probability
+        const stride = sW + 1;
+        const iiGray = new Float32Array((sW + 1) * (sH + 1));
+        const iiSkin = new Float32Array((sW + 1) * (sH + 1));
 
-        for (let y = 0; y < sH; y += 2) {{
-          for (let x = 0; x < sW; x += 2) {{
-            const idx = (y * sW + x) * 4;
+        for (let y = 0; y < sH; y++) {{
+          let rowGraySum = 0;
+          let rowSkinSum = 0;
+          const imgRowOffset = y * sW * 4;
+          const iiPrevRowOffset = y * stride;
+          const iiCurrRowOffset = (y + 1) * stride;
+
+          for (let x = 0; x < sW; x++) {{
+            const idx = imgRowOffset + (x * 4);
             const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
             const yP = 0.299 * r + 0.587 * g + 0.114 * b;
             const cr = 0.713 * (r - yP) + 128.0;
             const cb = 0.564 * (b - yP) + 128.0;
 
-            const isSkin = (r > 38 && g > 22 && b > 14 && r > g && g > b * 0.65 && (r - g) >= 4 && cr >= 126 && cr <= 184 && cb >= 72 && cb <= 138);
-            if (isSkin) {{
-              skinCount++;
-              if (x < minX) minX = x;
-              if (x > maxX) maxX = x;
-              if (y < minY) minY = y;
-              if (y > maxY) maxY = y;
+            const dCr = (cr - 152.0) / 20.0;
+            const dCb = (cb - 108.0) / 16.0;
+            let sProb = Math.exp(-0.5 * (dCr * dCr + dCb * dCb));
+            if (r < 35 || (r - g) < 2) sProb = 0;
+
+            rowGraySum += yP;
+            rowSkinSum += sProb;
+
+            iiGray[iiCurrRowOffset + (x + 1)] = iiGray[iiPrevRowOffset + (x + 1)] + rowGraySum;
+            iiSkin[iiCurrRowOffset + (x + 1)] = iiSkin[iiPrevRowOffset + (x + 1)] + rowSkinSum;
+          }}
+        }}
+
+        const rectSum = (ii, x1, y1, x2, y2) => {{
+          const cx1 = Math.max(0, Math.min(sW, Math.floor(x1)));
+          const cy1 = Math.max(0, Math.min(sH, Math.floor(y1)));
+          const cx2 = Math.max(0, Math.min(sW, Math.floor(x2)));
+          const cy2 = Math.max(0, Math.min(sH, Math.floor(y2)));
+          if (cx2 <= cx1 || cy2 <= cy1) return 0;
+          return ii[cy2 * stride + cx2] - ii[cy1 * stride + cx2] - ii[cy2 * stride + cx1] + ii[cy1 * stride + cx1];
+        }};
+
+        const rectMean = (ii, x1, y1, x2, y2) => {{
+          const area = (x2 - x1) * (y2 - y1);
+          if (area <= 0) return 0;
+          return rectSum(ii, x1, y1, x2, y2) / area;
+        }};
+
+        // 2. Multi-Scale Face Sliding Detector (detects faces from 15% to 95% of image)
+        const candidates = [];
+        const minSize = Math.max(26, Math.floor(Math.min(sW, sH) * 0.16));
+        const maxSize = Math.floor(Math.min(sW, sH) * 0.95);
+
+        for (let currSize = minSize; currSize <= maxSize; currSize = Math.floor(currSize * 1.25)) {{
+          const step = Math.max(4, Math.floor(currSize * 0.12));
+          const wSz = currSize;
+          const hSz = Math.min(sH, Math.floor(currSize * 1.25));
+
+          for (let y = 0; y + hSz <= sH; y += step) {{
+            for (let x = 0; x + wSz <= sW; x += step) {{
+              const skinDens = rectMean(iiSkin, x, y, x + wSz, y + hSz);
+              if (skinDens > 0.28) {{
+                const eyeM = rectMean(iiGray, x + wSz * 0.12, y + hSz * 0.22, x + wSz * 0.88, y + hSz * 0.42);
+                const frnM = rectMean(iiGray, x + wSz * 0.20, y + hSz * 0.05, x + wSz * 0.80, y + hSz * 0.22);
+                const chkLM = rectMean(iiGray, x + wSz * 0.10, y + hSz * 0.45, x + wSz * 0.40, y + hSz * 0.65);
+                const chkRM = rectMean(iiGray, x + wSz * 0.60, y + hSz * 0.45, x + wSz * 0.90, y + hSz * 0.65);
+                const cheeksM = (chkLM + chkRM) / 2.0;
+                const mthM = rectMean(iiGray, x + wSz * 0.25, y + hSz * 0.68, x + wSz * 0.75, y + hSz * 0.85);
+                const chnM = rectMean(iiGray, x + wSz * 0.25, y + hSz * 0.85, x + wSz * 0.75, y + hSz * 0.98);
+
+                const c1 = cheeksM - eyeM;
+                const c2 = frnM - eyeM;
+                const c3 = chnM - mthM;
+
+                if (c1 > 1.8 && skinDens > 0.32) {{
+                  const score = (c1 * 1.5 + c2 * 1.0 + c3 * 0.8) * skinDens;
+                  candidates.push({{ score, x, y, w: wSz, h: hSz }});
+                }}
+              }}
             }}
           }}
         }}
 
-        let frnX = 50, frnY = 26;
-        let chkLX = 34, chkLY = 52;
-        let chkRX = 66, chkRY = 52;
-        let nosX = 50, nosY = 52;
-        let mthX = 50, mthY = 68;
-        let chnX = 50, chnY = 84;
-        let faceWPct = 32;
-        let faceHPct = 42;
-        let rollDeg = 0;
+        // 3. Cluster Candidates with Non-Maximum Suppression (NMS)
+        let fx, fy, fw, fh;
+        if (candidates.length > 0) {{
+          candidates.sort((a, b) => b.score - a.score);
+          const topN = Math.max(1, Math.min(20, Math.floor(candidates.length * 0.15)));
+          let sumScore = 0, sumX = 0, sumY = 0, sumW = 0, sumH = 0;
+          for (let i = 0; i < topN; i++) {{
+            const c = candidates[i];
+            sumScore += c.score;
+            sumX += c.x * c.score;
+            sumY += c.y * c.score;
+            sumW += c.w * c.score;
+            sumH += c.h * c.score;
+          }}
+          fx = sumX / sumScore;
+          fy = sumY / sumScore;
+          fw = sumW / sumScore;
+          fh = sumH / sumScore;
+        }} else {{
+          fx = sW * 0.20;
+          fy = sH * 0.12;
+          fw = sW * 0.60;
+          fh = sH * 0.76;
+        }}
 
-        if (skinCount > 25 && maxX > minX && maxY > minY) {{
-          const faceW = maxX - minX;
-          const faceH = maxY - minY;
-          const faceCenterX = (minX + maxX) / 2;
+        const faceWPct = Math.max(12, Math.min(85, (fw / sW) * 100));
+        const faceHPct = Math.max(15, Math.min(90, (fh / sH) * 100));
 
-          faceWPct = Math.max(12, Math.min(85, (faceW / sW) * 100));
-          faceHPct = Math.max(15, Math.min(90, (faceH / sH) * 100));
+        // 4. Feature Extraction & Bilateral Alignment inside the Detected Face
+        const eyeTop = Math.max(0, Math.floor(fy + fh * 0.20));
+        const eyeBottom = Math.min(sH - 1, Math.floor(fy + fh * 0.46));
+        let bestEyeY = Math.floor((eyeTop + eyeBottom) / 2);
+        let minEyeLum = 999999;
 
-          // 2. Vertical Facial Profile: Eye-Eyebrow Horizontal Band & Lip Redness Band
-          const eyeSearchStart = Math.floor(minY + faceH * 0.10);
-          const eyeSearchEnd = Math.floor(minY + faceH * 0.58);
-          const mouthSearchStart = Math.floor(minY + faceH * 0.48);
-          const mouthSearchEnd = Math.floor(minY + faceH * 0.90);
-
-          // Find Eye Band: minimum luminance with high horizontal gradient contrast
-          let bestEyeY = Math.floor(minY + faceH * 0.35);
-          let minLumScore = 9999999;
-
-          for (let y = eyeSearchStart; y < eyeSearchEnd; y += 2) {{
-            let rowLumSum = 0, count = 0;
-            let rowGradVar = 0, prevLum = -1;
-            for (let x = minX; x < maxX; x += 3) {{
-              const idx = (y * sW + x) * 4;
-              const lum = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
-              rowLumSum += lum;
-              count++;
-              if (prevLum >= 0) rowGradVar += Math.abs(lum - prevLum);
-              prevLum = lum;
-            }}
-            if (count > 6) {{
-              const avgLum = rowLumSum / count;
-              const score = avgLum - (rowGradVar / count) * 0.75;
-              if (score < minLumScore) {{
-                minLumScore = score;
-                bestEyeY = y;
-              }}
+        for (let y = eyeTop; y <= eyeBottom; y++) {{
+          let rowLum = 0, count = 0;
+          for (let x = Math.floor(fx); x < Math.floor(fx + fw); x += 2) {{
+            const idx = (y * sW + x) * 4;
+            rowLum += 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
+            count++;
+          }}
+          if (count > 0) {{
+            const avg = rowLum / count;
+            if (avg < minEyeLum) {{
+              minEyeLum = avg;
+              bestEyeY = y;
             }}
           }}
+        }}
 
-          // Find Mouth Band: peak lip redness in lower face
-          let bestMouthY = Math.floor(minY + faceH * 0.72);
-          let maxRedScore = -1;
+        // Bilateral Eye Pupil Localization
+        const midCol = Math.floor(fx + fw * 0.50);
+        let lx = Math.floor(fx + fw * 0.28);
+        let rx = Math.floor(fx + fw * 0.72);
+        let minLeft = 99999, minRight = 99999;
+        let leftEyeY = bestEyeY, rightEyeY = bestEyeY;
 
-          for (let y = mouthSearchStart; y < mouthSearchEnd; y += 2) {{
+        for (let dy = -4; dy <= 4; dy += 2) {{
+          const cy = Math.max(0, Math.min(sH - 1, bestEyeY + dy));
+          for (let x = Math.floor(fx + fw * 0.08); x < midCol - 2; x += 2) {{
+            const idx = (cy * sW + x) * 4;
+            const lum = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
+            if (lum < minLeft) {{ minLeft = lum; lx = x; leftEyeY = cy; }}
+          }}
+          for (let x = midCol + 2; x < Math.floor(fx + fw * 0.92); x += 2) {{
+            const idx = (cy * sW + x) * 4;
+            const lum = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
+            if (lum < minRight) {{ minRight = lum; rx = x; rightEyeY = cy; }}
+          }}
+        }}
+
+        // Head Roll Angle Rotation
+        let rollDeg = 0;
+        if (rx > lx + 6) {{
+          const dx = rx - lx;
+          const dy = rightEyeY - leftEyeY;
+          rollDeg = Math.atan2(dy, dx) * (180 / Math.PI);
+          if (Math.abs(rollDeg) > 40) rollDeg = 0;
+        }}
+
+        const angleRad = rollDeg * (Math.PI / 180);
+        const cosA = Math.cos(angleRad);
+        const sinA = Math.sin(angleRad);
+
+        const eyeDist = Math.max(fw * 0.32, rx - lx);
+        const centerX = (lx + rx) / 2.0;
+
+        // Mouth Search: Lip redness & dark fissure
+        const mouthTop = Math.max(0, Math.floor(bestEyeY + eyeDist * 0.52));
+        const mouthBottom = Math.min(sH - 1, Math.floor(fy + fh * 0.90));
+        let bestMouthY = Math.floor(bestEyeY + eyeDist * 0.88);
+        let maxRedScore = -1;
+
+        if (mouthBottom > mouthTop) {{
+          for (let y = mouthTop; y <= mouthBottom; y += 2) {{
             let redSum = 0, count = 0;
-            for (let x = Math.floor(faceCenterX - faceW * 0.28); x < Math.floor(faceCenterX + faceW * 0.28); x += 3) {{
+            for (let x = Math.floor(centerX - eyeDist * 0.40); x <= Math.floor(centerX + eyeDist * 0.40); x += 2) {{
               if (x >= 0 && x < sW) {{
                 const idx = (y * sW + x) * 4;
                 const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
-                const redContrast = (r - g) * 1.5 + (r - b);
-                redSum += redContrast;
+                const contrast = (r - g) * 1.5 + (r - b);
+                redSum += contrast;
                 count++;
               }}
             }}
-            if (count > 4) {{
+            if (count > 0) {{
               const avgRed = redSum / count;
               if (avgRed > maxRedScore) {{
                 maxRedScore = avgRed;
@@ -1317,109 +1417,56 @@ body {{
               }}
             }}
           }}
-
-          // Bilateral Eye Centers Search (find pupils and ocular centers)
-          let leftEyeX = faceCenterX - faceW * 0.22;
-          let rightEyeX = faceCenterX + faceW * 0.22;
-          let minLeftLum = 9999, minRightLum = 9999;
-          let leftEyeY = bestEyeY, rightEyeY = bestEyeY;
-
-          for (let dy = -6; dy <= 6; dy += 2) {{
-            const ey = Math.max(0, Math.min(sH - 1, bestEyeY + dy));
-            for (let x = Math.floor(minX + faceW * 0.08); x < Math.floor(faceCenterX - 4); x += 2) {{
-              const idx = (ey * sW + x) * 4;
-              const lum = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
-              if (lum < minLeftLum) {{ minLeftLum = lum; leftEyeX = x; leftEyeY = ey; }}
-            }}
-            for (let x = Math.floor(faceCenterX + 4); x < Math.floor(maxX - faceW * 0.08); x += 2) {{
-              const idx = (ey * sW + x) * 4;
-              const lum = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
-              if (lum < minRightLum) {{ minRightLum = lum; rightEyeX = x; rightEyeY = ey; }}
-            }}
-          }}
-
-          // Head Tilt Angle (Roll) from bilateral eye orientation
-          if (rightEyeX > leftEyeX + 8) {{
-            const dx = rightEyeX - leftEyeX;
-            const dy = rightEyeY - leftEyeY;
-            rollDeg = Math.atan2(dy, dx) * (180 / Math.PI);
-            if (Math.abs(rollDeg) > 40) rollDeg = 0; // Guard against extreme non-face artifacts
-          }}
-
-          const eyeDist = Math.max(sW * 0.14, rightEyeX - leftEyeX);
-          const eyeY = (leftEyeY + rightEyeY) / 2;
-          const mouthY = Math.max(eyeY + eyeDist * 0.45, bestMouthY);
-          const eyeToMouth = Math.max(18, mouthY - eyeY);
-          const trueCenterX = (leftEyeX + rightEyeX) / 2;
-
-          // --- MULTI-ANGLE & ADAPTIVE CROP PROJECTION ---
-          // Use trigonometry along the rotated face axis so features stay perfectly aligned on tilted poses
-          const angleRad = rollDeg * (Math.PI / 180);
-          const cosA = Math.cos(angleRad);
-          const sinA = Math.sin(angleRad);
-
-          const isTopCropped = (minY <= sH * 0.08) || (eyeY <= sH * 0.26);
-          const isBottomCropped = (maxY >= sH * 0.90) || (mouthY >= sH * 0.78);
-
-          const frnDist = isTopCropped ? Math.max(sH * 0.04, (eyeY - minY) * 0.45) : eyeToMouth * 0.52;
-          const nosDist = eyeToMouth * 0.48;
-          const mouthDist = eyeToMouth;
-          const chnDist = isBottomCropped ? eyeToMouth + Math.max(8, (maxY - mouthY) * 0.50) : eyeToMouth * 1.46;
-          const chkSpan = eyeDist * 0.65;
-
-          // Angular projected coordinates (x along symmetry line, y along face vertical)
-          const p_frn_x = trueCenterX + sinA * frnDist;
-          const p_frn_y = eyeY - cosA * frnDist;
-
-          const p_nos_x = trueCenterX - sinA * nosDist;
-          const p_nos_y = eyeY + cosA * nosDist;
-
-          const p_mth_x = trueCenterX - sinA * mouthDist;
-          const p_mth_y = eyeY + cosA * mouthDist;
-
-          const p_chn_x = trueCenterX - sinA * chnDist;
-          const p_chn_y = eyeY + cosA * chnDist;
-
-          const chk_mid_x = trueCenterX - sinA * (eyeToMouth * 0.42);
-          const chk_mid_y = eyeY + cosA * (eyeToMouth * 0.42);
-
-          const p_chk_l_x = chk_mid_x - cosA * chkSpan;
-          const p_chk_l_y = chk_mid_y - sinA * chkSpan;
-
-          const p_chk_r_x = chk_mid_x + cosA * chkSpan;
-          const p_chk_r_y = chk_mid_y + sinA * chkSpan;
-
-          // Convert to stage percentages
-          frnX = (p_frn_x / sW) * 100;
-          frnY = (p_frn_y / sH) * 100;
-          nosX = (p_nos_x / sW) * 100;
-          nosY = (p_nos_y / sH) * 100;
-          chkLX = (p_chk_l_x / sW) * 100;
-          chkLY = (p_chk_l_y / sH) * 100;
-          chkRX = (p_chk_r_x / sW) * 100;
-          chkRY = (p_chk_r_y / sH) * 100;
-          mthX = (p_mth_x / sW) * 100;
-          mthY = (p_mth_y / sH) * 100;
-          chnX = (p_chn_x / sW) * 100;
-          chnY = (p_chn_y / sH) * 100;
         }}
 
-        // Clamp safeguards
-        const clamp = (val, min, max) => Math.max(min, Math.min(max, val));
-        frnX = clamp(frnX, 6, 94);
-        frnY = clamp(frnY, 4, 90);
-        nosX = clamp(nosX, 8, 92);
-        nosY = clamp(nosY, 12, 90);
-        chkLX = clamp(chkLX, 4, 88);
-        chkLY = clamp(chkLY, 12, 90);
-        chkRX = clamp(chkRX, 12, 96);
-        chkRY = clamp(chkRY, 12, 90);
-        mthX = clamp(mthX, 8, 92);
-        mthY = clamp(mthY, 20, 95);
-        chnX = clamp(chnX, 8, 92);
-        chnY = clamp(chnY, 25, 97);
+        const eyeToMouth = Math.max(16, bestMouthY - bestEyeY);
 
-        // Instant DOM update with scale & angle
+        // 5. Projected Feature Points (Forehead, Cheeks, Nose, Mouth, Chin)
+        const isTopCropped = (fy <= sH * 0.06);
+        const isBottomCropped = (fy + fh >= sH * 0.94);
+
+        const frnDist = isTopCropped ? Math.max(sH * 0.04, bestEyeY * 0.45) : eyeToMouth * 0.52;
+        const nosDist = eyeToMouth * 0.46;
+        const chnDist = isBottomCropped ? eyeToMouth + Math.max(8, (sH - bestMouthY) * 0.45) : eyeToMouth * 1.45;
+        const chkSpan = eyeDist * 0.65;
+
+        // Angular projection with roll tilt
+        const pFrnX = centerX + sinA * frnDist;
+        const pFrnY = Math.max(sH * 0.04, bestEyeY - cosA * frnDist);
+
+        const pNosX = centerX - sinA * nosDist;
+        const pNosY = bestEyeY + cosA * nosDist;
+
+        const chkMidX = centerX - sinA * (eyeToMouth * 0.40);
+        const chkMidY = bestEyeY + cosA * (eyeToMouth * 0.40);
+
+        const pChkLX = chkMidX - cosA * chkSpan;
+        const pChkLY = chkMidY - sinA * chkSpan;
+
+        const pChkRX = chkMidX + cosA * chkSpan;
+        const pChkRY = chkMidY + sinA * chkSpan;
+
+        const pMthX = centerX - sinA * eyeToMouth;
+        const pMthY = bestEyeY + cosA * eyeToMouth;
+
+        const pChnX = centerX - sinA * chnDist;
+        const pChnY = Math.min(sH * 0.96, bestEyeY + cosA * chnDist);
+
+        const clampPct = (val) => Math.max(4, Math.min(96, val));
+        const frnX = clampPct((pFrnX / sW) * 100);
+        const frnY = clampPct((pFrnY / sH) * 100);
+        const chkLX = clampPct((pChkLX / sW) * 100);
+        const chkLY = clampPct((pChkLY / sH) * 100);
+        const chkRX = clampPct((pChkRX / sW) * 100);
+        const chkRY = clampPct((pChkRY / sH) * 100);
+        const nosX = clampPct((pNosX / sW) * 100);
+        const nosY = clampPct((pNosY / sH) * 100);
+        const mthX = clampPct((pMthX / sW) * 100);
+        const mthY = clampPct((pMthY / sH) * 100);
+        const chnX = clampPct((pChnX / sW) * 100);
+        const chnY = clampPct((pChnY / sH) * 100);
+
+        // Instant DOM update with scale
         renderLandmarkBoxes({{ frnX, frnY, chkLX, chkLY, chkRX, chkRY, nosX, nosY, mthX, mthY, chnX, chnY, faceWPct, faceHPct }}, rollDeg);
         sampleBeaconColorFast(img, chkLX, chkLY, origW, origH);
 
