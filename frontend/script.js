@@ -868,9 +868,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const resultsGenderOptions = document.getElementById("results-gender-options");
     if (resultsGenderOptions) {
       if (currentGender === "female") {
-        resultsGenderOptions.innerHTML = '<div class="gender-pill active" data-gender="female" id="results-gender-pill">👩 Female</div>';
+        resultsGenderOptions.innerHTML = '<div class="gender-pill active" data-gender="female" id="results-gender-pill"> Female</div>';
       } else {
-        resultsGenderOptions.innerHTML = '<div class="gender-pill active" data-gender="male" id="results-gender-pill">👨 Male</div>';
+        resultsGenderOptions.innerHTML = '<div class="gender-pill active" data-gender="male" id="results-gender-pill"> Male</div>';
       }
     }
 
@@ -889,7 +889,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const bannerDesc = document.getElementById("gender-banner-desc");
 
     const displayGender = currentGender === "female" ? "Female" : "Male";
-    if (bannerIcon) bannerIcon.textContent = currentGender === "female" ? "👩" : "👨";
+    if (bannerIcon) bannerIcon.textContent = currentGender === "female" ? "" : "";
 
     if (bannerLabel) {
       if (cachedApiData && cachedApiData.gender && cachedApiData.gender.detected) {
@@ -899,7 +899,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     if (bannerBadge) {
-      bannerBadge.textContent = "🎯 Auto-Detected & Validated";
+      bannerBadge.textContent = " Auto-Detected & Validated";
       bannerBadge.className = "gender-banner-badge auto-badge";
     }
     if (bannerDesc) {
@@ -1397,4 +1397,10 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     });
   });
+  
+  // Global restrictions to disable copy, cut, paste and context menu
+  document.addEventListener('copy', (e) => e.preventDefault());
+  document.addEventListener('cut', (e) => e.preventDefault());
+  document.addEventListener('paste', (e) => e.preventDefault());
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
 });

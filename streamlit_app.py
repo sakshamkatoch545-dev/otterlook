@@ -14,7 +14,7 @@ import streamlit.components.v1 as components
 # Page Configuration
 st.set_page_config(
     page_title="OTTERLOOK AI — Atelier de Colorimétrie & Haute Vision",
-    page_icon="✨",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -408,9 +408,9 @@ body {{
       <div class="gender-selector-wrapper">
         <span class="gender-selector-label">Curated Styling Profile:</span>
         <div class="gender-options" id="upload-gender-options">
-          <button type="button" class="gender-pill active" data-gender="all">🧑 All Profiles</button>
-          <button type="button" class="gender-pill" data-gender="male">👨 Male Atelier</button>
-          <button type="button" class="gender-pill" data-gender="female">👩 Female Haute</button>
+          <button type="button" class="gender-pill active" data-gender="all"> All Profiles</button>
+          <button type="button" class="gender-pill" data-gender="male"> Male Atelier</button>
+          <button type="button" class="gender-pill" data-gender="female"> Female Haute</button>
         </div>
       </div>
 
@@ -442,7 +442,7 @@ body {{
               <span class="material-symbols-outlined step-status-icon">check_circle</span>
             </div>
             <div class="step-label">Spectral Validation</div>
-            <div class="step-subtext">CRI 98.4 ✓</div>
+            <div class="step-subtext">CRI 98.4 </div>
           </div>
 
           <!-- Phase 2 -->
@@ -452,7 +452,7 @@ body {{
               <span class="material-symbols-outlined step-status-icon">check_circle</span>
             </div>
             <div class="step-label">Dermal Facial Landmarks</div>
-            <div class="step-subtext">68 Mesh Sites ✓</div>
+            <div class="step-subtext">68 Mesh Sites </div>
           </div>
 
           <!-- Phase 3 -->
@@ -462,7 +462,7 @@ body {{
               <span class="material-symbols-outlined step-status-icon">check_circle</span>
             </div>
             <div class="step-label">Melanin & Hemoglobin</div>
-            <div class="step-subtext">Deconvolution ✓</div>
+            <div class="step-subtext">Deconvolution </div>
           </div>
 
           <!-- Phase 4 -->
@@ -472,7 +472,7 @@ body {{
               <span class="material-symbols-outlined step-status-icon">check_circle</span>
             </div>
             <div class="step-label">CIELAB L*a*b* Profile</div>
-            <div class="step-subtext">ITA° +34.8° ✓</div>
+            <div class="step-subtext">ITA° +34.8° </div>
           </div>
 
           <!-- Phase 5 -->
@@ -492,7 +492,7 @@ body {{
               <span class="material-symbols-outlined step-status-icon">verified</span>
             </div>
             <div class="step-label">Haute Styling Synthesis</div>
-            <div class="step-subtext">Complete Dossier ✓</div>
+            <div class="step-subtext">Complete Dossier </div>
           </div>
         </div>
       </div>
@@ -503,12 +503,12 @@ body {{
       <!-- Auto-Detected Gender Verdict Banner -->
       <div class="gender-verdict-banner" id="gender-verdict-banner">
         <div class="gender-banner-left">
-          <div class="gender-banner-icon" id="gender-banner-icon">🧑</div>
+          <div class="gender-banner-icon" id="gender-banner-icon"></div>
           <div>
             <div class="gender-banner-title">
               <span id="gender-banner-title-text">Detected Gender:</span>
               <strong id="gender-banner-label">Male</strong>
-              <span class="gender-banner-badge" id="gender-banner-badge">🎯 Auto-Detected & Validated</span>
+              <span class="gender-banner-badge" id="gender-banner-badge"> Auto-Detected & Validated</span>
             </div>
             <p class="gender-banner-desc" id="gender-banner-desc">
               Colorimetry calibrated for your detected facial morphological features, dermal undertone, and tailoring harmony.
@@ -518,7 +518,7 @@ body {{
         <div class="gender-banner-controls">
           <span class="gender-switch-label" id="gender-switch-label">Gender:</span>
           <div class="gender-options results-gender-options" id="results-gender-options">
-            <div class="gender-pill active" data-gender="male" id="results-gender-pill">👨 Male</div>
+            <div class="gender-pill active" data-gender="male" id="results-gender-pill"> Male</div>
           </div>
         </div>
       </div>
@@ -654,7 +654,7 @@ body {{
 
             <div class="visualizer-footer">
               <span>Spectral Delta ΔE*ab = 0.42</span>
-              <span>● CIE Calibrated ISO-13655</span>
+              <span> CIE Calibrated ISO-13655</span>
             </div>
           </div>
         </div>
@@ -752,11 +752,11 @@ body {{
       <!-- Recommendation Categories Tabs -->
       <div class="recommendations-container" id="curations">
         <div class="tab-nav">
-          <button class="tab-btn active" data-tab="clothing">👔 Clothing & Suiting</button>
-          <button class="tab-btn" data-tab="makeup" id="tab-btn-makeup">💄 Makeup & Cosmetics</button>
-          <button class="tab-btn" data-tab="accessories">⌚ Fine Horology & Jewelry</button>
-          <button class="tab-btn" data-tab="neutrals">🏛️ Foundational Neutrals</button>
-          <button class="tab-btn tab-btn-avoid" data-tab="avoid">⚠️ Colors to Avoid</button>
+          <button class="tab-btn active" data-tab="clothing"> Clothing & Suiting</button>
+          <button class="tab-btn" data-tab="makeup" id="tab-btn-makeup"> Makeup & Cosmetics</button>
+          <button class="tab-btn" data-tab="accessories"> Fine Horology & Jewelry</button>
+          <button class="tab-btn" data-tab="neutrals"> Foundational Neutrals</button>
+          <button class="tab-btn tab-btn-avoid" data-tab="avoid"> Colors to Avoid</button>
         </div>
 
         <div class="tab-content active" id="tab-clothing">
@@ -765,7 +765,7 @@ body {{
 
         <div class="tab-content" id="tab-makeup">
           <div class="makeup-guide-box" id="foundation-advice-box">
-            <div class="guide-icon">💄</div>
+            <div class="guide-icon"></div>
             <div>
               <h4>Foundation & Base Guidance</h4>
               <p id="foundation-advice-text"></p>
@@ -848,17 +848,17 @@ body {{
         <button class="modal-close" id="modal-close-btn">&times;</button>
       </div>
       <div class="modal-body">
-        <h4>✨ What is Otterlook AI?</h4>
+        <h4> What is Otterlook AI?</h4>
         <p>
           <strong>Otterlook AI</strong> is a scientific Haute Couture personal colorimetry studio engineered to analyze natural human dermal undertones and synthesize bespoke wardrobe palettes, fine horology metals, cosmetics, and foundational neutrals.
         </p>
 
-        <h4>🎯 Morphological & Biological Undertone Mapping</h4>
+        <h4> Morphological & Biological Undertone Mapping</h4>
         <p>
           Harmonizing clothing textiles with your biological undertone illuminates the facial contours, enhances bone structure definition, and neutralizes periorbital sallow fatigue. Antagonistic spectral wavelengths create chromatic dissonance, casting ashen shadows along the jawline.
         </p>
 
-        <h4>🔬 Haute Colorimetry Architecture</h4>
+        <h4> Haute Colorimetry Architecture</h4>
         <ul>
           <li><strong>Photometric Validation:</strong> Evaluates lighting uniformity, D65 white balance (5600K), and noise ratio.</li>
           <li><strong>68-Point Mesh Landmarking:</strong> Precisely localizes clean epidermis across forehead, cheekbones, and jaw margin.</li>
@@ -878,7 +878,7 @@ body {{
     <div class="footer-container">
       <div class="footer-brand">
         <span class="footer-title">OTTERLOOK AI</span>
-        <span class="footer-copy">© 2025 OTTERLOOK AI Haute Couture Studio. Algorithmic Colorimetry & Biometric Science.</span>
+        <span class="footer-copy"> 2025 OTTERLOOK AI Haute Couture Studio. Algorithmic Colorimetry & Biometric Science.</span>
       </div>
       <div class="footer-links">
         <a href="#cie">CIE 1931 Standards</a>
@@ -2146,42 +2146,42 @@ body {{
           {{
             name: "Skin Complementary Accent",
             hex: hsvToHex((baseH + 180) % 360, satTarget, valTarget),
-            badge: "⚡ Optical Contrast",
+            badge: " Optical Contrast",
             harmony_type: "Complementary Contrast",
             description: `Exact 180° optical complement to your facial tone (${{skinHex}}). High-fashion pop that never clashes.`
           }},
           {{
             name: "Analogous Golden Radiance",
             hex: hsvToHex((baseH + 35) % 360, Math.min(1.0, satTarget * 0.9), Math.min(1.0, valTarget * 1.15)),
-            badge: "✨ Dermal Glow",
+            badge: " Dermal Glow",
             harmony_type: "Analogous Glow",
             description: "Warm golden spectrum shift that illuminates the natural luminescence of your complexion."
           }},
           {{
             name: "Analogous Coral/Rose Flush",
             hex: hsvToHex((baseH - 30 + 360) % 360, Math.min(1.0, satTarget * 0.95), Math.min(1.0, valTarget * 1.05)),
-            badge: "🌸 Rosy Flush",
+            badge: " Rosy Flush",
             harmony_type: "Analogous Flush",
             description: "Mirrors your cutaneous flush to give a youthful, fresh, healthy presence."
           }},
           {{
             name: "Triadic Gemstone Balance",
             hex: hsvToHex((baseH + 120) % 360, satTarget * 0.85, valTarget),
-            badge: "💎 Triadic Balance",
+            badge: " Triadic Balance",
             harmony_type: "Triadic Balance",
             description: "Equidistant 120° botanical/gemstone vibrancy creating high-fashion editorial balance."
           }},
           {{
             name: "Triadic Royal Statement",
             hex: hsvToHex((baseH + 240) % 360, Math.min(1.0, satTarget * 0.90), valTarget),
-            badge: "👑 Royal Statement",
+            badge: " Royal Statement",
             harmony_type: "Triadic Statement",
             description: "Balanced 240° jewel point designed for statement outerwear, blazers, and luxury silk."
           }},
           {{
             name: "Monochromatic Tonal Chic",
             hex: hsvToHex(baseH, Math.min(1.0, skinHsv.s * 1.4), Math.max(0.18, skinHsv.v * 0.48)),
-            badge: "🧥 Tonal Dressing",
+            badge: " Tonal Dressing",
             harmony_type: "Tonal Dressing",
             description: "Matches the exact hue angle of your skin at a deep luxury value for effortless monochromatic chic."
           }}
@@ -2526,9 +2526,9 @@ body {{
         const resultsGenderOptions = document.getElementById("results-gender-options");
         if (resultsGenderOptions) {{
           if (currentGender === "female") {{
-            resultsGenderOptions.innerHTML = '<div class="gender-pill active" data-gender="female" id="results-gender-pill">👩 Female</div>';
+            resultsGenderOptions.innerHTML = '<div class="gender-pill active" data-gender="female" id="results-gender-pill"> Female</div>';
           }} else {{
-            resultsGenderOptions.innerHTML = '<div class="gender-pill active" data-gender="male" id="results-gender-pill">👨 Male</div>';
+            resultsGenderOptions.innerHTML = '<div class="gender-pill active" data-gender="male" id="results-gender-pill"> Male</div>';
           }}
         }}
 
@@ -2546,7 +2546,7 @@ body {{
         const bannerDesc = document.getElementById("gender-banner-desc");
 
         const displayGender = currentGender === "female" ? "Female" : "Male";
-        if (bannerIcon) bannerIcon.textContent = currentGender === "female" ? "👩" : "👨";
+        if (bannerIcon) bannerIcon.textContent = currentGender === "female" ? "" : "";
 
         if (bannerLabel) {{
           if (cachedAnalysisData && cachedAnalysisData.gender && cachedAnalysisData.gender.confidence) {{
@@ -2557,7 +2557,7 @@ body {{
         }}
 
         if (bannerBadge) {{
-          bannerBadge.textContent = "🎯 Auto-Detected & Validated";
+          bannerBadge.textContent = " Auto-Detected & Validated";
           bannerBadge.className = "gender-banner-badge auto-badge";
         }}
 

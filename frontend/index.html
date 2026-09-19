@@ -16,7 +16,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="bg-atelier-grid">
+<body class="bg-atelier-grid" oncopy="return false;" oncut="return false;" oncontextmenu="return false;">
   <!-- Ambient Luxury Light Orbs -->
   <div class="ambient-orbs">
     <div class="orb-gold"></div>
@@ -289,9 +289,9 @@
       <div class="gender-selector-wrapper">
         <span class="gender-selector-label">Curated Styling Profile:</span>
         <div class="gender-options" id="upload-gender-options">
-          <button type="button" class="gender-pill active" data-gender="all">🧑 All Profiles</button>
-          <button type="button" class="gender-pill" data-gender="male">👨 Male Atelier</button>
-          <button type="button" class="gender-pill" data-gender="female">👩 Female Haute</button>
+          <button type="button" class="gender-pill active" data-gender="all"> All Profiles</button>
+          <button type="button" class="gender-pill" data-gender="male"> Male Atelier</button>
+          <button type="button" class="gender-pill" data-gender="female"> Female Haute</button>
         </div>
       </div>
 
@@ -323,7 +323,7 @@
               <span class="material-symbols-outlined step-status-icon">check_circle</span>
             </div>
             <div class="step-label">Spectral Validation</div>
-            <div class="step-subtext">CRI 98.4 ✓</div>
+            <div class="step-subtext">CRI 98.4 </div>
           </div>
 
           <!-- Phase 2 -->
@@ -333,7 +333,7 @@
               <span class="material-symbols-outlined step-status-icon">check_circle</span>
             </div>
             <div class="step-label">Dermal Facial Landmarks</div>
-            <div class="step-subtext">68 Mesh Sites ✓</div>
+            <div class="step-subtext">68 Mesh Sites </div>
           </div>
 
           <!-- Phase 3 -->
@@ -343,7 +343,7 @@
               <span class="material-symbols-outlined step-status-icon">check_circle</span>
             </div>
             <div class="step-label">Melanin & Hemoglobin</div>
-            <div class="step-subtext">Deconvolution ✓</div>
+            <div class="step-subtext">Deconvolution </div>
           </div>
 
           <!-- Phase 4 -->
@@ -353,7 +353,7 @@
               <span class="material-symbols-outlined step-status-icon">check_circle</span>
             </div>
             <div class="step-label">CIELAB L*a*b* Profile</div>
-            <div class="step-subtext">ITA° +34.8° ✓</div>
+            <div class="step-subtext">ITA° +34.8° </div>
           </div>
 
           <!-- Phase 5 -->
@@ -373,7 +373,7 @@
               <span class="material-symbols-outlined step-status-icon">verified</span>
             </div>
             <div class="step-label">Haute Styling Synthesis</div>
-            <div class="step-subtext">Complete Dossier ✓</div>
+            <div class="step-subtext">Complete Dossier </div>
           </div>
         </div>
       </div>
@@ -384,12 +384,12 @@
       <!-- Auto-Detected Gender Verdict Banner -->
       <div class="gender-verdict-banner" id="gender-verdict-banner">
         <div class="gender-banner-left">
-          <div class="gender-banner-icon" id="gender-banner-icon">🧑</div>
+          <div class="gender-banner-icon" id="gender-banner-icon"></div>
           <div>
             <div class="gender-banner-title">
               <span id="gender-banner-title-text">Detected Gender:</span>
               <strong id="gender-banner-label">Male</strong>
-              <span class="gender-banner-badge" id="gender-banner-badge">🎯 Auto-Detected & Validated</span>
+              <span class="gender-banner-badge" id="gender-banner-badge"> Auto-Detected & Validated</span>
             </div>
             <p class="gender-banner-desc" id="gender-banner-desc">
               Colorimetry calibrated for your detected facial morphological features, dermal undertone, and tailoring harmony.
@@ -399,7 +399,7 @@
         <div class="gender-banner-controls">
           <span class="gender-switch-label" id="gender-switch-label">Gender:</span>
           <div class="gender-options results-gender-options" id="results-gender-options">
-            <div class="gender-pill active" data-gender="male" id="results-gender-pill">👨 Male</div>
+            <div class="gender-pill active" data-gender="male" id="results-gender-pill"> Male</div>
           </div>
         </div>
       </div>
@@ -535,7 +535,7 @@
 
             <div class="visualizer-footer">
               <span>Spectral Delta ΔE*ab = 0.42</span>
-              <span>● CIE Calibrated ISO-13655</span>
+              <span> CIE Calibrated ISO-13655</span>
             </div>
           </div>
         </div>
@@ -633,11 +633,11 @@
       <!-- Recommendation Categories Tabs -->
       <div class="recommendations-container" id="curations">
         <div class="tab-nav">
-          <button class="tab-btn active" data-tab="clothing">👔 Clothing & Suiting</button>
-          <button class="tab-btn" data-tab="makeup" id="tab-btn-makeup">💄 Makeup & Cosmetics</button>
-          <button class="tab-btn" data-tab="accessories">⌚ Fine Horology & Jewelry</button>
-          <button class="tab-btn" data-tab="neutrals">🏛️ Foundational Neutrals</button>
-          <button class="tab-btn tab-btn-avoid" data-tab="avoid">⚠️ Colors to Avoid</button>
+          <button class="tab-btn active" data-tab="clothing"> Clothing & Suiting</button>
+          <button class="tab-btn" data-tab="makeup" id="tab-btn-makeup"> Makeup & Cosmetics</button>
+          <button class="tab-btn" data-tab="accessories"> Fine Horology & Jewelry</button>
+          <button class="tab-btn" data-tab="neutrals"> Foundational Neutrals</button>
+          <button class="tab-btn tab-btn-avoid" data-tab="avoid"> Colors to Avoid</button>
         </div>
 
         <div class="tab-content active" id="tab-clothing">
@@ -646,7 +646,7 @@
 
         <div class="tab-content" id="tab-makeup">
           <div class="makeup-guide-box" id="foundation-advice-box">
-            <div class="guide-icon">💄</div>
+            <div class="guide-icon"></div>
             <div>
               <h4>Foundation & Base Guidance</h4>
               <p id="foundation-advice-text"></p>
@@ -731,17 +731,17 @@
         <button class="modal-close" id="modal-close-btn">&times;</button>
       </div>
       <div class="modal-body">
-        <h4>✨ What is Otterlook AI?</h4>
+        <h4> What is Otterlook AI?</h4>
         <p>
           <strong>Otterlook AI</strong> is a scientific Haute Couture personal colorimetry studio engineered to analyze natural human dermal undertones and synthesize bespoke wardrobe palettes, fine horology metals, cosmetics, and foundational neutrals.
         </p>
 
-        <h4>🎯 Morphological & Biological Undertone Mapping</h4>
+        <h4> Morphological & Biological Undertone Mapping</h4>
         <p>
           Harmonizing clothing textiles with your biological undertone illuminates the facial contours, enhances bone structure definition, and neutralizes periorbital sallow fatigue. Antagonistic spectral wavelengths create chromatic dissonance, casting ashen shadows along the jawline.
         </p>
 
-        <h4>🔬 Haute Colorimetry Architecture</h4>
+        <h4> Haute Colorimetry Architecture</h4>
         <ul>
           <li><strong>Photometric Validation:</strong> Evaluates lighting uniformity, D65 white balance (5600K), and noise ratio.</li>
           <li><strong>68-Point Mesh Landmarking:</strong> Precisely localizes clean epidermis across forehead, cheekbones, and jaw margin.</li>
@@ -761,7 +761,7 @@
     <div class="footer-container">
       <div class="footer-brand">
         <span class="footer-title">OTTERLOOK AI</span>
-        <span class="footer-copy">© 2025 OTTERLOOK AI Haute Couture Studio. Algorithmic Colorimetry & Biometric Science.</span>
+        <span class="footer-copy"> 2025 OTTERLOOK AI Haute Couture Studio. Algorithmic Colorimetry & Biometric Science.</span>
       </div>
       <div class="footer-links">
         <a href="#cie">CIE 1931 Standards</a>
