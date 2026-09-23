@@ -84,14 +84,51 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // --- Demo Sample Portrait Quick-Loaders ---
+  async function loadSampleUrl(url) {
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) return;
+      const blob = await resp.blob();
+      const filename = url.split("/").pop() || "sample.jpg";
+      const file = new File([blob], filename, { type: blob.type || "image/jpeg" });
+      handleFileSelection(file);
+    } catch (e) {
+      console.warn("Failed to load sample portrait:", e);
+    }
+  }
+
+  document.querySelectorAll(".sample-chip-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const sampleUrl = btn.getAttribute("data-sample");
+      if (sampleUrl) loadSampleUrl(sampleUrl);
+    });
+  });
+
+  // Check URL parameter ?sample=warm etc.
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sampleParam = urlParams.get("sample");
+    if (sampleParam) {
+      const sampleMap = {
+        warm: "/static/assets/samples/sample_warm.jpg",
+        cool: "/static/assets/samples/sample_cool.jpg",
+        neutral: "/static/assets/samples/sample_neutral.jpg"
+      };
+      const targetUrl = sampleMap[sampleParam.toLowerCase()];
+      if (targetUrl) {
+        setTimeout(() => loadSampleUrl(targetUrl), 200);
+      }
+    }
+  } catch(e) {}
+
   // --- Live Selfie Camera Modal & Stream ---
   const cameraModal = document.getElementById("camera-modal");
   const cameraModalCloseBtn = document.getElementById("camera-modal-close-btn");
   const cameraVideo = document.getElementById("camera-video");
   const cameraCaptureBtn = document.getElementById("camera-capture-btn");
   const cameraFlipBtn = document.getElementById("camera-flip-btn");
-  const cameraBtn = document.getElementById("camera-btn");
-  const cameraInput = document.getElementById("camera-input");
   let currentStream = null;
   let currentFacingMode = "user";
 
@@ -238,10 +275,9 @@ document.addEventListener("DOMContentLoaded", () => {
       img.onload = () => {
         currentImageBitmap = img;
         showInitialQuality(img.width, img.height);
-        // Instant 0ms speculative placement so user sees boxes immediately
-        renderLandmarkBoxes({ frnX: 50, frnY: 26, chkLX: 34, chkLY: 52, chkRX: 66, chkRY: 52, nosX: 50, nosY: 52, mthX: 50, mthY: 68, chnX: 50, chnY: 84 }, 0);
-        sampleBeaconColorFast(img, 34, 52, img.width, img.height);
-        // Run low-latency auto-alignment in background
+        // Instant speculative placement of single face box
+        renderFaceBox({ x: 50, y: 48, w: 40, h: 52, isCenter: true }, 0);
+        // Run low-latency auto-alignment and face dermis color detection
         autoAlignFacialLandmarks(img);
       };
     };
@@ -267,444 +303,252 @@ document.addEventListener("DOMContentLoaded", () => {
     return { canvas, origW, origH, w, h };
   }
 
-  function renderLandmarkBoxes(regions, rollDeg = 0) {
-    const clampPct = (val) => Math.max(3, Math.min(97, val));
-    const fW = regions.faceWPct || 32;
-    const fH = regions.faceHPct || 42;
+  function rgbToHex(r, g, b) {
+    const clamp = (v) => Math.max(0, Math.min(255, Math.round(v)));
+    return `#${clamp(r).toString(16).padStart(2, '0')}${clamp(g).toString(16).padStart(2, '0')}${clamp(b).toString(16).padStart(2, '0')}`.toUpperCase();
+  }
 
+  function renderFaceBox(face, rollDeg = 0) {
+    const clampPct = (val) => Math.max(2, Math.min(98, val));
     const stage = document.getElementById("preview-stage") || document.getElementById("preview-box");
     const stageW = stage ? Math.max(160, stage.clientWidth) : 320;
     const stageH = stage ? Math.max(160, stage.clientHeight) : 400;
 
-    // Auto-scale box dimensions proportionally to the detected face size
-    const list = [
-      {
-        id: "box-forehead",
-        x: clampPct(regions.frnX),
-        y: clampPct(regions.frnY),
-        wPct: Math.max(4.0, Math.min(22, fW * 0.38)),
-        hPct: Math.max(2.5, Math.min(12, fH * 0.16))
-      },
-      {
-        id: "box-left-cheek",
-        x: clampPct(regions.chkLX),
-        y: clampPct(regions.chkLY),
-        wPct: Math.max(3.5, Math.min(16, fW * 0.22)),
-        hPct: Math.max(3.0, Math.min(14, fH * 0.20))
-      },
-      {
-        id: "box-right-cheek",
-        x: clampPct(regions.chkRX),
-        y: clampPct(regions.chkRY),
-        wPct: Math.max(3.5, Math.min(16, fW * 0.22)),
-        hPct: Math.max(3.0, Math.min(14, fH * 0.20))
-      },
-      {
-        id: "box-nose",
-        x: clampPct(regions.nosX),
-        y: clampPct(regions.nosY),
-        wPct: Math.max(3.0, Math.min(15, fW * 0.18)),
-        hPct: Math.max(2.8, Math.min(13, fH * 0.18))
-      },
-      {
-        id: "box-mouth",
-        x: clampPct(regions.mthX),
-        y: clampPct(regions.mthY),
-        wPct: Math.max(4.0, Math.min(20, fW * 0.32)),
-        hPct: Math.max(2.2, Math.min(10, fH * 0.14))
-      },
-      {
-        id: "box-chin",
-        x: clampPct(regions.chnX),
-        y: clampPct(regions.chnY),
-        wPct: Math.max(3.5, Math.min(18, fW * 0.26)),
-        hPct: Math.max(2.5, Math.min(12, fH * 0.16))
-      }
-    ];
+    const el = document.getElementById("box-face");
+    if (!el) return;
 
-    list.forEach((r) => {
-      const el = document.getElementById(r.id);
-      if (el) {
-        el.style.left = `${r.x.toFixed(1)}%`;
-        el.style.top = `${r.y.toFixed(1)}%`;
-        
-        // Dynamic proportional pixel sizing based on face scale
-        const pixelW = Math.max(16, Math.round((r.wPct / 100) * stageW));
-        const pixelH = Math.max(12, Math.round((r.hPct / 100) * stageH));
-        el.style.width = `${pixelW}px`;
-        el.style.height = `${pixelH}px`;
-        el.style.transform = `translate(-50%, -50%) rotate(${rollDeg.toFixed(1)}deg)`;
+    const cx = clampPct(face.isCenter ? face.x : (face.x + (face.w ? face.w / 2 : 0)));
+    const cy = clampPct(face.isCenter ? face.y : (face.y + (face.h ? face.h / 2 : 0)));
+    const wPct = Math.max(14, Math.min(92, face.w || 40));
+    const hPct = Math.max(16, Math.min(94, face.h || 52));
 
-        // Adaptive label & typography scaling for small vs large faces
-        const labelEl = el.querySelector(".landmark-label");
-        const descEl = el.querySelector(".landmark-desc");
-        if (pixelW < 38 || pixelH < 22) {
-          if (labelEl) labelEl.style.fontSize = "0.45rem";
-          if (descEl) descEl.style.display = "none";
-          el.style.padding = "1px 2px";
-        } else {
-          if (labelEl) labelEl.style.fontSize = "0.60rem";
-          if (descEl) descEl.style.display = "";
-          el.style.padding = "2px 5px";
-        }
-      }
-    });
+    el.style.left = `${cx.toFixed(1)}%`;
+    el.style.top = `${cy.toFixed(1)}%`;
+    
+    // Proportional pixel sizing based on actual stage viewport
+    const pixelW = Math.max(48, Math.round((wPct / 100) * stageW));
+    const pixelH = Math.max(56, Math.round((hPct / 100) * stageH));
+    el.style.width = `${pixelW}px`;
+    el.style.height = `${pixelH}px`;
+    el.style.transform = `translate(-50%, -50%) rotate(${rollDeg.toFixed(1)}deg)`;
   }
 
-  function sampleBeaconColorFast(img, leftCheekXPct, leftCheekYPct, origW, origH) {
+  function detectFaceColorProperly(img, faceBox) {
     try {
+      if (!img) return;
+      const origW = img.naturalWidth || img.width || 320;
+      const origH = img.naturalHeight || img.height || 400;
+
+      // Sample canvas for high-performance dermis colorimetry
+      const sampleW = 240;
+      const sampleH = Math.max(120, Math.round((origH / origW) * 240));
       const sampleC = document.createElement("canvas");
-      sampleC.width = 1;
-      sampleC.height = 1;
+      sampleC.width = sampleW;
+      sampleC.height = sampleH;
       const sCtx = sampleC.getContext("2d", { willReadFrequently: true });
-      const sx = Math.floor((leftCheekXPct / 100) * origW);
-      const sy = Math.floor((leftCheekYPct / 100) * origH);
-      sCtx.drawImage(img, Math.max(0, Math.min(origW - 1, sx)), Math.max(0, Math.min(origH - 1, sy)), 1, 1, 0, 0, 1, 1);
-      const p = sCtx.getImageData(0, 0, 1, 1).data;
-      const clamp = (v) => Math.max(0, Math.min(255, Math.round(v)));
-      const hex = `#${clamp(p[0]).toString(16).padStart(2, '0')}${clamp(p[1]).toString(16).padStart(2, '0')}${clamp(p[2]).toString(16).padStart(2, '0')}`.toUpperCase();
-      const beaconEl = document.getElementById("beacon-hex");
-      if (beaconEl) beaconEl.textContent = hex;
-    } catch(e) {}
+      sCtx.drawImage(img, 0, 0, sampleW, sampleH);
+      const imgData = sCtx.getImageData(0, 0, sampleW, sampleH).data;
+
+      // Calculate face box pixel bounds on sample canvas
+      let fw = (faceBox.w / 100) * sampleW;
+      let fh = (faceBox.h / 100) * sampleH;
+      let fx = faceBox.isCenter ? ((faceBox.x / 100) * sampleW - fw / 2) : ((faceBox.x / 100) * sampleW);
+      let fy = faceBox.isCenter ? ((faceBox.y / 100) * sampleH - fh / 2) : ((faceBox.y / 100) * sampleH);
+
+      const x1 = Math.max(0, Math.floor(fx));
+      const y1 = Math.max(0, Math.floor(fy));
+      const x2 = Math.min(sampleW - 1, Math.ceil(fx + fw));
+      const y2 = Math.min(sampleH - 1, Math.ceil(fy + fh));
+
+      const fWidth = Math.max(10, x2 - x1);
+      const fHeight = Math.max(10, y2 - y1);
+
+      const candidateSkin = [];
+      const foreheadSkin = [];
+      const cheekSkin = [];
+      const jawSkin = [];
+
+      for (let y = y1; y <= y2; y += 2) {
+        const relY = (y - y1) / fHeight;
+        for (let x = x1; x <= x2; x += 2) {
+          const relX = (x - x1) / fWidth;
+          const idx = (y * sampleW + x) * 4;
+          const r = imgData[idx];
+          const g = imgData[idx + 1];
+          const b = imgData[idx + 2];
+
+          // Dermis Color Discrimination:
+          // 1. Human skin luminance & chromatic YCrCb rule
+          const yP = 0.299 * r + 0.587 * g + 0.114 * b;
+          const cr = 0.713 * (r - yP) + 128.0;
+          const cb = 0.564 * (b - yP) + 128.0;
+
+          // 2. Saturation & RGB rules
+          const maxC = Math.max(r, g, b);
+          const minC = Math.min(r, g, b);
+          const delta = maxC - minC;
+          const sat = maxC > 0 ? delta / maxC : 0;
+
+          const isSkinYCrCb = (cr >= 128 && cr <= 180 && cb >= 75 && cb <= 138 && (cr - cb) >= 6);
+          const isSkinRGB = (r > g && g > b && r > 40 && (r - g) >= 4 && (r - b) >= 8);
+          const isSkinSat = (sat >= 0.10 && sat <= 0.75);
+
+          if (isSkinYCrCb && isSkinRGB && isSkinSat) {
+            const pixelObj = { r, g, b, lum: yP };
+            candidateSkin.push(pixelObj);
+
+            // Categorize by facial dermal zones
+            if (relY >= 0.10 && relY <= 0.35 && relX >= 0.18 && relX <= 0.82) {
+              foreheadSkin.push(pixelObj);
+            } else if (relY >= 0.35 && relY <= 0.68 && (relX <= 0.40 || relX >= 0.60)) {
+              cheekSkin.push(pixelObj);
+            } else if (relY >= 0.68 && relY <= 0.94 && relX >= 0.22 && relX <= 0.78) {
+              jawSkin.push(pixelObj);
+            }
+          }
+        }
+      }
+
+      // Robust median color extraction with IQR luminance outlier rejection
+      function getRobustColor(pixels, defaultR = 200, defaultG = 150, defaultB = 115) {
+        if (!pixels || pixels.length < 5) return { r: defaultR, g: defaultG, b: defaultB, hex: rgbToHex(defaultR, defaultG, defaultB) };
+        pixels.sort((a, b) => a.lum - b.lum);
+        const start = Math.floor(pixels.length * 0.15);
+        const end = Math.max(start + 1, Math.floor(pixels.length * 0.85));
+        const trimmed = pixels.slice(start, end);
+        let sumR = 0, sumG = 0, sumB = 0;
+        trimmed.forEach(p => { sumR += p.r; sumG += p.g; sumB += p.b; });
+        const r = Math.round(sumR / trimmed.length);
+        const g = Math.round(sumG / trimmed.length);
+        const b = Math.round(sumB / trimmed.length);
+        return { r, g, b, hex: rgbToHex(r, g, b) };
+      }
+
+      const mainTone = getRobustColor(candidateSkin);
+      const cheekTone = getRobustColor(cheekSkin, mainTone.r, mainTone.g, mainTone.b);
+      const foreheadTone = getRobustColor(foreheadSkin, mainTone.r - 4, mainTone.g - 3, mainTone.b - 2);
+      const jawTone = getRobustColor(jawSkin, mainTone.r + 3, mainTone.g + 2, mainTone.b + 1);
+
+      // 1. Update the Single Face Box Badge
+      const dotEl = document.getElementById("face-box-color-dot");
+      const hexEl = document.getElementById("face-box-hex");
+      if (dotEl) dotEl.style.backgroundColor = mainTone.hex;
+      if (hexEl) hexEl.textContent = mainTone.hex;
+
+      // 2. Update the Micro-Samples Swatch Breakdown
+      const updateSwatch = (colorId, hexId, hex) => {
+        const c = document.getElementById(colorId);
+        const h = document.getElementById(hexId);
+        if (c) c.style.backgroundColor = hex;
+        if (h) h.textContent = hex;
+      };
+      updateSwatch("sample-color-1", "sample-hex-1", mainTone.hex);
+      updateSwatch("sample-color-2", "sample-hex-2", foreheadTone.hex);
+      updateSwatch("sample-color-3", "sample-hex-3", cheekTone.hex);
+      updateSwatch("sample-color-4", "sample-hex-4", jawTone.hex);
+
+    } catch(e) {
+      console.warn("Face color sampling fallback:", e);
+    }
   }
 
   function autoAlignFacialLandmarks(img) {
     const statusEl = document.getElementById("mesh-status-text");
     if (statusEl) statusEl.textContent = "AI Scanning Facial Morphology...";
 
-    const { canvas: inferCanvas, origW, origH, w: sW, h: sH } = getFastInferenceCanvas(img, 320);
+    // ── 0. Inference canvas ───────────────────────────────────────────────────
+    const { canvas: inferCanvas, w: sW, h: sH } = getFastInferenceCanvas(img, 320);
     const scanCtx = inferCanvas.getContext("2d", { willReadFrequently: true });
     const imgData = scanCtx.getImageData(0, 0, sW, sH).data;
 
-    // 1. Build 2D Integral Images for Grayscale Luminance and Chromatic Skin Probability
-    const stride = sW + 1;
-    const iiGray = new Float32Array((sW + 1) * (sH + 1));
-    const iiSkin = new Float32Array((sW + 1) * (sH + 1));
+    // ── 1. Row & column skin histograms ─────────────────────────────────────
+    // Project skin pixels onto X (cols) and Y (rows) axes.
+    // The peak region directly tells us where the face skin is.
+    const colSkin = new Float32Array(sW);
+    const rowSkin = new Float32Array(sH);
+    let _skinCount = 0;
 
     for (let y = 0; y < sH; y++) {
-      let rowGraySum = 0;
-      let rowSkinSum = 0;
-      const imgRowOffset = y * sW * 4;
-      const iiPrevRowOffset = y * stride;
-      const iiCurrRowOffset = (y + 1) * stride;
-
       for (let x = 0; x < sW; x++) {
-        const idx = imgRowOffset + (x * 4);
+        const idx = (y * sW + x) * 4;
         const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
         const yP = 0.299 * r + 0.587 * g + 0.114 * b;
-        const cr = 0.713 * (r - yP) + 128.0;
-        const cb = 0.564 * (b - yP) + 128.0;
-
-        const dCr = (cr - 152.0) / 20.0;
-        const dCb = (cb - 108.0) / 16.0;
-        let sProb = Math.exp(-0.5 * (dCr * dCr + dCb * dCb));
-        if (r < 35 || (r - g) < 2) sProb = 0;
-
-        rowGraySum += yP;
-        rowSkinSum += sProb;
-
-        iiGray[iiCurrRowOffset + (x + 1)] = iiGray[iiPrevRowOffset + (x + 1)] + rowGraySum;
-        iiSkin[iiCurrRowOffset + (x + 1)] = iiSkin[iiPrevRowOffset + (x + 1)] + rowSkinSum;
+        const cr = 0.713 * (r - yP) + 128;
+        const cb = 0.564 * (b - yP) + 128;
+        // Broad YCbCr skin range — fair through dark complexions
+        if (cr >= 120 && cr <= 195 && cb >= 65 && cb <= 145 &&
+            r > 40 && r > g && r > b && (r - Math.min(g, b)) >= 5) {
+          colSkin[x]++;
+          rowSkin[y]++;
+          _skinCount++;
+        }
       }
     }
 
-    const rectSum = (ii, x1, y1, x2, y2) => {
-      const cx1 = Math.max(0, Math.min(sW, Math.floor(x1)));
-      const cy1 = Math.max(0, Math.min(sH, Math.floor(y1)));
-      const cx2 = Math.max(0, Math.min(sW, Math.floor(x2)));
-      const cy2 = Math.max(0, Math.min(sH, Math.floor(y2)));
-      if (cx2 <= cx1 || cy2 <= cy1) return 0;
-      return ii[cy2 * stride + cx2] - ii[cy1 * stride + cx2] - ii[cy2 * stride + cx1] + ii[cy1 * stride + cx1];
+    // ── 2. Smooth histograms (radius-5 moving average) ───────────────────────
+    const smooth = (arr, len, radius) => {
+      const out = new Float32Array(len);
+      for (let i = 0; i < len; i++) {
+        let sum = 0, cnt = 0;
+        for (let j = Math.max(0, i - radius); j <= Math.min(len - 1, i + radius); j++) {
+          sum += arr[j]; cnt++;
+        }
+        out[i] = cnt ? sum / cnt : 0;
+      }
+      return out;
+    };
+    const smC = smooth(colSkin, sW, 5);
+    const smR = smooth(rowSkin, sH, 5);
+
+    // ── 3. Find peak then expand while density ≥ 12% of peak ─────────────────
+    const findBounds = (arr, len) => {
+      let peak = 0, peakIdx = Math.floor(len / 2);
+      for (let i = 0; i < len; i++) { if (arr[i] > peak) { peak = arr[i]; peakIdx = i; } }
+      if (peak === 0) return { lo: 0, hi: len - 1 };
+      const thr = peak * 0.12;
+      let lo = peakIdx, hi = peakIdx;
+      while (lo > 0 && arr[lo - 1] >= thr) lo--;
+      while (hi < len - 1 && arr[hi + 1] >= thr) hi++;
+      return { lo, hi };
     };
 
-    const rectMean = (ii, x1, y1, x2, y2) => {
-      const area = (x2 - x1) * (y2 - y1);
-      if (area <= 0) return 0;
-      return rectSum(ii, x1, y1, x2, y2) / area;
-    };
+    const xB = findBounds(smC, sW);
+    const yB = findBounds(smR, sH);
 
-    // 2. Multi-Scale Face Sliding Detector (detects faces from 15% to 95% of image)
-    const candidates = [];
-    const minSize = Math.max(26, Math.floor(Math.min(sW, sH) * 0.16));
-    const maxSize = Math.floor(Math.min(sW, sH) * 0.95);
+    // ── 4. Add anatomical padding ─────────────────────────────────────────────
+    // Skin ends before forehead (hair) and slightly before chin edge.
+    let boxL = xB.lo, boxR = xB.hi, boxT = yB.lo, boxB = yB.hi;
+    const bW = boxR - boxL, bH = boxB - boxT;
+    // +22% top (hairline & forehead), +10% bottom (chin), +10% sides (temples)
+    boxT = Math.max(0,  boxT - bH * 0.22);
+    boxB = Math.min(sH, boxB + bH * 0.10);
+    boxL = Math.max(0,  boxL - bW * 0.10);
+    boxR = Math.min(sW, boxR + bW * 0.10);
 
-    for (let currSize = minSize; currSize <= maxSize; currSize = Math.floor(currSize * 1.25)) {
-      const step = Math.max(4, Math.floor(currSize * 0.12));
-      const wSz = currSize;
-      const hSz = Math.min(sH, Math.floor(currSize * 1.25));
-
-      for (let y = 0; y + hSz <= sH; y += step) {
-        for (let x = 0; x + wSz <= sW; x += step) {
-          const skinDens = rectMean(iiSkin, x, y, x + wSz, y + hSz);
-          if (skinDens > 0.28) {
-            const eyeM = rectMean(iiGray, x + wSz * 0.12, y + hSz * 0.22, x + wSz * 0.88, y + hSz * 0.42);
-            const frnM = rectMean(iiGray, x + wSz * 0.20, y + hSz * 0.05, x + wSz * 0.80, y + hSz * 0.22);
-            const chkLM = rectMean(iiGray, x + wSz * 0.10, y + hSz * 0.45, x + wSz * 0.40, y + hSz * 0.65);
-            const chkRM = rectMean(iiGray, x + wSz * 0.60, y + hSz * 0.45, x + wSz * 0.90, y + hSz * 0.65);
-            const cheeksM = (chkLM + chkRM) / 2.0;
-            const mthM = rectMean(iiGray, x + wSz * 0.25, y + hSz * 0.68, x + wSz * 0.75, y + hSz * 0.85);
-            const chnM = rectMean(iiGray, x + wSz * 0.25, y + hSz * 0.85, x + wSz * 0.75, y + hSz * 0.98);
-
-            const c1 = cheeksM - eyeM;
-            const c2 = frnM - eyeM;
-            const c3 = chnM - mthM;
-
-            if (c1 > 1.8 && skinDens > 0.32) {
-              const score = (c1 * 1.5 + c2 * 1.0 + c3 * 0.8) * skinDens;
-              candidates.push({ score, x, y, w: wSz, h: hSz });
-            }
-          }
-        }
-      }
+    // ── 5. Fallback for dark / unusual images ─────────────────────────────────
+    if (_skinCount < 80 || (boxR - boxL) < sW * 0.20 || (boxB - boxT) < sH * 0.25) {
+      boxL = sW * 0.10; boxR = sW * 0.90;
+      boxT = sH * 0.02; boxB = sH * 0.95;
     }
 
-    // 3. Cluster Candidates with Non-Maximum Suppression (NMS)
-    let fx, fy, fw, fh;
-    if (candidates.length > 0) {
-      candidates.sort((a, b) => b.score - a.score);
-      const topN = Math.max(1, Math.min(20, Math.floor(candidates.length * 0.15)));
-      let sumScore = 0, sumX = 0, sumY = 0, sumW = 0, sumH = 0;
-      for (let i = 0; i < topN; i++) {
-        const c = candidates[i];
-        sumScore += c.score;
-        sumX += c.x * c.score;
-        sumY += c.y * c.score;
-        sumW += c.w * c.score;
-        sumH += c.h * c.score;
-      }
-      fx = sumX / sumScore;
-      fy = sumY / sumScore;
-      fw = sumW / sumScore;
-      fh = sumH / sumScore;
-    } else {
-      fx = sW * 0.20;
-      fy = sH * 0.12;
-      fw = sW * 0.60;
-      fh = sH * 0.76;
-    }
+    const finalW  = boxR - boxL;
+    const finalH  = boxB - boxT;
+    const finalCX = (boxL + boxR) / 2;
+    const finalCY = (boxT + boxB) / 2;
 
-    const faceWPct = Math.max(12, Math.min(85, (fw / sW) * 100));
-    const faceHPct = Math.max(15, Math.min(90, (fh / sH) * 100));
+    const faceXPct = (finalCX / sW) * 100;
+    const faceYPct = (finalCY / sH) * 100;
+    const faceWPct = Math.max(14, Math.min(93, (finalW / sW) * 100));
+    const faceHPct = Math.max(18, Math.min(95, (finalH / sH) * 100));
 
-    // 4. Feature Extraction & Bilateral Alignment inside the Detected Face
-    const eyeTop = Math.max(0, Math.floor(fy + fh * 0.20));
-    const eyeBottom = Math.min(sH - 1, Math.floor(fy + fh * 0.46));
-    let bestEyeY = Math.floor((eyeTop + eyeBottom) / 2);
-    let minEyeLum = 999999;
-
-    for (let y = eyeTop; y <= eyeBottom; y++) {
-      let rowLum = 0, count = 0;
-      for (let x = Math.floor(fx); x < Math.floor(fx + fw); x += 2) {
-        const idx = (y * sW + x) * 4;
-        rowLum += 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
-        count++;
-      }
-      if (count > 0) {
-        const avg = rowLum / count;
-        if (avg < minEyeLum) {
-          minEyeLum = avg;
-          bestEyeY = y;
-        }
-      }
-    }
-
-    // Bilateral Eye Pupil Localization
-    const midCol = Math.floor(fx + fw * 0.50);
-    let lx = Math.floor(fx + fw * 0.28);
-    let rx = Math.floor(fx + fw * 0.72);
-    let minLeft = 99999, minRight = 99999;
-    let leftEyeY = bestEyeY, rightEyeY = bestEyeY;
-
-    for (let dy = -4; dy <= 4; dy += 2) {
-      const cy = Math.max(0, Math.min(sH - 1, bestEyeY + dy));
-      for (let x = Math.floor(fx + fw * 0.08); x < midCol - 2; x += 2) {
-        const idx = (cy * sW + x) * 4;
-        const lum = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
-        if (lum < minLeft) { minLeft = lum; lx = x; leftEyeY = cy; }
-      }
-      for (let x = midCol + 2; x < Math.floor(fx + fw * 0.92); x += 2) {
-        const idx = (cy * sW + x) * 4;
-        const lum = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
-        if (lum < minRight) { minRight = lum; rx = x; rightEyeY = cy; }
-      }
-    }
-
-    // Head Roll Angle Rotation
-    let rollDeg = 0;
-    if (rx > lx + 6) {
-      const dx = rx - lx;
-      const dy = rightEyeY - leftEyeY;
-      rollDeg = Math.atan2(dy, dx) * (180 / Math.PI);
-      if (Math.abs(rollDeg) > 40) rollDeg = 0;
-    }
-
-    const angleRad = rollDeg * (Math.PI / 180);
-    const cosA = Math.cos(angleRad);
-    const sinA = Math.sin(angleRad);
-
-    const eyeDist = Math.max(fw * 0.32, rx - lx);
-    const centerX = (lx + rx) / 2.0;
-
-    // Mouth Search: Lip redness & dark fissure
-    const mouthTop = Math.max(0, Math.floor(bestEyeY + eyeDist * 0.52));
-    const mouthBottom = Math.min(sH - 1, Math.floor(fy + fh * 0.90));
-    let bestMouthY = Math.floor(bestEyeY + eyeDist * 0.88);
-    let maxRedScore = -1;
-
-    if (mouthBottom > mouthTop) {
-      for (let y = mouthTop; y <= mouthBottom; y += 2) {
-        let redSum = 0, count = 0;
-        for (let x = Math.floor(centerX - eyeDist * 0.40); x <= Math.floor(centerX + eyeDist * 0.40); x += 2) {
-          if (x >= 0 && x < sW) {
-            const idx = (y * sW + x) * 4;
-            const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
-            const contrast = (r - g) * 1.5 + (r - b);
-            redSum += contrast;
-            count++;
-          }
-        }
-        if (count > 0) {
-          const avgRed = redSum / count;
-          if (avgRed > maxRedScore) {
-            maxRedScore = avgRed;
-            bestMouthY = y;
-          }
-        }
-      }
-    }
-
-    const eyeToMouth = Math.max(16, bestMouthY - bestEyeY);
-
-    // 5. Projected Feature Points (Forehead, Cheeks, Nose, Mouth, Chin)
-    const isTopCropped = (fy <= sH * 0.06);
-    const isBottomCropped = (fy + fh >= sH * 0.94);
-
-    const frnDist = isTopCropped ? Math.max(sH * 0.04, bestEyeY * 0.45) : eyeToMouth * 0.52;
-    const nosDist = eyeToMouth * 0.46;
-    const chnDist = isBottomCropped ? eyeToMouth + Math.max(8, (sH - bestMouthY) * 0.45) : eyeToMouth * 1.45;
-    const chkSpan = eyeDist * 0.65;
-
-    // Angular projection with roll tilt
-    const pFrnX = centerX + sinA * frnDist;
-    const pFrnY = Math.max(sH * 0.04, bestEyeY - cosA * frnDist);
-
-    const pNosX = centerX - sinA * nosDist;
-    const pNosY = bestEyeY + cosA * nosDist;
-
-    const chkMidX = centerX - sinA * (eyeToMouth * 0.40);
-    const chkMidY = bestEyeY + cosA * (eyeToMouth * 0.40);
-
-    const pChkLX = chkMidX - cosA * chkSpan;
-    const pChkLY = chkMidY - sinA * chkSpan;
-
-    const pChkRX = chkMidX + cosA * chkSpan;
-    const pChkRY = chkMidY + sinA * chkSpan;
-
-    const pMthX = centerX - sinA * eyeToMouth;
-    const pMthY = bestEyeY + cosA * eyeToMouth;
-
-    const pChnX = centerX - sinA * chnDist;
-    const pChnY = Math.min(sH * 0.96, bestEyeY + cosA * chnDist);
-
-    const clampPct = (val) => Math.max(4, Math.min(96, val));
-    const frnX = clampPct((pFrnX / sW) * 100);
-    const frnY = clampPct((pFrnY / sH) * 100);
-    const chkLX = clampPct((pChkLX / sW) * 100);
-    const chkLY = clampPct((pChkLY / sH) * 100);
-    const chkRX = clampPct((pChkRX / sW) * 100);
-    const chkRY = clampPct((pChkRY / sH) * 100);
-    const nosX = clampPct((pNosX / sW) * 100);
-    const nosY = clampPct((pNosY / sH) * 100);
-    const mthX = clampPct((pMthX / sW) * 100);
-    const mthY = clampPct((pMthY / sH) * 100);
-    const chnX = clampPct((pChnX / sW) * 100);
-    const chnY = clampPct((pChnY / sH) * 100);
-
-    // Instant DOM update with scale & angle
-    renderLandmarkBoxes({ frnX, frnY, chkLX, chkLY, chkRX, chkRY, nosX, nosY, mthX, mthY, chnX, chnY, faceWPct, faceHPct }, rollDeg);
-    sampleBeaconColorFast(img, chkLX, chkLY, origW, origH);
+    // ── 6. Render & colour-sample ─────────────────────────────────────────────
+    renderFaceBox({ x: faceXPct, y: faceYPct, w: faceWPct, h: faceHPct, isCenter: true }, 0);
+    detectFaceColorProperly(img, { x: faceXPct, y: faceYPct, w: faceWPct, h: faceHPct, isCenter: true });
 
     if (statusEl) {
-      const tiltText = Math.abs(rollDeg) > 2 ? ` (${Math.round(rollDeg)}° Tilt)` : "";
-      const scaleText = faceWPct < 22 ? "Small Face Calibrated" : (faceWPct > 55 ? "Close-Up Calibrated" : "Studio Calibrated");
-      statusEl.textContent = `AI Facial Auto-Align (${scaleText})${tiltText} • Locked`;
+      const scaleText = faceWPct < 28 ? "Small Portrait" : (faceWPct > 62 ? "Close-Up" : "Studio");
+      statusEl.textContent = `AI Face Auto-Adjusted (${scaleText} Scaled) • Locked`;
     }
-
-    enableBoxDragging();
-  }
-
-  // Interactive click targeting and dragging for landmark boxes
-  const landmarkBoxIds = ["box-forehead", "box-left-cheek", "box-right-cheek", "box-nose", "box-mouth", "box-chin"];
-  landmarkBoxIds.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener("click", (e) => {
-        e.stopPropagation();
-        landmarkBoxIds.forEach(otherId => {
-          const oEl = document.getElementById(otherId);
-          if (oEl) oEl.classList.remove("active-beacon");
-        });
-        el.classList.add("active-beacon");
-        const descEl = el.querySelector(".landmark-desc");
-        const name = descEl ? descEl.textContent : "Site";
-        if (typeof showToast === "function") showToast(`Targeted ${name} dermal landmark region`);
-      });
-    }
-  });
-
-  function enableBoxDragging() {
-    const stage = document.getElementById("preview-stage");
-    if (!stage) return;
-
-    landmarkBoxIds.forEach((id) => {
-      const box = document.getElementById(id);
-      if (!box || box.dataset.dragEnabled === "true") return;
-      box.dataset.dragEnabled = "true";
-
-      let isDragging = false;
-      let startX, startY, initialLeft, initialTop;
-
-      const onStart = (e) => {
-        isDragging = true;
-        box.style.transition = "none";
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        startX = clientX;
-        startY = clientY;
-        const rect = stage.getBoundingClientRect();
-        const boxRect = box.getBoundingClientRect();
-        initialLeft = ((boxRect.left + boxRect.width / 2 - rect.left) / rect.width) * 100;
-        initialTop = ((boxRect.top + boxRect.height / 2 - rect.top) / rect.height) * 100;
-        e.preventDefault();
-      };
-
-      const onMove = (e) => {
-        if (!isDragging) return;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const rect = stage.getBoundingClientRect();
-        const deltaXPct = ((clientX - startX) / rect.width) * 100;
-        const deltaYPct = ((clientY - startY) / rect.height) * 100;
-
-        const newLeft = Math.max(3, Math.min(97, initialLeft + deltaXPct));
-        const newTop = Math.max(3, Math.min(97, initialTop + deltaYPct));
-        box.style.left = `${newLeft.toFixed(1)}%`;
-        box.style.top = `${newTop.toFixed(1)}%`;
-      };
-
-      const onEnd = () => {
-        if (!isDragging) return;
-        isDragging = false;
-        box.style.transition = "all 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)";
-      };
-
-      box.addEventListener("mousedown", onStart);
-      box.addEventListener("touchstart", onStart, { passive: false });
-      window.addEventListener("mousemove", onMove);
-      window.addEventListener("touchmove", onMove, { passive: false });
-      window.addEventListener("mouseup", onEnd);
-      window.addEventListener("touchend", onEnd);
-    });
   }
 
   function resetUploadState() {
@@ -830,25 +674,27 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(data.error || "An error occurred during facial color analysis.");
       }
 
-      // Sync visual boxes with backend neural regions if present
-      if (data.face && data.face.regions && previewImg.naturalWidth && previewImg.naturalHeight) {
-        const regs = data.face.regions;
+      // Sync single face box with backend neural bounding box
+      if (data.face && data.face.bounding_box && previewImg.naturalWidth && previewImg.naturalHeight) {
+        const [bx, by, bw, bh] = data.face.bounding_box;
         const nw = previewImg.naturalWidth;
         const nh = previewImg.naturalHeight;
-        renderLandmarkBoxes({
-          frnX: ((regs.forehead.x + regs.forehead.w / 2) / nw) * 100,
-          frnY: ((regs.forehead.y + regs.forehead.h / 2) / nh) * 100,
-          chkLX: ((regs.left_cheek.x + regs.left_cheek.w / 2) / nw) * 100,
-          chkLY: ((regs.left_cheek.y + regs.left_cheek.h / 2) / nh) * 100,
-          chkRX: ((regs.right_cheek.x + regs.right_cheek.w / 2) / nw) * 100,
-          chkRY: ((regs.right_cheek.y + regs.right_cheek.h / 2) / nh) * 100,
-          nosX: ((regs.nose.x + regs.nose.w / 2) / nw) * 100,
-          nosY: ((regs.nose.y + regs.nose.h / 2) / nh) * 100,
-          mthX: ((regs.mouth.x + regs.mouth.w / 2) / nw) * 100,
-          mthY: ((regs.mouth.y + regs.mouth.h / 2) / nh) * 100,
-          chnX: ((regs.chin.x + regs.chin.w / 2) / nw) * 100,
-          chnY: ((regs.chin.y + regs.chin.h / 2) / nh) * 100
-        });
+        renderFaceBox({
+          x: (bx / nw) * 100,
+          y: (by / nh) * 100,
+          w: (bw / nw) * 100,
+          h: (bh / nh) * 100,
+          isCenter: false
+        }, 0);
+
+        // Lock face box tag to calibrated representative skin color from neural model
+        if (data.skin_analysis && data.skin_analysis.metrics) {
+          const repHex = data.skin_analysis.metrics.representative_hex;
+          const dotEl = document.getElementById("face-box-color-dot");
+          const hexEl = document.getElementById("face-box-hex");
+          if (dotEl) dotEl.style.backgroundColor = repHex;
+          if (hexEl) hexEl.textContent = repHex;
+        }
       }
 
       // Render all results
@@ -1259,10 +1105,24 @@ document.addEventListener("DOMContentLoaded", () => {
     const sample2 = document.getElementById("sample-color-2");
     const sample3 = document.getElementById("sample-color-3");
     const sample4 = document.getElementById("sample-color-4");
+    const hex1 = document.getElementById("sample-hex-1");
+    const hex2 = document.getElementById("sample-hex-2");
+    const hex3 = document.getElementById("sample-hex-3");
+    const hex4 = document.getElementById("sample-hex-4");
+
     if (sample1) sample1.style.background = skinMetrics.representative_hex;
-    if (sample2 && data.skin_harmonies && data.skin_harmonies[1]) sample2.style.background = data.skin_harmonies[1].hex;
-    if (sample3 && data.skin_harmonies && data.skin_harmonies[2]) sample3.style.background = data.skin_harmonies[2].hex;
-    if (sample4 && data.skin_harmonies && data.skin_harmonies[0]) sample4.style.background = data.skin_harmonies[0].hex;
+    if (hex1) hex1.textContent = skinMetrics.representative_hex;
+
+    const hexVal2 = (data.skin_harmonies && data.skin_harmonies[1]) ? data.skin_harmonies[1].hex : skinMetrics.representative_hex;
+    const hexVal3 = (data.skin_harmonies && data.skin_harmonies[2]) ? data.skin_harmonies[2].hex : skinMetrics.representative_hex;
+    const hexVal4 = (data.skin_harmonies && data.skin_harmonies[0]) ? data.skin_harmonies[0].hex : skinMetrics.representative_hex;
+
+    if (sample2) sample2.style.background = hexVal2;
+    if (hex2) hex2.textContent = hexVal2;
+    if (sample3) sample3.style.background = hexVal3;
+    if (hex3) hex3.textContent = hexVal3;
+    if (sample4) sample4.style.background = hexVal4;
+    if (hex4) hex4.textContent = hexVal4;
 
     // 3. Draw Autonomous Skin Canvas
     drawFacialLandmarksCanvas(skinMetrics.representative_hex, data.undertone.label);

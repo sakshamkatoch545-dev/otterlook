@@ -965,6 +965,44 @@ body {
   box-shadow: 0 4px 16px rgba(242, 202, 80, 0.4);
 }
 
+.sample-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.sample-chips-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sample-chip-btn {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.28rem 0.65rem;
+  background: rgba(242, 202, 80, 0.08);
+  border: 1px solid rgba(242, 202, 80, 0.28);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sample-chip-btn:hover {
+  background: rgba(242, 202, 80, 0.22);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  transform: translateY(-1px);
+}
+
 .file-hint {
   font-family: var(--font-mono);
   font-size: 0.72rem;
@@ -1019,6 +1057,148 @@ body {
   pointer-events: none;
   overflow: hidden;
   line-height: 1.35;
+}
+
+/* Single Auto-Aligned Face Target Box (AI Sized & Positioned - Locked to User Movement) */
+.face-target-box {
+  position: absolute;
+  border: 1.5px solid rgba(242, 202, 80, 0.55);
+  background: radial-gradient(circle at center, rgba(242, 202, 80, 0.09) 0%, rgba(242, 202, 80, 0.02) 75%, transparent 100%);
+  border-radius: 6px;
+  box-shadow: 0 0 24px rgba(242, 202, 80, 0.28), inset 0 0 16px rgba(242, 202, 80, 0.12);
+  transform: translate(-50%, -50%);
+  transition: all 0.35s cubic-bezier(0.2, 0.9, 0.3, 1);
+  pointer-events: none; /* User cannot move or drag the box - AI automatically controls alignment & sizing */
+  cursor: default;
+  user-select: none;
+  z-index: 5;
+}
+
+/* Biometric HUD Corner Brackets */
+.corner-bracket {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  transition: all 0.25s ease;
+}
+
+.corner-tl {
+  top: -2px;
+  left: -2px;
+  border-top: 3px solid var(--accent-gold);
+  border-left: 3px solid var(--accent-gold);
+  border-top-left-radius: 4px;
+}
+
+.corner-tr {
+  top: -2px;
+  right: -2px;
+  border-top: 3px solid var(--accent-gold);
+  border-right: 3px solid var(--accent-gold);
+  border-top-right-radius: 4px;
+}
+
+.corner-bl {
+  bottom: -2px;
+  left: -2px;
+  border-bottom: 3px solid var(--accent-gold);
+  border-left: 3px solid var(--accent-gold);
+  border-bottom-left-radius: 4px;
+}
+
+.corner-br {
+  bottom: -2px;
+  right: -2px;
+  border-bottom: 3px solid var(--accent-gold);
+  border-right: 3px solid var(--accent-gold);
+  border-bottom-right-radius: 4px;
+}
+
+/* Face Box Live Telemetry Badge */
+.face-box-tag {
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(18, 16, 26, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(242, 202, 80, 0.55);
+  border-radius: 999px;
+  padding: 2px 9px 2px 5px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), 0 0 12px rgba(242, 202, 80, 0.3);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 6;
+}
+
+.face-color-indicator {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1.5px solid #FFFFFF;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+  flex-shrink: 0;
+  transition: background-color 0.2s ease;
+}
+
+.face-box-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  letter-spacing: 0.6px;
+}
+
+.face-box-sublabel {
+  font-family: var(--font-mono);
+  font-size: 0.48rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1px 4px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+/* Center Optical Crosshair */
+.face-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  opacity: 0.45;
+  border: 1px dashed rgba(242, 202, 80, 0.7);
+  border-radius: 50%;
+}
+
+.face-crosshair::before,
+.face-crosshair::after {
+  content: "";
+  position: absolute;
+  background: rgba(242, 202, 80, 0.6);
+}
+
+.face-crosshair::before {
+  top: 50%;
+  left: -4px;
+  right: -4px;
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+.face-crosshair::after {
+  left: 50%;
+  top: -4px;
+  bottom: -4px;
+  width: 1px;
+  transform: translateX(-50%);
 }
 
 .landmark-box {

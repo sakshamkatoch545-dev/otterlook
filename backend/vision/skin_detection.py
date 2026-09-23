@@ -33,6 +33,8 @@ class SkinExtractor:
         region_details = {}
 
         for reg_name, box in regions.items():
+            if reg_name in ["mouth", "nose"]:
+                continue
             x, y, w, h = box["x"], box["y"], box["w"], box["h"]
             
             # Boundary checks

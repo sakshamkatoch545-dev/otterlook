@@ -37,3 +37,5 @@ data/raw_all_shades.csv
 data/training_synthetic_backup.csv
 download_datasets.py
 requirements-data.txt
+otterlook/
+streamlit_extracted.js

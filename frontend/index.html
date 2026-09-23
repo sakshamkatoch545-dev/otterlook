@@ -119,6 +119,14 @@
                   Browse Files
                 </button>
               </div>
+
+              <!-- Quick Demo Studio Portraits -->
+              <div class="sample-chips-row">
+                <span class="sample-chips-label">Demo Portraits:</span>
+                <button type="button" class="sample-chip-btn" id="chip-sample-warm" data-sample="/static/assets/samples/sample_warm.jpg">Warm Autumn</button>
+                <button type="button" class="sample-chip-btn" id="chip-sample-cool" data-sample="/static/assets/samples/sample_cool.jpg">Cool Summer</button>
+                <button type="button" class="sample-chip-btn" id="chip-sample-neutral" data-sample="/static/assets/samples/sample_neutral.jpg">Neutral Spring</button>
+              </div>
               
               <span class="file-hint">RAW D65 / JPG / PNG / WebP (max 15MB) • Front-facing with neutral lighting</span>
             </div>
@@ -132,39 +140,27 @@
                 <!-- Biometric Mesh Simulation Overlay -->
                 <div class="biometric-overlay" id="biometric-overlay">
                   <div class="viewport-hud">
-                    <span class="hud-pill">CIE L*a*b* SAMPLER: 6 SITES</span>
-                    <span class="hud-pill hud-pill-secondary">RAW 14-BIT D65</span>
+                    <span class="hud-pill">NEURAL FACE DETECTOR • D65 CALIBRATED</span>
+                    <span class="hud-pill hud-pill-secondary">14-BIT CHROMINANCE</span>
                   </div>
                   
-                  <!-- Bounding Box: Forehead Landmark -->
-                  <div class="landmark-box" id="box-forehead" title="Forehead Dermal Zone (FRN-01)" style="top: 26%; left: 50%; width: 56px; height: 32px;">
-                    <span class="landmark-label">FRN-01</span>
-                    <span class="landmark-desc">Forehead</span>
-                  </div>
-                  <!-- Bounding Box: Left Cheek Landmark -->
-                  <div class="landmark-box active-beacon" id="box-left-cheek" title="Left Cheek Dermal Zone (CHK-L)" style="top: 52%; left: 34%; width: 52px; height: 38px;">
-                    <span class="landmark-label" id="beacon-hex">CHK-L</span>
-                    <span class="landmark-desc">Left Cheek</span>
-                  </div>
-                  <!-- Bounding Box: Right Cheek Landmark -->
-                  <div class="landmark-box" id="box-right-cheek" title="Right Cheek Dermal Zone (CHK-R)" style="top: 52%; left: 66%; width: 52px; height: 38px;">
-                    <span class="landmark-label">CHK-R</span>
-                    <span class="landmark-desc">Right Cheek</span>
-                  </div>
-                  <!-- Bounding Box: Nose Landmark -->
-                  <div class="landmark-box" id="box-nose" title="Nasal Apex / Bridge (NOS-01)" style="top: 52%; left: 50%; width: 44px; height: 32px;">
-                    <span class="landmark-label">NOS-01</span>
-                    <span class="landmark-desc">Nose</span>
-                  </div>
-                  <!-- Bounding Box: Mouth / Lips Landmark -->
-                  <div class="landmark-box" id="box-mouth" title="Oral Vermilion Border (MTH-01)" style="top: 68%; left: 50%; width: 52px; height: 30px;">
-                    <span class="landmark-label">MTH-01</span>
-                    <span class="landmark-desc">Mouth</span>
-                  </div>
-                  <!-- Bounding Box: Chin / Mentalis Landmark -->
-                  <div class="landmark-box" id="box-chin" title="Mentalis Chin Zone (CHN-01)" style="top: 84%; left: 50%; width: 56px; height: 32px;">
-                    <span class="landmark-label">CHN-01</span>
-                    <span class="landmark-desc">Chin</span>
+                  <!-- Single Auto-Aligned Face Bounding Box (AI Controlled) -->
+                  <div class="face-target-box" id="box-face" title="AI Auto-Aligned Face Target Box">
+                    <!-- Corner Reticles -->
+                    <span class="corner-bracket corner-tl"></span>
+                    <span class="corner-bracket corner-tr"></span>
+                    <span class="corner-bracket corner-bl"></span>
+                    <span class="corner-bracket corner-br"></span>
+
+                    <!-- Integrated Biometric Header Badge -->
+                    <div class="face-box-tag">
+                      <span class="face-color-indicator" id="face-box-color-dot" style="background: #C68B59;"></span>
+                      <span class="face-box-label" id="face-box-hex">CALIBRATING</span>
+                      <span class="face-box-sublabel">AI LOCKED</span>
+                    </div>
+
+                    <!-- Center Optical Focus Reticle -->
+                    <div class="face-crosshair"></div>
                   </div>
 
                   <!-- Laser Scan Line FX -->
@@ -174,7 +170,7 @@
                   <div class="viewport-dock">
                     <div class="dock-status">
                       <span class="dock-dot"></span>
-                      <span id="mesh-status-text">Spatial Mesh (68 Pts) • 6 Sites</span>
+                      <span id="mesh-status-text">Neural Face Alignment • Auto-Locked</span>
                     </div>
                     <span class="hud-pill">D65 Synchronized</span>
                   </div>
@@ -256,26 +252,26 @@
 
           <!-- Micro-Extract Sample Swatches Strip -->
           <div class="micro-samples-strip">
-            <div class="micro-samples-title">Micro-Extract Dermis Samples</div>
+            <div class="micro-samples-title">Facial Dermis Spectral Breakdown</div>
             <div class="micro-samples-grid">
               <div class="micro-sample-card">
                 <div class="micro-sample-color" id="sample-color-1" style="background: #C68B59;"></div>
-                <div class="micro-sample-name">Cheekbone</div>
+                <div class="micro-sample-name">Detected Face Color</div>
                 <div class="micro-sample-hex" id="sample-hex-1">#C68B59</div>
               </div>
               <div class="micro-sample-card">
                 <div class="micro-sample-color" id="sample-color-2" style="background: #BA8152;"></div>
-                <div class="micro-sample-name">Forehead</div>
+                <div class="micro-sample-name">Forehead Zone</div>
                 <div class="micro-sample-hex" id="sample-hex-2">#BA8152</div>
               </div>
               <div class="micro-sample-card">
                 <div class="micro-sample-color" id="sample-color-3" style="background: #D39766;"></div>
-                <div class="micro-sample-name">Jaw Margin</div>
+                <div class="micro-sample-name">Cheek / Malar Zone</div>
                 <div class="micro-sample-hex" id="sample-hex-3">#D39766</div>
               </div>
               <div class="micro-sample-card">
                 <div class="micro-sample-color" id="sample-color-4" style="background: #BF8555;"></div>
-                <div class="micro-sample-name">Inner Wrist</div>
+                <div class="micro-sample-name">Jawline Zone</div>
                 <div class="micro-sample-hex" id="sample-hex-4">#BF8555</div>
               </div>
             </div>
@@ -770,6 +766,6 @@
     </div>
   </footer>
 
-  <script src="/static/script.js"></script>
+  <script src="/static/script.js?v=facebox"></script>
 </body>
 </html>

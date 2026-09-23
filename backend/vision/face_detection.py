@@ -315,6 +315,7 @@ class FaceDetector:
             return {"x": int(cx), "y": int(cy), "w": int(cw), "h": int(ch)}
 
         return {
+            "face": clamp_box(bx, by, bw, bh),
             "forehead": clamp_box(forehead_x, forehead_y, forehead_w, forehead_h),
             "left_cheek": clamp_box(chk_l_x, chk_l_y - chk_h // 2, chk_w, chk_h),
             "right_cheek": clamp_box(chk_r_x, chk_r_y - chk_h // 2, chk_w, chk_h),
@@ -385,6 +386,7 @@ class FaceDetector:
             return {"x": int(cx), "y": int(cy), "w": int(cw), "h": int(ch)}
 
         return {
+            "face": clamp_box(bx, by, bw, bh),
             "forehead": clamp_box(int(face_center_x - forehead_w / 2), forehead_y, forehead_w, forehead_h),
             "left_cheek": clamp_box(chk_l_x, chk_y, chk_w, chk_h),
             "right_cheek": clamp_box(chk_r_x, chk_y, chk_w, chk_h),
@@ -439,6 +441,12 @@ class FaceDetector:
     def _get_regions_from_bbox(self, bbox: List[int], img_w: int, img_h: int) -> Dict[str, Dict[str, int]]:
         x, y, w, h = bbox
         return {
+            "face": {
+                "x": max(0, min(x, img_w - 12)),
+                "y": max(0, min(y, img_h - 12)),
+                "w": max(12, min(w, img_w - x)),
+                "h": max(12, min(h, img_h - y))
+            },
             "forehead": {
                 "x": max(0, min(int(x + w * 0.24), img_w - 12)),
                 "y": max(0, min(int(y + h * 0.08), img_h - 12)),
