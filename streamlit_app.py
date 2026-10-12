@@ -148,25 +148,25 @@ body {{
         <div class="brand-monogram">Ω</div>
         <div class="brand-info">
           <h1 class="brand-title">OTTER<span>LOOK</span> AI</h1>
-          <span class="brand-sub">Atelier de Colorimétrie & Haute Vision</span>
+          <span class="brand-sub">Personal Color & Style Analysis</span>
         </div>
       </div>
 
-      <!-- Live Engine Telemetry Hub -->
+      <!-- Live Engine Status Hub -->
       <div class="telemetry-hub">
         <span class="telemetry-dot">
           <span class="telemetry-dot-ping"></span>
           <span class="telemetry-dot-core"></span>
         </span>
-        <span class="telemetry-text">AI Colorimetry Engine v4.2 Active</span>
+        <span class="telemetry-text">Auto-Colour Detection Engine Active</span>
         <span class="telemetry-sep">|</span>
-        <span class="telemetry-sub">D65 Calibrated · CRI 98.4</span>
+        <span class="telemetry-sub">Natural Daylight Standard</span>
       </div>
 
       <div class="header-actions">
         <button id="viva-modal-btn" class="btn btn-outline" title="About Otterlook AI">
           <span class="material-symbols-outlined" style="font-size: 16px;">help_outline</span>
-          <span>Methodology</span>
+          <span>How It Works</span>
         </button>
         <button id="theme-toggle-btn" class="theme-toggle" aria-label="Toggle theme">
           <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -181,36 +181,36 @@ body {{
     <!-- Hero Section -->
     <section class="hero-section">
       <div class="hero-tag">
-        <span class="material-symbols-outlined" style="font-size: 14px;">camera</span>
-        Computer Vision & Dermatological Colorimetry
+        <span class="material-symbols-outlined" style="font-size: 14px;">palette</span>
+        Smart Personal Color Analysis
       </div>
-      <h2 class="hero-headline">Studio Portrait Scanner & <em>Haute Colorimetry</em></h2>
+      <h2 class="hero-headline">Find the Colors that <em>Naturally Flatter You</em></h2>
       <p class="hero-description">
-        Precision AI-powered personal colorimetry and seasonal wardrobe direction. Utilizing 68-point facial landmarking, multi-site dermis sampling, and Machine Learning spectral classification.
+        Upload a clear photo taken in natural daylight. Our smart scanner spots your skin tone, checks your lighting, and reveals your personal color season and best outfit shades.
       </p>
 
       <div class="hero-badges">
         <div class="badge-item">
-          <span class="material-symbols-outlined" style="font-size: 14px;">grid_4x4</span>
-          Multi-Region Dermis Extraction
+          <span class="material-symbols-outlined" style="font-size: 14px;">colorize</span>
+          Auto-Colour Detection
         </div>
         <div class="badge-item">
-          <span class="material-symbols-outlined" style="font-size: 14px;">tune</span>
-          CIELAB L*a*b* & ITA° Features
+          <span class="material-symbols-outlined" style="font-size: 14px;">wb_sunny</span>
+          Natural Lighting Check
         </div>
         <div class="badge-item">
-          <span class="material-symbols-outlined" style="font-size: 14px;">analytics</span>
-          Random Forest Ensemble ML
+          <span class="material-symbols-outlined" style="font-size: 14px;">checkroom</span>
+          Personalized Style Guide
         </div>
       </div>
     </section>
 
-    <!-- Bento Studio & Optical Acquisition Terminal -->
+    <!-- Studio Photo Upload & Analysis Area -->
     <section class="studio-section">
       <div class="scanner-bento-grid">
-        <!-- Left: Reticle Viewport Box with Crosshairs & Drag-Drop -->
+        <!-- Left: Upload Viewport Box with Auto-Colour Scanner -->
         <div class="reticle-viewport">
-          <!-- 4-Corner Crosshair Reticles -->
+          <!-- 4-Corner Reticles -->
           <div class="reticle-corner reticle-tl"></div>
           <div class="reticle-corner reticle-tr"></div>
           <div class="reticle-corner reticle-bl"></div>
@@ -225,13 +225,13 @@ body {{
               <div class="upload-icon">
                 <span class="material-symbols-outlined" style="font-size: 32px;">add_a_photo</span>
               </div>
-              <h3>Acquire Studio Portrait</h3>
-              <p>Drag & drop your portrait here, or capture via high-resolution camera</p>
+              <h3>Upload Your Photo</h3>
+              <p>Drag & drop your portrait here, or snap a quick live selfie</p>
               
               <div class="upload-actions">
                 <button type="button" class="btn btn-camera" id="camera-btn">
                   <span class="material-symbols-outlined" style="font-size: 16px;">photo_camera</span>
-                  Webcam / Live Feed
+                  Take Live Selfie
                 </button>
                 <button type="button" class="btn btn-outline" id="browse-btn">
                   <span class="material-symbols-outlined" style="font-size: 16px;">folder_open</span>
@@ -241,68 +241,64 @@ body {{
 
               <!-- Quick Demo Studio Portraits -->
               <div class="sample-chips-row">
-                <span class="sample-chips-label">Demo Portraits:</span>
+                <span class="sample-chips-label">Demo Photos:</span>
                 <button type="button" class="sample-chip-btn" id="chip-sample-warm" data-sample="/static/assets/samples/sample_warm.jpg">Warm Autumn</button>
                 <button type="button" class="sample-chip-btn" id="chip-sample-cool" data-sample="/static/assets/samples/sample_cool.jpg">Cool Summer</button>
                 <button type="button" class="sample-chip-btn" id="chip-sample-neutral" data-sample="/static/assets/samples/sample_neutral.jpg">Neutral Spring</button>
               </div>
               
-              <span class="file-hint">RAW D65 / JPG / PNG / WebP (max 15MB) • Front-facing with neutral lighting</span>
+              <span class="file-hint">JPG, PNG, or WebP (max 15MB) • Natural daylight facing a window works best</span>
             </div>
 
-            <!-- Live Preview Box with Biometric Overlay FX -->
+            <!-- Live Preview Box with Auto Colour Detection Overlay -->
             <div class="preview-box hidden" id="preview-box">
               <div class="preview-stage" id="preview-stage">
-                <img id="preview-img" src="" alt="Acquired Studio Portrait">
+                <img id="preview-img" src="" alt="Analyzed Photo">
                 <button class="remove-btn" id="remove-img-btn" title="Remove image">×</button>
                 
-                <!-- Biometric Mesh Simulation Overlay -->
+                <!-- Auto Colour & Lighting Detection Overlay (Replaces Face Detection Box) -->
                 <div class="biometric-overlay" id="biometric-overlay">
                   <div class="viewport-hud">
-                    <span class="hud-pill">NEURAL FACE DETECTOR • D65 CALIBRATED</span>
-                    <span class="hud-pill hud-pill-secondary">14-BIT CHROMINANCE</span>
+                    <span class="hud-pill" id="hud-mode-pill">🎨 AUTO COLOUR DETECTION ACTIVE</span>
+                    <span class="hud-pill hud-pill-secondary" id="hud-lighting-pill">💡 NATURAL LIGHT SENSOR</span>
                   </div>
                   
-                  <!-- Single Auto-Aligned Face Bounding Box (AI Controlled) -->
-                  <div class="face-target-box" id="box-face" title="AI Auto-Aligned Face Target Box">
-                    <!-- Corner Reticles -->
-                    <span class="corner-bracket corner-tl"></span>
-                    <span class="corner-bracket corner-tr"></span>
-                    <span class="corner-bracket corner-bl"></span>
-                    <span class="corner-bracket corner-br"></span>
-
-                    <!-- Integrated Biometric Header Badge -->
-                    <div class="face-box-tag">
-                      <span class="face-color-indicator" id="face-box-color-dot" style="background: #C68B59;"></span>
-                      <span class="face-box-label" id="face-box-hex">CALIBRATING</span>
-                      <span class="face-box-sublabel">AI LOCKED</span>
+                  <!-- Smart Auto-Detected Complexion Badge -->
+                  <div class="auto-color-badge-container" id="auto-color-badge-container">
+                    <div class="auto-color-badge" id="auto-color-badge">
+                      <span class="auto-color-swatch-circle" id="face-box-color-dot" style="background: #C68B59;"></span>
+                      <div class="auto-color-badge-info">
+                        <span class="auto-color-badge-title" id="auto-color-badge-title">SPOTTING COMPLEXION...</span>
+                        <span class="auto-color-badge-hex" id="face-box-hex">CALIBRATING</span>
+                      </div>
+                      <span class="auto-color-status-tag" id="face-box-sublabel">AUTO SCAN</span>
                     </div>
-
-                    <!-- Center Optical Focus Reticle -->
-                    <div class="face-crosshair"></div>
                   </div>
 
+                  <!-- Reference anchor for backward compatibility -->
+                  <div id="box-face" style="display: none;"></div>
+
                   <!-- Laser Scan Line FX -->
-                  <div class="scanline-fx"></div>
+                  <div class="scanline-fx" id="scanline-fx"></div>
 
                   <!-- Viewport Bottom Dock -->
                   <div class="viewport-dock">
                     <div class="dock-status">
-                      <span class="dock-dot"></span>
-                      <span id="mesh-status-text">Neural Face Alignment • Auto-Locked</span>
+                      <span class="dock-dot" id="dock-dot"></span>
+                      <span id="mesh-status-text">Scanning photo lighting and complexion...</span>
                     </div>
-                    <span class="hud-pill">D65 Synchronized</span>
+                    <span class="hud-pill" id="lighting-status-pill">Checking Lighting...</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Diagnostic Quality Bar -->
+          <!-- Photo Quality & Lighting Bar -->
           <div class="quality-bar hidden" id="quality-bar">
             <div class="quality-header">
-              <span class="quality-title">Diagnostic Telemetry Check:</span>
-              <span class="quality-status" id="quality-status">Evaluating...</span>
+              <span class="quality-title">Photo Quality & Lighting Check:</span>
+              <span class="quality-status" id="quality-status">Checking Photo...</span>
             </div>
             <div class="quality-meter-track">
               <div class="quality-meter-fill" id="quality-meter" style="width: 0%"></div>
@@ -317,50 +313,50 @@ body {{
           </div>
         </div>
 
-        <!-- Right: Real-time Photometric Diagnostic Telemetry Card -->
+        <!-- Right: Real-time Photo Quality & Lighting Check Card -->
         <div class="telemetry-card">
           <div>
             <div class="telemetry-header">
-              <span class="telemetry-title">Diagnostic Telemetry</span>
-              <span class="telemetry-grade">Studio Grade 98.9%</span>
+              <span class="telemetry-title">Photo Check</span>
+              <span class="telemetry-grade">High Accuracy</span>
             </div>
-            <h3 class="telemetry-headline">Photometric Uniformity Analysis</h3>
+            <h3 class="telemetry-headline">Lighting & Clarity Analysis</h3>
 
             <div class="diagnostic-meters">
               <div class="meter-row">
                 <div class="meter-labels">
-                  <span class="meter-name">Lighting Uniformity (Lux Coherence)</span>
-                  <span class="meter-val" id="meter-lux-val">98% (Optimal)</span>
+                  <span class="meter-name">Lighting Quality</span>
+                  <span class="meter-val" id="meter-lux-val">Optimal Daylight</span>
                 </div>
                 <div class="meter-track">
-                  <div class="meter-fill" id="meter-lux-fill" style="width: 98%;"></div>
+                  <div class="meter-fill" id="meter-lux-fill" style="width: 95%;"></div>
                 </div>
               </div>
 
               <div class="meter-row">
                 <div class="meter-labels">
-                  <span class="meter-name">D65 Neutral White Balance (5600K)</span>
-                  <span class="meter-val" id="meter-wb-val">99% (Calibrated)</span>
+                  <span class="meter-name">Natural Color Balance</span>
+                  <span class="meter-val" id="meter-wb-val">Balanced</span>
                 </div>
                 <div class="meter-track">
-                  <div class="meter-fill" id="meter-wb-fill" style="width: 99%;"></div>
+                  <div class="meter-fill" id="meter-wb-fill" style="width: 96%;"></div>
                 </div>
               </div>
 
               <div class="meter-row">
                 <div class="meter-labels">
-                  <span class="meter-name">Spectral Color Noise (Dermis SNR)</span>
-                  <span class="meter-val" id="meter-snr-val" style="color: #10B981;">&lt;0.02% (Laboratory)</span>
+                  <span class="meter-name">Image Clarity & Focus</span>
+                  <span class="meter-val text-emerald-400" id="meter-snr-val" style="color: #10B981;">Clear & Sharp</span>
                 </div>
                 <div class="meter-track">
-                  <div class="meter-fill meter-fill-green" id="meter-snr-fill" style="width: 96%;"></div>
+                  <div class="meter-fill meter-fill-green" id="meter-snr-fill" style="width: 95%;"></div>
                 </div>
               </div>
 
               <div class="meter-row">
                 <div class="meter-labels">
-                  <span class="meter-name">Input Resolution</span>
-                  <span class="meter-val" id="meter-res-val">RAW 4K Optical Matrix</span>
+                  <span class="meter-name">Photo Resolution</span>
+                  <span class="meter-val" id="meter-res-val">High Definition</span>
                 </div>
                 <div class="meter-track">
                   <div class="meter-fill" id="meter-res-fill" style="width: 100%;"></div>
@@ -369,28 +365,28 @@ body {{
             </div>
           </div>
 
-          <!-- Micro-Extract Sample Swatches Strip -->
+          <!-- Auto-Detected Complexion Swatches Strip -->
           <div class="micro-samples-strip">
-            <div class="micro-samples-title">Facial Dermis Spectral Breakdown</div>
+            <div class="micro-samples-title">Auto-Detected Complexion Swatches</div>
             <div class="micro-samples-grid">
               <div class="micro-sample-card">
                 <div class="micro-sample-color" id="sample-color-1" style="background: #C68B59;"></div>
-                <div class="micro-sample-name">Detected Face Color</div>
+                <div class="micro-sample-name">Detected Skin Tone</div>
                 <div class="micro-sample-hex" id="sample-hex-1">#C68B59</div>
               </div>
               <div class="micro-sample-card">
                 <div class="micro-sample-color" id="sample-color-2" style="background: #BA8152;"></div>
-                <div class="micro-sample-name">Forehead Zone</div>
+                <div class="micro-sample-name">Upper Face</div>
                 <div class="micro-sample-hex" id="sample-hex-2">#BA8152</div>
               </div>
               <div class="micro-sample-card">
                 <div class="micro-sample-color" id="sample-color-3" style="background: #D39766;"></div>
-                <div class="micro-sample-name">Cheek / Malar Zone</div>
+                <div class="micro-sample-name">Cheek Tone</div>
                 <div class="micro-sample-hex" id="sample-hex-3">#D39766</div>
               </div>
               <div class="micro-sample-card">
                 <div class="micro-sample-color" id="sample-color-4" style="background: #BF8555;"></div>
-                <div class="micro-sample-name">Jawline Zone</div>
+                <div class="micro-sample-name">Lower Face</div>
                 <div class="micro-sample-hex" id="sample-hex-4">#BF8555</div>
               </div>
             </div>
@@ -398,13 +394,14 @@ body {{
         </div>
       </div>
 
-      <!-- Styling Profile Selector (Strict Order: [All] [Male] [Female]) -->
+      <!-- Styling Profile Selector -->
       <div class="gender-selector-wrapper">
-        <span class="gender-selector-label">Curated Styling Profile:</span>
+        <span class="gender-selector-label">Style Recommendations For:</span>
         <div class="gender-options" id="upload-gender-options">
-          <button type="button" class="gender-pill active" data-gender="all"> All Profiles</button>
-          <button type="button" class="gender-pill" data-gender="male"> Male Atelier</button>
-          <button type="button" class="gender-pill" data-gender="female"> Female Haute</button>
+          <button type="button" class="gender-pill active" data-gender="auto">✨ Auto-Detect</button>
+          <button type="button" class="gender-pill" data-gender="female">👗 Women's Style</button>
+          <button type="button" class="gender-pill" data-gender="male">👔 Men's Style</button>
+          <button type="button" class="gender-pill" data-gender="all">👥 All Styles</button>
         </div>
       </div>
 
@@ -412,81 +409,81 @@ body {{
       <div class="cta-container">
         <button id="analyze-btn" class="btn btn-primary btn-glow" disabled>
           <span class="material-symbols-outlined" style="font-size: 20px;">play_arrow</span>
-          <span>Analyze Undertone & Generate Palette</span>
+          <span>Analyze Undertone & View Palette</span>
         </button>
       </div>
     </section>
 
-    <!-- 6-Phase Glowing Scientific Pipeline Stepper -->
+    <!-- 6-Phase Glowing Pipeline Stepper -->
     <section class="processing-section hidden" id="processing-section">
       <div class="processing-card">
         <div class="processing-header">
           <div class="processing-title-group">
-            <span class="material-symbols-outlined" style="font-size: 22px; color: var(--accent-gold);">polyline</span>
-            <h3 class="processing-title">High-Precision Optical Synthesis Pipeline</h3>
+            <span class="material-symbols-outlined text-primary" style="font-size: 22px;">palette</span>
+            <h3 class="processing-title">Analyzing Your Natural Colors...</h3>
           </div>
-          <span class="pipeline-timer">T+ 0.428s Execution Realtime</span>
+          <span class="pipeline-timer">Quick Analysis</span>
         </div>
 
         <div class="pipeline-stepper">
           <!-- Phase 1 -->
           <div class="step-item" id="step-1">
             <div class="step-meta">
-              <span class="step-phase">PHASE 01</span>
+              <span class="step-phase">STEP 01</span>
               <span class="material-symbols-outlined step-status-icon">check_circle</span>
             </div>
-            <div class="step-label">Spectral Validation</div>
-            <div class="step-subtext">CRI 98.4 </div>
+            <div class="step-label">Lighting Check</div>
+            <div class="step-subtext">Daylight Verified</div>
           </div>
 
           <!-- Phase 2 -->
           <div class="step-item" id="step-2">
             <div class="step-meta">
-              <span class="step-phase">PHASE 02</span>
+              <span class="step-phase">STEP 02</span>
               <span class="material-symbols-outlined step-status-icon">check_circle</span>
             </div>
-            <div class="step-label">Dermal Facial Landmarks</div>
-            <div class="step-subtext">68 Mesh Sites </div>
+            <div class="step-label">Auto Skin Detection</div>
+            <div class="step-subtext">Complexion Spotted</div>
           </div>
 
           <!-- Phase 3 -->
           <div class="step-item" id="step-3">
             <div class="step-meta">
-              <span class="step-phase">PHASE 03</span>
+              <span class="step-phase">STEP 03</span>
               <span class="material-symbols-outlined step-status-icon">check_circle</span>
             </div>
-            <div class="step-label">Melanin & Hemoglobin</div>
-            <div class="step-subtext">Deconvolution </div>
+            <div class="step-label">Undertone Analysis</div>
+            <div class="step-subtext">Warm vs. Cool</div>
           </div>
 
           <!-- Phase 4 -->
           <div class="step-item" id="step-4">
             <div class="step-meta">
-              <span class="step-phase">PHASE 04</span>
+              <span class="step-phase">STEP 04</span>
               <span class="material-symbols-outlined step-status-icon">check_circle</span>
             </div>
-            <div class="step-label">CIELAB L*a*b* Profile</div>
-            <div class="step-subtext">ITA° +34.8° </div>
+            <div class="step-label">Color Season Match</div>
+            <div class="step-subtext">Seasonal Subtype</div>
           </div>
 
           <!-- Phase 5 -->
           <div class="step-item" id="step-5">
             <div class="step-meta">
-              <span class="step-phase">PHASE 05</span>
+              <span class="step-phase">STEP 05</span>
               <span class="material-symbols-outlined step-status-icon">refresh</span>
             </div>
-            <div class="step-label">Deep Ensemble ML</div>
-            <div class="step-subtext">Confidence 99.4%</div>
+            <div class="step-label">Outfit Color Curation</div>
+            <div class="step-subtext">Flattering Shades</div>
           </div>
 
           <!-- Phase 6 -->
           <div class="step-item" id="step-6">
             <div class="step-meta">
-              <span class="step-phase">PHASE 06</span>
+              <span class="step-phase">STEP 06</span>
               <span class="material-symbols-outlined step-status-icon">verified</span>
             </div>
-            <div class="step-label">Haute Styling Synthesis</div>
-            <div class="step-subtext">Complete Dossier </div>
+            <div class="step-label">Personal Style Guide</div>
+            <div class="step-subtext">Ready to View</div>
           </div>
         </div>
       </div>
@@ -494,32 +491,34 @@ body {{
 
     <!-- Results Showcase Section -->
     <section class="results-section hidden" id="results-section">
-      <!-- Auto-Detected Gender Verdict Banner -->
+      <!-- Auto-Detected Style Profile Banner -->
       <div class="gender-verdict-banner" id="gender-verdict-banner">
         <div class="gender-banner-left">
           <div class="gender-banner-icon" id="gender-banner-icon"></div>
           <div>
             <div class="gender-banner-title">
-              <span id="gender-banner-title-text">Detected Gender:</span>
-              <strong id="gender-banner-label">Male</strong>
-              <span class="gender-banner-badge" id="gender-banner-badge"> Auto-Detected & Validated</span>
+              <span id="gender-banner-title-text">Style Profile:</span>
+              <strong id="gender-banner-label">All Styles</strong>
+              <span class="gender-banner-badge" id="gender-banner-badge"> Verified</span>
             </div>
             <p class="gender-banner-desc" id="gender-banner-desc">
-              Colorimetry calibrated for your detected facial morphological features, dermal undertone, and tailoring harmony.
+              Your color analysis is personalized for your natural skin undertone and flattering color harmony.
             </p>
           </div>
         </div>
         <div class="gender-banner-controls">
-          <span class="gender-switch-label" id="gender-switch-label">Gender:</span>
+          <span class="gender-switch-label" id="gender-switch-label">Switch Style:</span>
           <div class="gender-options results-gender-options" id="results-gender-options">
-            <div class="gender-pill active" data-gender="male" id="results-gender-pill"> Male</div>
+            <button type="button" class="gender-pill active" data-gender="female">👗 Women's</button>
+            <button type="button" class="gender-pill" data-gender="male">👔 Men's</button>
+            <button type="button" class="gender-pill" data-gender="all">👥 All Styles</button>
           </div>
         </div>
       </div>
 
       <!-- Verdict & Visualizer Grid (Two Columns) -->
       <div class="verdict-grid" id="hud">
-        <!-- Left: Algorithmic Seasonal Diagnosis Hero -->
+        <!-- Left: Seasonal Diagnosis Card -->
         <div class="card verdict-card" id="verdict-card">
           <!-- Seasonal Watermark -->
           <div class="season-watermark" id="season-watermark">AUTUMN</div>
@@ -527,33 +526,33 @@ body {{
           <div>
             <div class="verdict-header-row">
               <div>
-                <span class="card-tag">Algorithmic Seasonal Diagnosis</span>
+                <span class="card-tag">Your Color Season</span>
                 <div class="undertone-badge-wrapper">
                   <h2 class="undertone-badge" id="undertone-badge">WARM AUTUMN</h2>
                 </div>
-                <div class="verdict-subheadline" id="verdict-subheadline">Ochre & Obsidian Harmony</div>
+                <div class="verdict-subheadline" id="verdict-subheadline">Warm Earthy Harmony</div>
               </div>
               
               <div class="confidence-score-box">
                 <div class="confidence-val" id="confidence-val">94.8%</div>
-                <div class="confidence-label">Aesthetic Match</div>
+                <div class="confidence-label">Match Confidence</div>
               </div>
             </div>
 
             <p class="undertone-explanation" id="undertone-explanation">
-              Your chromatic signature is defined by rich carotenoid undertones paired with deep, dense melanin intensity. You command high visual depth, requiring saturated earthy bases complemented by lustrous metallic accents.
+              Your natural complexion has rich golden and warm undertones. Earthy colors, terracotta, warm olive, and gold will make your skin look vibrant and healthy.
             </p>
 
             <!-- Undertone Probability Matrix -->
             <div class="prob-matrix-box">
               <div class="prob-matrix-header">
-                <span>Undertone Probability Matrix</span>
-                <span>Ensemble Classifier v4.2</span>
+                <span>Undertone Breakdown</span>
+                <span>AI Color Model</span>
               </div>
               <div class="prob-bars-list" id="prob-breakdown">
                 <div class="prob-bar-item">
                   <div class="prob-bar-info">
-                    <span class="prob-bar-label">Warm (Carotenoid Affinity)</span>
+                    <span class="prob-bar-label">Warm (Golden & Peach Tones)</span>
                     <span class="prob-bar-pct">94.8%</span>
                   </div>
                   <div class="prob-track">
@@ -562,7 +561,7 @@ body {{
                 </div>
                 <div class="prob-bar-item">
                   <div class="prob-bar-info">
-                    <span class="prob-bar-label">Neutral (Balanced Matrix)</span>
+                    <span class="prob-bar-label">Neutral (Balanced Harmony)</span>
                     <span class="prob-bar-pct">4.2%</span>
                   </div>
                   <div class="prob-track">
@@ -571,7 +570,7 @@ body {{
                 </div>
                 <div class="prob-bar-item">
                   <div class="prob-bar-info">
-                    <span class="prob-bar-label">Cool (Erythema / Hemoglobin)</span>
+                    <span class="prob-bar-label">Cool (Rosy & Blue Tones)</span>
                     <span class="prob-bar-pct">1.0%</span>
                   </div>
                   <div class="prob-track">
@@ -582,73 +581,73 @@ body {{
             </div>
           </div>
 
-          <!-- Micro-Metrics Row -->
+          <!-- Quick Metrics Row -->
           <div class="micro-metrics-row" id="key-factors">
             <div class="micro-metric-item">
-              <div class="micro-metric-val">1.42</div>
-              <div class="micro-metric-label">Carotene / Melanin</div>
+              <div class="micro-metric-val">High</div>
+              <div class="micro-metric-label">Golden Warmth</div>
             </div>
             <div class="micro-metric-item">
-              <div class="micro-metric-val">+14%</div>
-              <div class="micro-metric-label">Vascular Diffusion</div>
+              <div class="micro-metric-val">Natural</div>
+              <div class="micro-metric-label">Rosy Balance</div>
             </div>
             <div class="micro-metric-item">
-              <div class="micro-metric-val">3.8</div>
-              <div class="micro-metric-label">Subsurface Index</div>
+              <div class="micro-metric-val">Clear</div>
+              <div class="micro-metric-label">Depth Level</div>
             </div>
           </div>
         </div>
 
-        <!-- Right: Facial Colorimetry & Dermis Optical HUD -->
+        <!-- Right: Detected Skin Complexion Card -->
         <div class="card visualizer-card">
           <div class="visualizer-container">
             <div>
-              <span class="card-tag">Dermis Optical HUD</span>
+              <span class="card-tag">Your Detected Complexion</span>
               <div class="face-canvas-box">
                 <canvas id="face-canvas"></canvas>
-                <div class="canvas-caption">Autonomous AI Dermis Region Extraction & 68-Point Mesh</div>
+                <div class="canvas-caption">Auto-Identified Complexion & Lighting Analysis</div>
               </div>
             </div>
 
-            <!-- Representative Dermis Swatch -->
+            <!-- Representative Skin Swatch -->
             <div class="rep-swatch-box">
               <div class="rep-swatch" id="rep-swatch" style="background: #C68B59;">
-                <span class="rep-swatch-tag">D65</span>
+                <span class="rep-swatch-tag">Color</span>
               </div>
               <div class="rep-info">
-                <span class="rep-label">Representative Dermis Sample</span>
-                <div class="rep-hex" id="rep-hex">#C68B59 · Golden Ochre</div>
-                <div class="rep-phototype" id="rep-phototype">Type IV — Golden Olive Mediterranean</div>
+                <span class="rep-label">Your Detected Skin Tone</span>
+                <div class="rep-hex" id="rep-hex">#C68B59 · Golden Olive</div>
+                <div class="rep-phototype" id="rep-phototype">Medium Golden Complexion</div>
               </div>
             </div>
 
-            <!-- Live Optical Spectrogram Data Table -->
+            <!-- Optical Color Data Table -->
             <div class="color-metrics-table">
               <div class="metric-row">
-                <span class="metric-name">L* (Luminance Density)</span>
+                <span class="metric-name">Brightness Level (L*)</span>
                 <span class="metric-val" id="metric-lab-l">61.4</span>
               </div>
               <div class="metric-row">
-                <span class="metric-name">a* (Red-Green Chromaticity)</span>
+                <span class="metric-name">Rosy / Pink Balance (a*)</span>
                 <span class="metric-val" id="metric-lab-a">+13.8</span>
               </div>
               <div class="metric-row">
-                <span class="metric-name">b* (Yellow-Blue Axis)</span>
+                <span class="metric-name">Golden Warmth (b*)</span>
                 <span class="metric-val highlight-metric" id="metric-lab-b">+21.2</span>
               </div>
               <div class="metric-row">
-                <span class="metric-name">ITA° (Typology Angle)</span>
+                <span class="metric-name">Complexion Tone Angle</span>
                 <span class="metric-val" id="metric-ita">+34.8°</span>
               </div>
               <div class="metric-row">
-                <span class="metric-name">HSV Dominant Hue</span>
+                <span class="metric-name">Dominant Color Hue</span>
                 <span class="metric-val" id="metric-hsv-h">28.4°</span>
               </div>
             </div>
 
             <div class="visualizer-footer">
-              <span>Spectral Delta ΔE*ab = 0.42</span>
-              <span> CIE Calibrated ISO-13655</span>
+              <span>Natural Daylight Standard</span>
+              <span>Calibrated Color Harmony</span>
             </div>
           </div>
         </div>
@@ -658,14 +657,14 @@ body {{
       <div class="card palette-showcase-card" id="harmony">
         <div class="palette-header">
           <div>
-            <span class="card-tag">Signature Haute Palette</span>
+            <span class="card-tag">Your Color Palette</span>
             <h3 class="palette-title" id="palette-headline">Signature Master Color Swatches</h3>
             <p class="palette-desc" id="stylist-summary">
-              Seven meticulously calibrated master shades formulated to harmonize with your dermal melanin and carotenoid ratios.
+              Seven flattering shades chosen to harmonize with your natural skin undertone and complexion.
             </p>
             <div class="swatch-tap-hint">
               <span class="material-symbols-outlined" style="font-size: 14px;">content_copy</span>
-              <span>Tap any swatch to copy HEX coordinate</span>
+              <span>Tap any swatch to copy HEX color code</span>
             </div>
           </div>
           <div class="season-badge" id="season-badge">
@@ -683,34 +682,34 @@ body {{
       <div class="optical-metrics-row">
         <div class="optical-metric-card">
           <div class="optical-metric-header">
-            <span>Optical Contrast Dynamic</span>
+            <span>Contrast Level</span>
             <span class="material-symbols-outlined" style="font-size: 18px;">contrast</span>
           </div>
-          <h4 class="optical-metric-title">High Contrast Index 8.6/10</h4>
+          <h4 class="optical-metric-title">Rich Contrast</h4>
           <p class="optical-metric-desc">
-            Best paired with deeply saturated bases anchored by luminous champagne or warm ecru collar highlights for peak jawline definition.
+            Pair deeper primary colors with warm neutral highlights to frame your face naturally and cleanly.
           </p>
         </div>
 
         <div class="optical-metric-card">
           <div class="optical-metric-header">
-            <span>Dermal Radiance Shift</span>
+            <span>Skin Radiance</span>
             <span class="material-symbols-outlined" style="font-size: 18px;">wb_twilight</span>
           </div>
-          <h4 class="optical-metric-title">Subsurface Glow +22%</h4>
+          <h4 class="optical-metric-title">Brings Out Your Warmth</h4>
           <p class="optical-metric-desc">
-            Warm earth pigments actively reflect golden carotenoid frequencies, neutralizing periorbital sallow tones and enhancing natural facial bone radiance.
+            Warm earth tones reflect natural daylight onto your face, keeping your complexion looking fresh, bright, and healthy.
           </p>
         </div>
 
         <div class="optical-metric-card">
           <div class="optical-metric-header">
-            <span>Sartorial Tonal Vector</span>
+            <span>Style Recommendations</span>
             <span class="material-symbols-outlined" style="font-size: 18px;">diamond</span>
           </div>
-          <h4 class="optical-metric-title">Monochromatic & Jewel Tones</h4>
+          <h4 class="optical-metric-title">Warm & Earthy Tones</h4>
           <p class="optical-metric-desc">
-            Harmonizes flawlessly with muted autumnal jewel shades, heavy structured fabrics, and 18-karat brushed metals.
+            Harmonizes best with rich autumnal shades, terracotta, warm neutrals, and warm gold jewelry.
           </p>
         </div>
       </div>
@@ -719,10 +718,10 @@ body {{
       <div class="card skin-harmonies-card" id="skin-harmonies-card">
         <div class="palette-header">
           <div>
-            <span class="card-tag">Mathematical Skin-Tone Resonance</span>
-            <h3 class="palette-title">Color Wheel Resonance</h3>
+            <span class="card-tag">Color Wheel Matches</span>
+            <h3 class="palette-title">Harmonious Color Combinations</h3>
             <p class="palette-desc">
-              Direct mathematical color wheel harmonies computed from your facial dermal coordinates (<strong id="skin-coords-badge">#C68B59</strong>).
+              Complementary and analogous color harmonies matched directly to your detected skin tone (<strong id="skin-coords-badge">#C68B59</strong>).
             </p>
           </div>
         </div>
@@ -735,7 +734,7 @@ body {{
         <div class="image-atmosphere-box" id="image-atmosphere-box">
           <div class="atmosphere-label">
             <span class="material-symbols-outlined" style="font-size: 18px;">palette</span>
-            <span>Analyzed Image Palette:</span>
+            <span>Analyzed Photo Colors:</span>
           </div>
           <div class="atmosphere-swatches" id="atmosphere-swatches">
             <!-- Rendered dynamically -->
@@ -746,11 +745,11 @@ body {{
       <!-- Recommendation Categories Tabs -->
       <div class="recommendations-container" id="curations">
         <div class="tab-nav">
-          <button class="tab-btn active" data-tab="clothing"> Clothing & Suiting</button>
-          <button class="tab-btn" data-tab="makeup" id="tab-btn-makeup"> Makeup & Cosmetics</button>
-          <button class="tab-btn" data-tab="accessories"> Fine Horology & Jewelry</button>
-          <button class="tab-btn" data-tab="neutrals"> Foundational Neutrals</button>
-          <button class="tab-btn tab-btn-avoid" data-tab="avoid"> Colors to Avoid</button>
+          <button class="tab-btn active" data-tab="clothing">👔 Clothes & Outfits</button>
+          <button class="tab-btn" data-tab="makeup" id="tab-btn-makeup">💄 Makeup & Lips</button>
+          <button class="tab-btn" data-tab="accessories">💍 Jewelry & Metals</button>
+          <button class="tab-btn" data-tab="neutrals">🎨 Everyday Neutrals</button>
+          <button class="tab-btn tab-btn-avoid" data-tab="avoid">⛔ Colors to Avoid</button>
         </div>
 
         <div class="tab-content active" id="tab-clothing">
@@ -761,7 +760,7 @@ body {{
           <div class="makeup-guide-box" id="foundation-advice-box">
             <div class="guide-icon"></div>
             <div>
-              <h4>Foundation & Base Guidance</h4>
+              <h4>Foundation & Complexion Tips</h4>
               <p id="foundation-advice-text"></p>
             </div>
           </div>
@@ -788,11 +787,11 @@ body {{
           <div class="another-analysis-info">
             <div class="another-analysis-badge">
               <span class="material-symbols-outlined" style="font-size: 16px;">autorenew</span>
-              <span>Continuous Atelier Session</span>
+              <span>Try Another Photo</span>
             </div>
-            <h3 class="another-analysis-title">Perform Another Biometric Analysis</h3>
+            <h3 class="another-analysis-title">Analyze Another Photo or Selfie</h3>
             <p class="another-analysis-desc">
-              Upload a new portrait or capture a real-time daylight selfie to test another client profile, alternate lighting, or seasonal shifts.
+              Upload a new photo or take a daylight selfie to test another outfit or lighting.
             </p>
           </div>
           <div class="another-analysis-actions">
@@ -814,7 +813,7 @@ body {{
   <div class="modal-overlay hidden" id="camera-modal">
     <div class="camera-card">
       <div class="modal-header">
-        <h3>Live Biometric Acquisition</h3>
+        <h3>Take a Live Selfie</h3>
         <button class="modal-close" id="camera-modal-close-btn">&times;</button>
       </div>
       <div class="camera-video-wrapper">
@@ -823,14 +822,14 @@ body {{
       <div class="camera-controls">
         <button type="button" class="btn btn-outline" id="camera-flip-btn">
           <span class="material-symbols-outlined" style="font-size: 16px;">flip_camera_android</span>
-          <span>Flip Sensor</span>
+          <span>Flip Camera</span>
         </button>
         <button type="button" class="btn btn-primary" id="camera-capture-btn">
           <span class="material-symbols-outlined" style="font-size: 16px;">photo_camera</span>
-          <span>Capture Portrait</span>
+          <span>Capture Photo</span>
         </button>
       </div>
-      <p class="camera-hint">Position face directly within soft, natural daylight for laboratory-grade precision.</p>
+      <p class="camera-hint">Position your face in soft, natural daylight so your skin tone is clearly visible.</p>
     </div>
   </div>
 
@@ -918,7 +917,8 @@ body {{
 
       let currentImageBitmap = null;
       let currentDataUrl = null;
-      let currentGender = "all";
+      let currentGender = "auto";
+      let userExplicitlyChoseGender = false;
       let cachedAnalysisData = null;
 
       // Theme Controller
@@ -1121,137 +1121,208 @@ body {{
       }}
 
       function renderFaceBox(face, rollDeg = 0) {{
-        const clampPct = (val) => Math.max(2, Math.min(98, val));
-        const stage = document.getElementById("preview-stage") || document.getElementById("preview-box");
-        const stageW = stage ? Math.max(160, stage.clientWidth) : 320;
-        const stageH = stage ? Math.max(160, stage.clientHeight) : 400;
-
+        // Kept for backward compatibility, box-face is hidden in auto-colour mode
         const el = document.getElementById("box-face");
-        if (!el) return;
-
-        const cx = clampPct(face.isCenter ? face.x : (face.x + (face.w ? face.w / 2 : 0)));
-        const cy = clampPct(face.isCenter ? face.y : (face.y + (face.h ? face.h / 2 : 0)));
-        const wPct = Math.max(14, Math.min(92, face.w || 40));
-        const hPct = Math.max(16, Math.min(94, face.h || 52));
-
-        el.style.left = `${{cx.toFixed(1)}}%`;
-        el.style.top = `${{cy.toFixed(1)}}%`;
-        
-        const pixelW = Math.max(48, Math.round((wPct / 100) * stageW));
-        const pixelH = Math.max(56, Math.round((hPct / 100) * stageH));
-        el.style.width = `${{pixelW}}px`;
-        el.style.height = `${{pixelH}}px`;
-        el.style.transform = `translate(-50%, -50%) rotate(${{rollDeg.toFixed(1)}}deg)`;
+        if (el) el.style.display = "none";
       }}
 
-      function detectFaceColorProperly(img, faceBox) {{
-        try {{
-          if (!img) return;
-          const origW = img.naturalWidth || img.width || 320;
-          const origH = img.naturalHeight || img.height || 400;
+      // --- Auto Colour Detection & Lighting Quality Sensor ---
+      function checkImageQualityAndAutoColor(img) {{
+        const statusEl = document.getElementById("mesh-status-text");
+        const lightingPill = document.getElementById("lighting-status-pill");
+        const hudLightingPill = document.getElementById("hud-lighting-pill");
+        const dockDot = document.getElementById("dock-dot");
+        const autoBadgeTitle = document.getElementById("auto-color-badge-title");
+        const autoBadgeHex = document.getElementById("face-box-hex");
+        const autoBadgeTag = document.getElementById("face-box-sublabel");
+        const autoDot = document.getElementById("face-box-color-dot");
 
-          const sampleW = 240;
-          const sampleH = Math.max(120, Math.round((origH / origW) * 240));
-          const sampleC = document.createElement("canvas");
-          sampleC.width = sampleW;
-          sampleC.height = sampleH;
-          const sCtx = sampleC.getContext("2d", {{ willReadFrequently: true }});
-          sCtx.drawImage(img, 0, 0, sampleW, sampleH);
-          const imgData = sCtx.getImageData(0, 0, sampleW, sampleH).data;
+        if (statusEl) statusEl.textContent = "Scanning photo lighting and complexion...";
 
-          let fw = (faceBox.w / 100) * sampleW;
-          let fh = (faceBox.h / 100) * sampleH;
-          let fx = faceBox.isCenter ? ((faceBox.x / 100) * sampleW - fw / 2) : ((faceBox.x / 100) * sampleW);
-          let fy = faceBox.isCenter ? ((faceBox.y / 100) * sampleH - fh / 2) : ((faceBox.y / 100) * sampleH);
+        const origW = img.naturalWidth || img.width || 320;
+        const origH = img.naturalHeight || img.height || 400;
 
-          const x1 = Math.max(0, Math.floor(fx));
-          const y1 = Math.max(0, Math.floor(fy));
-          const x2 = Math.min(sampleW - 1, Math.ceil(fx + fw));
-          const y2 = Math.min(sampleH - 1, Math.ceil(fy + fh));
+        // Fast sampling canvas
+        const sampleW = 280;
+        const sampleH = Math.max(140, Math.round((origH / origW) * 280));
+        const canvas = document.createElement("canvas");
+        canvas.width = sampleW;
+        canvas.height = sampleH;
+        const ctx = canvas.getContext("2d", {{ willReadFrequently: true }});
+        ctx.drawImage(img, 0, 0, sampleW, sampleH);
+        const imgData = ctx.getImageData(0, 0, sampleW, sampleH).data;
 
-          const fWidth = Math.max(10, x2 - x1);
-          const fHeight = Math.max(10, y2 - y1);
+        // 1. Lighting, Exposure & Clarity metrics
+        let totalLum = 0;
+        let darkCount = 0;
+        let brightCount = 0;
+        const totalPixels = sampleW * sampleH;
+        const lums = [];
 
-          const candidateSkin = [];
-          const foreheadSkin = [];
-          const cheekSkin = [];
-          const jawSkin = [];
+        for (let i = 0; i < imgData.length; i += 4) {{
+          const r = imgData[i], g = imgData[i + 1], b = imgData[i + 2];
+          const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+          totalLum += lum;
+          if (lum < 22) darkCount++;
+          if (lum > 242) brightCount++;
+          if (i % 16 === 0) lums.push(lum);
+        }}
 
-          for (let y = y1; y <= y2; y += 2) {{
-            const relY = (y - y1) / fHeight;
-            for (let x = x1; x <= x2; x += 2) {{
-              const relX = (x - x1) / fWidth;
-              const idx = (y * sampleW + x) * 4;
-              const r = imgData[idx];
-              const g = imgData[idx + 1];
-              const b = imgData[idx + 2];
+        const meanBrightness = totalLum / totalPixels;
+        const darkRatio = darkCount / totalPixels;
+        const brightRatio = brightCount / totalPixels;
 
-              const yP = 0.299 * r + 0.587 * g + 0.114 * b;
-              const cr = 0.713 * (r - yP) + 128.0;
-              const cb = 0.564 * (b - yP) + 128.0;
+        let lumVarSum = 0;
+        for (let l of lums) {{
+          const d = l - meanBrightness;
+          lumVarSum += d * d;
+        }}
+        const contrastStd = Math.sqrt(lumVarSum / lums.length);
 
-              const maxC = Math.max(r, g, b);
-              const minC = Math.min(r, g, b);
-              const delta = maxC - minC;
-              const sat = maxC > 0 ? delta / maxC : 0;
+        // Focus / blur approximation
+        let edgeDiffSum = 0;
+        let edgeCount = 0;
+        for (let y = 1; y < sampleH - 1; y += 3) {{
+          for (let x = 1; x < sampleW - 1; x += 3) {{
+            const idx = (y * sampleW + x) * 4;
+            const c = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
+            const r = 0.299 * imgData[idx + 4] + 0.587 * imgData[idx + 5] + 0.114 * imgData[idx + 6];
+            const down = 0.299 * imgData[idx + sampleW * 4] + 0.587 * imgData[idx + sampleW * 4 + 1] + 0.114 * imgData[idx + sampleW * 4 + 2];
+            const diff = Math.abs(c - r) + Math.abs(c - down);
+            edgeDiffSum += diff * diff;
+            edgeCount++;
+          }}
+        }}
+        const blurMetric = edgeCount > 0 ? (edgeDiffSum / edgeCount) : 100;
 
-              const isSkinYCrCb = (cr >= 128 && cr <= 180 && cb >= 75 && cb <= 138 && (cr - cb) >= 6);
-              const isSkinRGB = (r > g && g > b && r > 40 && (r - g) >= 4 && (r - b) >= 8);
-              const isSkinSat = (sat >= 0.10 && sat <= 0.75);
+        // 2. Candidate skin pixels across full Fitzpatrick range
+        const candidateSkin = [];
+        for (let y = 0; y < sampleH; y += 2) {{
+          for (let x = 0; x < sampleW; x += 2) {{
+            const idx = (y * sampleW + x) * 4;
+            const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+            const yP = 0.299 * r + 0.587 * g + 0.114 * b;
+            const cr = 0.713 * (r - yP) + 128.0;
+            const cb = 0.564 * (b - yP) + 128.0;
 
-              if (isSkinYCrCb && isSkinRGB && isSkinSat) {{
-                const pixelObj = {{ r, g, b, lum: yP }};
-                candidateSkin.push(pixelObj);
+            const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
+            const delta = maxC - minC;
+            const sat = maxC > 0 ? delta / maxC : 0;
 
-                if (relY >= 0.10 && relY <= 0.35 && relX >= 0.18 && relX <= 0.82) {{
-                  foreheadSkin.push(pixelObj);
-                }} else if (relY >= 0.35 && relY <= 0.68 && (relX <= 0.40 || relX >= 0.60)) {{
-                  cheekSkin.push(pixelObj);
-                }} else if (relY >= 0.68 && relY <= 0.94 && relX >= 0.22 && relX <= 0.78) {{
-                  jawSkin.push(pixelObj);
-                }}
-              }}
+            const isYCrCb = (cr >= 126 && cr <= 188 && cb >= 68 && cb <= 142 && (cr - cb) >= 5);
+            const isRGB = (r > g && g > b && r > 40 && (r - g) >= 4 && (r - b) >= 7);
+            const isSat = (sat >= 0.08 && sat <= 0.78);
+
+            if (isYCrCb && isRGB && isSat) {{
+              candidateSkin.push({{ r, g, b, lum: yP, x, y }});
             }}
           }}
-
-          function getRobustColor(pixels, defaultR = 200, defaultG = 150, defaultB = 115) {{
-            if (!pixels || pixels.length < 5) return {{ r: defaultR, g: defaultG, b: defaultB, hex: rgbToHex(defaultR, defaultG, defaultB) }};
-            pixels.sort((a, b) => a.lum - b.lum);
-            const start = Math.floor(pixels.length * 0.15);
-            const end = Math.max(start + 1, Math.floor(pixels.length * 0.85));
-            const trimmed = pixels.slice(start, end);
-            let sumR = 0, sumG = 0, sumB = 0;
-            trimmed.forEach(p => {{ sumR += p.r; sumG += p.g; sumB += p.b; }});
-            const r = Math.round(sumR / trimmed.length);
-            const g = Math.round(sumG / trimmed.length);
-            const b = Math.round(sumB / trimmed.length);
-            return {{ r, g, b, hex: rgbToHex(r, g, b) }};
-          }}
-
-          const mainTone = getRobustColor(candidateSkin);
-          const cheekTone = getRobustColor(cheekSkin, mainTone.r, mainTone.g, mainTone.b);
-          const foreheadTone = getRobustColor(foreheadSkin, mainTone.r - 4, mainTone.g - 3, mainTone.b - 2);
-          const jawTone = getRobustColor(jawSkin, mainTone.r + 3, mainTone.g + 2, mainTone.b + 1);
-
-          const dotEl = document.getElementById("face-box-color-dot");
-          const hexEl = document.getElementById("face-box-hex");
-          if (dotEl) dotEl.style.backgroundColor = mainTone.hex;
-          if (hexEl) hexEl.textContent = mainTone.hex;
-
-          const updateSwatch = (colorId, hexId, hex) => {{
-            const c = document.getElementById(colorId);
-            const h = document.getElementById(hexId);
-            if (c) c.style.backgroundColor = hex;
-            if (h) h.textContent = hex;
-          }};
-          updateSwatch("sample-color-1", "sample-hex-1", mainTone.hex);
-          updateSwatch("sample-color-2", "sample-hex-2", foreheadTone.hex);
-          updateSwatch("sample-color-3", "sample-hex-3", cheekTone.hex);
-          updateSwatch("sample-color-4", "sample-hex-4", jawTone.hex);
-
-        }} catch(e) {{
-          console.warn("Face color sampling fallback:", e);
         }}
+
+        // 3. Check for lighting and clarity issues
+        let errorMsg = null;
+        if (origW < 160 || origH < 160) {{
+          errorMsg = "The image is not clear: Photo resolution is too low. Please upload a higher resolution photo.";
+        }} else if (meanBrightness < 45 || darkRatio > 0.35) {{
+          errorMsg = "The image is not clear and does not have proper lighting: The photo is too dark. Please take your photo in bright, natural daylight so your skin tone can be identified accurately.";
+        }} else if (meanBrightness > 222 || brightRatio > 0.35) {{
+          errorMsg = "The image is not clear: Harsh glare or overexposure detected. Please avoid strong camera flash or harsh direct sunlight.";
+        }} else if (contrastStd < 16) {{
+          errorMsg = "The image is not clear: The photo lacks contrast or has heavy uneven shadows. Please use clear, balanced lighting.";
+        }} else if (blurMetric < 15) {{
+          errorMsg = "The image is not clear: The photo appears blurry or out of focus. Please ensure the camera is steady and clear.";
+        }} else if (candidateSkin.length < 35) {{
+          errorMsg = "Could not identify your natural skin colour. The image is not clear or does not have proper lighting. Please upload a clear photo with visible skin complexion in natural lighting.";
+        }}
+
+        if (errorMsg) {{
+          // Show warning and PREVENT proceeding!
+          showError(errorMsg);
+          if (qualityBar) qualityBar.classList.remove("hidden");
+          if (qualityMeter) {{
+            qualityMeter.style.width = "30%";
+            qualityMeter.style.background = "#EF4444";
+          }}
+          if (qualityStatus) {{
+            qualityStatus.textContent = "Lighting / Clarity Issue";
+            qualityStatus.className = "quality-status Poor";
+          }}
+          if (qualityDetails) qualityDetails.textContent = errorMsg;
+
+          if (statusEl) statusEl.textContent = "⚠️ Image not clear or poor lighting • Skin colour not spotted";
+          if (lightingPill) lightingPill.textContent = "Lighting: Needs Improvement";
+          if (hudLightingPill) hudLightingPill.textContent = "⚠️ POOR LIGHTING";
+          if (dockDot) dockDot.style.background = "#EF4444";
+
+          if (autoBadgeTitle) autoBadgeTitle.textContent = "SKIN COLOUR NOT SPOTTED";
+          if (autoBadgeHex) autoBadgeHex.textContent = "UNCLEAR";
+          if (autoBadgeTag) {{
+            autoBadgeTag.textContent = "CHECK LIGHTING";
+            autoBadgeTag.className = "auto-color-status-tag error";
+          }}
+          if (autoDot) autoDot.style.backgroundColor = "#64748B";
+
+          analyzeBtn.disabled = true;
+          return false;
+        }}
+
+        // Success! Dermis color spotted accurately
+        hideError();
+        candidateSkin.sort((a, b) => a.lum - b.lum);
+        const lowCut = Math.floor(candidateSkin.length * 0.15);
+        const highCut = Math.max(lowCut + 1, Math.floor(candidateSkin.length * 0.85));
+        const trimmed = candidateSkin.slice(lowCut, highCut);
+
+        let sumR = 0, sumG = 0, sumB = 0;
+        trimmed.forEach((p) => {{ sumR += p.r; sumG += p.g; sumB += p.b; }});
+        const spottedR = Math.round(sumR / trimmed.length);
+        const spottedG = Math.round(sumG / trimmed.length);
+        const spottedB = Math.round(sumB / trimmed.length);
+        const spottedHex = rgbToHex(spottedR, spottedG, spottedB);
+
+        // Update Quality Bar: Optimal
+        if (qualityBar) qualityBar.classList.remove("hidden");
+        if (qualityMeter) {{
+          qualityMeter.style.width = "95%";
+          qualityMeter.style.background = "#10B981";
+        }}
+        if (qualityStatus) {{
+          qualityStatus.textContent = "Good Lighting & Clear Photo";
+          qualityStatus.className = "quality-status Good";
+        }}
+        if (qualityDetails) {{
+          qualityDetails.textContent = `Natural skin tone spotted (${{spottedHex}}) • Lighting is balanced and clear. Ready to proceed!`;
+        }}
+
+        // Update HUD & Auto Color Badge
+        if (statusEl) statusEl.textContent = `✨ Natural skin colour spotted (${{spottedHex}}) • Lighting is clear`;
+        if (lightingPill) lightingPill.textContent = "Lighting: Clear & Balanced";
+        if (hudLightingPill) hudLightingPill.textContent = "💡 GOOD LIGHTING";
+        if (dockDot) dockDot.style.background = "#10B981";
+
+        if (autoBadgeTitle) autoBadgeTitle.textContent = "SKIN COLOUR SPOTTED";
+        if (autoBadgeHex) autoBadgeHex.textContent = spottedHex;
+        if (autoBadgeTag) {{
+          autoBadgeTag.textContent = "READY TO PROCEED";
+          autoBadgeTag.className = "auto-color-status-tag success";
+        }}
+        if (autoDot) autoDot.style.backgroundColor = spottedHex;
+
+        // Update Telemetry Swatches
+        const updateSwatch = (colorId, hexId, hex) => {{
+          const c = document.getElementById(colorId);
+          const h = document.getElementById(hexId);
+          if (c) c.style.backgroundColor = hex;
+          if (h) h.textContent = hex;
+        }};
+        updateSwatch("sample-color-1", "sample-hex-1", spottedHex);
+        updateSwatch("sample-color-2", "sample-hex-2", rgbToHex(Math.max(0, spottedR - 10), Math.max(0, spottedG - 8), Math.max(0, spottedB - 6)));
+        updateSwatch("sample-color-3", "sample-hex-3", rgbToHex(Math.min(255, spottedR + 10), Math.min(255, spottedG + 8), Math.min(255, spottedB + 6)));
+        updateSwatch("sample-color-4", "sample-hex-4", rgbToHex(Math.max(0, spottedR - 6), Math.max(0, spottedG - 4), Math.max(0, spottedB - 3)));
+
+        // Spotted the colour - proceed!
+        analyzeBtn.disabled = false;
+        return true;
       }}
 
       function loadImageFromDataUrl(dataUrl) {{
@@ -1262,107 +1333,12 @@ body {{
           previewImg.src = dataUrl;
           uploadPrompt.classList.add("hidden");
           previewBox.classList.remove("hidden");
-          analyzeBtn.disabled = false;
+          analyzeBtn.disabled = true;
           hideError();
-          showInitialQuality(img.width, img.height);
-          // Instantaneous auto-alignment with adaptive scale for small, large, cropped & angled portraits
-          autoAlignFacialLandmarks(img);
+          // Check lighting, clarity, and automatically spot skin colour
+          checkImageQualityAndAutoColor(img);
         }};
         img.src = dataUrl;
-      }}
-
-      function autoAlignFacialLandmarks(img) {{
-        const statusEl = document.getElementById("mesh-status-text");
-        if (statusEl) statusEl.textContent = "AI Scanning Facial Morphology...";
-
-        // ── 0. Inference canvas ──────────────────────────────────────────────
-        const {{ canvas: inferCanvas, w: sW, h: sH }} = getFastInferenceCanvas(img, 320);
-        const scanCtx = inferCanvas.getContext("2d", {{ willReadFrequently: true }});
-        const imgData = scanCtx.getImageData(0, 0, sW, sH).data;
-
-        // ── 1. Row & column skin histograms ──────────────────────────────────
-        const colSkin = new Float32Array(sW);
-        const rowSkin = new Float32Array(sH);
-        let _skinCount = 0;
-
-        for (let y = 0; y < sH; y++) {{
-          for (let x = 0; x < sW; x++) {{
-            const idx = (y * sW + x) * 4;
-            const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
-            const yP = 0.299 * r + 0.587 * g + 0.114 * b;
-            const cr = 0.713 * (r - yP) + 128;
-            const cb = 0.564 * (b - yP) + 128;
-            if (cr >= 120 && cr <= 195 && cb >= 65 && cb <= 145 &&
-                r > 40 && r > g && r > b && (r - Math.min(g, b)) >= 5) {{
-              colSkin[x]++;
-              rowSkin[y]++;
-              _skinCount++;
-            }}
-          }}
-        }}
-
-        // ── 2. Smooth histograms (radius-5 moving average) ───────────────────
-        const smooth = (arr, len, radius) => {{
-          const out = new Float32Array(len);
-          for (let i = 0; i < len; i++) {{
-            let sum = 0, cnt = 0;
-            for (let j = Math.max(0, i - radius); j <= Math.min(len - 1, i + radius); j++) {{
-              sum += arr[j]; cnt++;
-            }}
-            out[i] = cnt ? sum / cnt : 0;
-          }}
-          return out;
-        }};
-        const smC = smooth(colSkin, sW, 5);
-        const smR = smooth(rowSkin, sH, 5);
-
-        // ── 3. Find peak then expand while density ≥ 12% of peak ────────────
-        const findBounds = (arr, len) => {{
-          let peak = 0, peakIdx = Math.floor(len / 2);
-          for (let i = 0; i < len; i++) {{ if (arr[i] > peak) {{ peak = arr[i]; peakIdx = i; }} }}
-          if (peak === 0) return {{ lo: 0, hi: len - 1 }};
-          const thr = peak * 0.12;
-          let lo = peakIdx, hi = peakIdx;
-          while (lo > 0 && arr[lo - 1] >= thr) lo--;
-          while (hi < len - 1 && arr[hi + 1] >= thr) hi++;
-          return {{ lo, hi }};
-        }};
-
-        const xB = findBounds(smC, sW);
-        const yB = findBounds(smR, sH);
-
-        // ── 4. Add anatomical padding ─────────────────────────────────────────
-        let boxL = xB.lo, boxR = xB.hi, boxT = yB.lo, boxB = yB.hi;
-        const bW = boxR - boxL, bH = boxB - boxT;
-        boxT = Math.max(0,  boxT - bH * 0.22);
-        boxB = Math.min(sH, boxB + bH * 0.10);
-        boxL = Math.max(0,  boxL - bW * 0.10);
-        boxR = Math.min(sW, boxR + bW * 0.10);
-
-        // ── 5. Fallback ───────────────────────────────────────────────────────
-        if (_skinCount < 80 || (boxR - boxL) < sW * 0.20 || (boxB - boxT) < sH * 0.25) {{
-          boxL = sW * 0.10; boxR = sW * 0.90;
-          boxT = sH * 0.02; boxB = sH * 0.95;
-        }}
-
-        const finalW  = boxR - boxL;
-        const finalH  = boxB - boxT;
-        const finalCX = (boxL + boxR) / 2;
-        const finalCY = (boxT + boxB) / 2;
-
-        const faceXPct = (finalCX / sW) * 100;
-        const faceYPct = (finalCY / sH) * 100;
-        const faceWPct = Math.max(14, Math.min(93, (finalW / sW) * 100));
-        const faceHPct = Math.max(18, Math.min(95, (finalH / sH) * 100));
-
-        // ── 6. Render & colour-sample ─────────────────────────────────────────
-        renderFaceBox({{ x: faceXPct, y: faceYPct, w: faceWPct, h: faceHPct, isCenter: true }}, 0);
-        detectFaceColorProperly(img, {{ x: faceXPct, y: faceYPct, w: faceWPct, h: faceHPct, isCenter: true }});
-
-        if (statusEl) {{
-          const scaleText = faceWPct < 28 ? "Small Portrait" : (faceWPct > 62 ? "Close-Up" : "Studio");
-          statusEl.textContent = `AI Face Auto-Adjusted (${{scaleText}} Scaled) • Locked`;
-        }}
       }}
 
       function resetUpload() {{
@@ -1455,26 +1431,9 @@ body {{
 
         const imgData = ctx.getImageData(0, 0, w, h).data;
         
-        // Retrieve exact coordinates from auto-aligned face box
-        const faceEl = document.getElementById("box-face");
-        let faceXPct = 50, faceYPct = 48, faceWPct = 40, faceHPct = 50;
-        if (faceEl && faceEl.style.left) {{
-          faceXPct = parseFloat(faceEl.style.left) || 50;
-          faceYPct = parseFloat(faceEl.style.top) || 48;
-          const stageEl = document.getElementById("preview-stage") || document.getElementById("preview-box");
-          if (stageEl) {{
-            faceWPct = (faceEl.offsetWidth / stageEl.clientWidth) * 100 || 40;
-            faceHPct = (faceEl.offsetHeight / stageEl.clientHeight) * 100 || 50;
-          }}
-        }}
-
-        const headCenterX = (faceXPct / 100) * w;
-        const headCenterY = (faceYPct / 100) * h;
-        const headRadiusX = Math.max(w * 0.12, (faceWPct / 100) * w * 0.55);
-        const headRadiusY = Math.max(h * 0.15, (faceHPct / 100) * h * 0.55);
-
-        // Dermis Melanin Discriminator
+        // Auto Skin Colour Detection across entire image
         const candidateSkin = [];
+        let sumSkinX = 0, sumSkinY = 0;
         for (let y = 0; y < h; y += 2) {{
           for (let x = 0; x < w; x += 2) {{
             const idx = (y * w + x) * 4;
@@ -1494,28 +1453,42 @@ body {{
               hue = (hue * 60 + 360) % 360;
             }}
 
-            const isYCrCb = (cr >= 128 && cr <= 180 && cb >= 75 && cb <= 136 && (cr - cb) >= 6);
-            const isRGB = (r > g && g > b && r > 40 && (r - g) >= 5 && (r - b) >= 8);
-            const isHSV = (sat >= 0.12 && sat <= 0.75 && ((hue >= 0 && hue <= 52) || (hue >= 330 && hue <= 360)));
+            const isYCrCb = (cr >= 126 && cr <= 188 && cb >= 68 && cb <= 142 && (cr - cb) >= 5);
+            const isRGB = (r > g && g > b && r > 40 && (r - g) >= 4 && (r - b) >= 7);
+            const isHSV = (sat >= 0.08 && sat <= 0.78 && ((hue >= 0 && hue <= 52) || (hue >= 330 && hue <= 360)));
 
             if (isYCrCb && isRGB && isHSV) {{
-              const dx = (x - headCenterX) / headRadiusX;
-              const dy = (y - headCenterY) / headRadiusY;
-              const distNorm = Math.sqrt(dx * dx + dy * dy);
-              if (distNorm <= 1.35) {{
-                const weight = Math.max(1, Math.round((1.5 - distNorm) * 5));
-                candidateSkin.push({{ r, g, b, lum: yP, dist: distNorm, weight }});
-              }}
+              candidateSkin.push({{ r, g, b, lum: yP, x, y, weight: 1 }});
+              sumSkinX += x;
+              sumSkinY += y;
             }}
           }}
         }}
 
+        // 1. Precise Anatomical Face Cluster Extraction (excludes neck, shoulders, and chest)
+        let faceSkinPixels = candidateSkin.filter(p => p.y < h * 0.70);
+        if (faceSkinPixels.length < 25) faceSkinPixels = candidateSkin;
+
+        const skinXs = faceSkinPixels.map(p => p.x).sort((a, b) => a - b);
+        const skinYs = faceSkinPixels.map(p => p.y).sort((a, b) => a - b);
+
+        const fLeft = skinXs[Math.floor(skinXs.length * 0.08)];
+        const fRight = skinXs[Math.floor(skinXs.length * 0.92)];
+        const fTop = skinYs[Math.floor(skinYs.length * 0.04)];
+        const fWidth = Math.max(60, fRight - fLeft);
+        const fHeight = Math.max(75, Math.min(Math.round(fWidth * 1.32), h - fTop - 4));
+
+        const headCenterX = fLeft + fWidth * 0.5;
+        const headCenterY = fTop + fHeight * 0.48;
+        const headRadiusX = fWidth * 0.46;
+        const headRadiusY = fHeight * 0.46;
+
         if (candidateSkin.length < 25) {{
-          for (let y = Math.floor(h * 0.08); y < Math.floor(h * 0.50); y += 2) {{
-            for (let x = Math.floor(w * 0.25); x < Math.floor(w * 0.75); x += 2) {{
+          for (let y = Math.floor(h * 0.08); y < Math.floor(h * 0.85); y += 2) {{
+            for (let x = Math.floor(w * 0.15); x < Math.floor(w * 0.85); x += 2) {{
               const idx = (y * w + x) * 4;
               const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
-              if (r > 70 && g > 45 && b > 30 && r > g && g > b) {{
+              if (r > 60 && g > 40 && b > 25 && r > g && g > b) {{
                 candidateSkin.push({{ r, g, b, lum: 0.299*r + 0.587*g + 0.114*b, dist: 1, weight: 1 }});
               }}
             }}
@@ -1530,17 +1503,17 @@ body {{
 
         let sumR = 0, sumG = 0, sumB = 0, totalW = 0;
         trimmed.forEach((p) => {{
-          sumR += p.r * p.weight;
-          sumG += p.g * p.weight;
-          sumB += p.b * p.weight;
-          totalW += p.weight;
+          sumR += p.r * (p.weight || 1);
+          sumG += p.g * (p.weight || 1);
+          sumB += p.b * (p.weight || 1);
+          totalW += (p.weight || 1);
         }});
 
         const meanR = totalW > 0 ? sumR / totalW : 195;
         const meanG = totalW > 0 ? sumG / totalW : 145;
         const meanB = totalW > 0 ? sumB / totalW : 110;
 
-        // Sample micro-extract swatches directly from localized facial regions
+        // Sample micro-extract swatches directly from localized skin regions
         const sampleRegionColor = (boxPct, defHex) => {{
           const bx = Math.floor((boxPct.x / 100) * w);
           const by = Math.floor((boxPct.y / 100) * h);
@@ -1561,10 +1534,10 @@ body {{
           return sCount > 0 ? rgbToHex(sR / sCount, sG / sCount, sB / sCount) : defHex;
         }};
 
-        const ptFace = {{ x: faceXPct, y: faceYPct }};
-        const ptFrn = {{ x: faceXPct, y: Math.max(8, faceYPct - faceHPct * 0.28) }};
-        const ptChk = {{ x: Math.max(8, faceXPct - faceWPct * 0.25), y: faceYPct }};
-        const ptChn = {{ x: faceXPct, y: Math.min(95, faceYPct + faceHPct * 0.35) }};
+        const ptFace = {{ x: (headCenterX / w) * 100, y: (headCenterY / h) * 100 }};
+        const ptFrn = {{ x: (headCenterX / w) * 100, y: Math.max(6, Math.min(95, ((fTop + fHeight * 0.16) / h) * 100)) }};
+        const ptChk = {{ x: Math.max(6, Math.min(95, ((fLeft + fWidth * 0.22) / w) * 100)), y: ((fTop + fHeight * 0.52) / h) * 100 }};
+        const ptChn = {{ x: (headCenterX / w) * 100, y: Math.min(95, ((fTop + fHeight * 0.88) / h) * 100) }};
 
         const mainFaceHex = sampleRegionColor(ptFace, rgbToHex(meanR, meanG, meanB));
         const foreheadHex = sampleRegionColor(ptFrn, "#BA8152");
@@ -1597,7 +1570,7 @@ body {{
         const bgHex = rgbToHex(bgR / bgCount, bgG / bgCount, bgB / bgCount);
 
         let outR = 0, outG = 0, outB = 0, outCount = 0;
-        for (let y = Math.floor(h * 0.75); y < h; y += 4) {{
+        for (let y = Math.floor(h * 0.78); y < h; y += 4) {{
           for (let x = Math.floor(w * 0.25); x < Math.floor(w * 0.75); x += 4) {{
             const idx = (y * w + x) * 4;
             outR += imgData[idx]; outG += imgData[idx + 1]; outB += imgData[idx + 2];
@@ -1606,128 +1579,205 @@ body {{
         }}
         const outHex = outCount > 0 ? rgbToHex(outR / outCount, outG / outCount, outB / outCount) : "#1E293B";
 
-        // Enhanced Multi-Factor Morphological & Chromatic Gender Classification
+        // Multi-Factor Anatomical, Chromatic & Texture Gender Classification
         let scoreMale = 0.0;
         let scoreFemale = 0.0;
 
-        // 1. Cheek patch sampling (mid-face skin baseline)
-        const chkY1 = Math.max(0, Math.floor(headCenterY - headRadiusY * 0.10));
-        const chkY2 = Math.min(h, Math.floor(headCenterY + headRadiusY * 0.25));
-        const chkX1 = Math.max(0, Math.floor(headCenterX - headRadiusX * 0.70));
-        const chkX2 = Math.min(w, Math.floor(headCenterX + headRadiusX * 0.70));
+        // 1. Bilateral Cheek Baseline Sampling (clean dermal tissue away from nose & mouth)
+        const chkY1 = Math.floor(fTop + fHeight * 0.44);
+        const chkY2 = Math.floor(fTop + fHeight * 0.58);
+        const lChkX1 = Math.floor(fLeft + fWidth * 0.12);
+        const lChkX2 = Math.floor(fLeft + fWidth * 0.32);
+        const rChkX1 = Math.floor(fLeft + fWidth * 0.68);
+        const rChkX2 = Math.floor(fLeft + fWidth * 0.88);
+
         let chkR = 0, chkG = 0, chkB = 0, chkLum = 0, chkCount = 0;
-        for (let y = chkY1; y < chkY2; y += 2) {{
-          for (let x = chkX1; x < chkX2; x += 2) {{
-            const idx = (y * w + x) * 4;
-            const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
-            chkR += r; chkG += g; chkB += b;
-            chkLum += (0.299 * r + 0.587 * g + 0.114 * b);
-            chkCount++;
+        const sampleCheekBand = (x1, x2) => {{
+          for (let y = chkY1; y < chkY2; y += 2) {{
+            for (let x = x1; x < x2; x += 2) {{
+              if (x >= 0 && x < w && y >= 0 && y < h) {{
+                const idx = (y * w + x) * 4;
+                const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+                if (r > 40 && g > 25 && b > 15) {{
+                  chkR += r; chkG += g; chkB += b;
+                  chkLum += (0.299 * r + 0.587 * g + 0.114 * b);
+                  chkCount++;
+                }}
+              }}
+            }}
           }}
-        }}
+        }};
+        sampleCheekBand(lChkX1, lChkX2);
+        sampleCheekBand(rChkX1, rChkX2);
+
         const meanChkLum = chkCount > 0 ? chkLum / chkCount : 128;
         const meanChkR = chkCount > 0 ? chkR / chkCount : 150;
         const meanChkG = chkCount > 0 ? chkG / chkCount : 120;
         const meanChkB = chkCount > 0 ? chkB / chkCount : 100;
+        const chkRedRatio = meanChkR / Math.max(1, (meanChkG + meanChkB) / 2);
 
-        // 2. Chin & Mandibular patch sampling (follicular shadow / beard density)
-        const chinY1 = Math.max(0, Math.floor(headCenterY + headRadiusY * 0.65));
-        const chinY2 = Math.min(h, Math.floor(headCenterY + headRadiusY * 0.95));
-        const chinX1 = Math.max(0, Math.floor(headCenterX - headRadiusX * 0.45));
-        const chinX2 = Math.min(w, Math.floor(headCenterX + headRadiusX * 0.45));
-        let chinLum = 0, chinCount = 0;
-        for (let y = chinY1; y < chinY2; y += 2) {{
-          for (let x = chinX1; x < chinX2; x += 2) {{
-            const idx = (y * w + x) * 4;
-            const l = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
-            chinLum += l;
-            chinCount++;
-          }}
-        }}
-        const meanChinLum = chinCount > 0 ? chinLum / chinCount : 120;
-        const lumDrop = meanChkLum - meanChinLum;
+        // 2. Vermilion Mucosa Lip Sampling (Russell Facial Contrast with top-redness extraction)
+        const lipY1 = Math.floor(fTop + fHeight * 0.67);
+        const lipY2 = Math.floor(fTop + fHeight * 0.81);
+        const lipX1 = Math.floor(headCenterX - fWidth * 0.22);
+        const lipX2 = Math.floor(headCenterX + fWidth * 0.22);
 
-        // Males naturally exhibit darker lower face due to dermal hair follicles & chin structure
-        if (lumDrop > 22.0) {{
-          scoreMale += Math.min(3.5, (lumDrop - 22.0) / 10.0 + 1.2);
-        }} else if (lumDrop < 8.0) {{
-          scoreFemale += Math.min(2.5, (8.0 - lumDrop) / 8.0 + 0.8);
-        }}
-
-        // 3. Lip patch sampling (Russell Facial Contrast & Lip Redness)
-        const lipY1 = Math.max(0, Math.floor(headCenterY + headRadiusY * 0.35));
-        const lipY2 = Math.min(h, Math.floor(headCenterY + headRadiusY * 0.65));
-        const lipX1 = Math.max(0, Math.floor(headCenterX - headRadiusX * 0.35));
-        const lipX2 = Math.min(w, Math.floor(headCenterX + headRadiusX * 0.35));
-        let lipR = 0, lipG = 0, lipB = 0, lipCount = 0;
+        const mouthPixels = [];
         for (let y = lipY1; y < lipY2; y += 2) {{
           for (let x = lipX1; x < lipX2; x += 2) {{
-            const idx = (y * w + x) * 4;
-            lipR += imgData[idx]; lipG += imgData[idx + 1]; lipB += imgData[idx + 2];
-            lipCount++;
+            if (x >= 0 && x < w && y >= 0 && y < h) {{
+              const idx = (y * w + x) * 4;
+              const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+              const redScore = r / Math.max(1, (g + b) / 2);
+              mouthPixels.push({{ r, g, b, redScore }});
+            }}
           }}
+        }}
+
+        // Isolate actual mucosal lips by selecting top 30% reddest pixels in mouth zone
+        mouthPixels.sort((a, b) => b.redScore - a.redScore);
+        const lipCut = Math.max(4, Math.floor(mouthPixels.length * 0.30));
+        let lipR = 0, lipG = 0, lipB = 0, lipCount = 0;
+        for (let i = 0; i < lipCut; i++) {{
+          lipR += mouthPixels[i].r;
+          lipG += mouthPixels[i].g;
+          lipB += mouthPixels[i].b;
+          lipCount++;
         }}
         const meanLipR = lipCount > 0 ? lipR / lipCount : 160;
-        const meanLipG = lipCount > 0 ? lipG / lipCount : 110;
-        const meanLipB = lipCount > 0 ? lipB / lipCount : 100;
+        const meanLipG = lipCount > 0 ? lipG / lipCount : 100;
+        const meanLipB = lipCount > 0 ? lipB / lipCount : 95;
+        const lipRedRatio = meanLipR / Math.max(1, (meanLipG + meanLipB) / 2);
+        const lipContrast = lipRedRatio - chkRedRatio;
 
-        const chkRedness = meanChkR / Math.max(1, (meanChkG + meanChkB) / 2);
-        const lipRedness = meanLipR / Math.max(1, (meanLipG + meanLipB) / 2);
-        const lipContrast = lipRedness - chkRedness;
-
-        // Females naturally have significantly higher lip chrominance / contrast
-        if (lipContrast > 0.12) {{
-          scoreFemale += Math.min(3.0, (lipContrast - 0.12) * 12.0 + 1.0);
-        }} else if (lipContrast < 0.05) {{
-          scoreMale += Math.min(2.5, (0.05 - lipContrast) * 15.0 + 1.2);
+        // Scientific Russell Contrast: Women exhibit significantly higher lip-to-skin contrast (> 0.08)
+        if (lipContrast > 0.08) {{
+          scoreFemale += Math.min(3.6, (lipContrast - 0.08) * 16.0 + 1.2);
+        }} else if (lipContrast < 0.04) {{
+          scoreMale += Math.min(3.0, (0.04 - lipContrast) * 22.0 + 1.0);
+        }} else {{
+          // Smooth transition zone
+          const t = (lipContrast - 0.04) / 0.04;
+          scoreFemale += t * 0.8;
+          scoreMale += (1.0 - t) * 0.8;
         }}
 
-        // 4. Eyebrow density & supraorbital prominence
-        const browY1 = Math.max(0, Math.floor(headCenterY - headRadiusY * 0.62));
-        const browY2 = Math.min(h, Math.floor(headCenterY - headRadiusY * 0.25));
-        const browX1 = Math.max(0, Math.floor(headCenterX - headRadiusX * 0.75));
-        const browX2 = Math.min(w, Math.floor(headCenterX + headRadiusX * 0.75));
-        let browLums = [];
-        let browLumSum = 0;
+        // 3. Lower-Mandible Dermal Follicular Shadow (Chin)
+        const chinY1 = Math.floor(fTop + fHeight * 0.83);
+        const chinY2 = Math.floor(fTop + fHeight * 0.94);
+        const chinX1 = Math.floor(headCenterX - fWidth * 0.16);
+        const chinX2 = Math.floor(headCenterX + fWidth * 0.16);
+
+        let chinLumSum = 0, chinWarmSum = 0, chinCount = 0;
+        for (let y = chinY1; y < chinY2; y += 2) {{
+          for (let x = chinX1; x < chinX2; x += 2) {{
+            if (x >= 0 && x < w && y >= 0 && y < h) {{
+              const idx = (y * w + x) * 4;
+              const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+              chinLumSum += (0.299 * r + 0.587 * g + 0.114 * b);
+              chinWarmSum += (r + g) / Math.max(1, 2 * b);
+              chinCount++;
+            }}
+          }}
+        }}
+        const meanChinLum = chinCount > 0 ? chinLumSum / chinCount : meanChkLum;
+        const meanChinWarm = chinCount > 0 ? chinWarmSum / chinCount : 1.2;
+        const chkWarm = (meanChkR + meanChkG) / Math.max(1, 2 * meanChkB);
+        const lumDrop = meanChkLum - meanChinLum;
+        const warmDrop = chkWarm - meanChinWarm;
+
+        // Male follicular beard shadow creates luminance drop (> 14px) and cool/gray desaturation (warmDrop > 0.14)
+        if (lumDrop > 14.0 || warmDrop > 0.14) {{
+          const maleDropScore = Math.max(0, (lumDrop - 14.0) * 0.22) + Math.max(0, (warmDrop - 0.14) * 8.0);
+          scoreMale += Math.min(3.4, maleDropScore + 0.9);
+        }} else if (lumDrop < 8.0 && warmDrop < 0.08) {{
+          scoreFemale += Math.min(2.8, (8.0 - lumDrop) * 0.28 + 0.9);
+        }}
+
+        // 4. Lateral Hair Volume (Long hair framing the jawline & neck past the face)
+        const sideH1 = Math.floor(fTop + fHeight * 0.40);
+        const sideH2 = Math.min(h - 1, Math.floor(fTop + fHeight * 1.15));
+        const lSideX1 = Math.max(0, Math.floor(fLeft - fWidth * 0.28));
+        const lSideX2 = Math.floor(fLeft - 4);
+        const rSideX1 = Math.floor(fRight + 4);
+        const rSideX2 = Math.min(w - 1, Math.floor(fRight + fWidth * 0.28));
+
+        let hairPixels = 0, totalSidePixels = 0;
+        const checkHairSide = (x1, x2) => {{
+          for (let y = sideH1; y < sideH2; y += 3) {{
+            for (let x = x1; x < x2; x += 3) {{
+              if (x >= 0 && x < w && y >= 0 && y < h) {{
+                const idx = (y * w + x) * 4;
+                const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+                const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+                totalSidePixels++;
+                // Hair is dark (< 85 lum) or distinctly non-background / non-skin
+                if (lum < 85 || (r > 70 && g > 40 && b < 45 && r > g * 1.2)) {{
+                  hairPixels++;
+                }}
+              }}
+            }}
+          }}
+        }};
+        checkHairSide(lSideX1, lSideX2);
+        checkHairSide(rSideX1, rSideX2);
+
+        const hairRatio = totalSidePixels > 20 ? hairPixels / totalSidePixels : 0;
+        if (hairRatio > 0.22) {{
+          scoreFemale += Math.min(2.8, (hairRatio - 0.22) * 8.0 + 1.2);
+        }} else if (hairRatio < 0.06 && totalSidePixels > 20) {{
+          scoreMale += 1.0;
+        }}
+
+        // 5. Eyebrow Supraorbital Arch Height & Thickness
+        const browY1 = Math.floor(fTop + fHeight * 0.20);
+        const browY2 = Math.floor(fTop + fHeight * 0.36);
+        const browX1 = Math.floor(headCenterX - fWidth * 0.34);
+        const browX2 = Math.floor(headCenterX + fWidth * 0.34);
+        let darkBrowCount = 0, browWeightY = 0, browBoxTotal = 0;
         for (let y = browY1; y < browY2; y += 2) {{
           for (let x = browX1; x < browX2; x += 2) {{
-            const idx = (y * w + x) * 4;
-            const l = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
-            browLums.push(l);
-            browLumSum += l;
-          }}
-        }}
-        if (browLums.length > 10) {{
-          browLums.sort((a, b) => a - b);
-          const browMin = browLums[Math.floor(browLums.length * 0.12)];
-          const browMean = browLumSum / browLums.length;
-          if (browMin < 45.0 && browMean < 110.0) {{
-            scoreMale += 1.8;
-          }} else if (browMin > 70.0) {{
-            scoreFemale += 1.5;
+            if (x >= 0 && x < w && y >= 0 && y < h) {{
+              const idx = (y * w + x) * 4;
+              const l = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
+              browBoxTotal++;
+              if (l < meanChkLum * 0.65) {{
+                darkBrowCount++;
+                browWeightY += (y - browY1);
+              }}
+            }}
           }}
         }}
 
-        // 5. Craniofacial Proportions (Jaw-to-Cheek Aspect Ratio)
-        const faceAspect = headRadiusX / Math.max(headRadiusY, 1);
-        if (faceAspect > 0.82) {{
+        if (browBoxTotal > 15 && darkBrowCount > 5) {{
+          const browCenterRel = browWeightY / darkBrowCount / Math.max(1, browY2 - browY1);
+          // Higher brow position (browCenterRel < 0.42) = arched female brow
+          if (browCenterRel < 0.42) {{
+            scoreFemale += 1.2;
+          }} else if (browCenterRel > 0.58) {{
+            scoreMale += 1.2;
+          }}
+        }}
+
+        // 6. Facial Oval Aspect Ratio
+        const faceAspect = fWidth / Math.max(fHeight, 1);
+        if (faceAspect > 0.83) {{
           scoreMale += 0.8;
-        }} else if (faceAspect < 0.68) {{
-          scoreFemale += 0.6;
+        }} else if (faceAspect < 0.73) {{
+          scoreFemale += 0.8;
         }}
 
         const expM = Math.exp(scoreMale);
         const expF = Math.exp(scoreFemale);
         const pMale = expM / (expM + expF);
-        const detectedGender = pMale >= 0.50 ? "Male" : "Female";
-        const genderConfidence = Math.min(99, Math.max(82, Math.round(Math.max(pMale, 1.0 - pMale) * 100)));
-        console.log("[OTTERLOOK GENDER DEBUG]", {{
-          scoreMale, scoreFemale, pMale: (pMale*100).toFixed(1)+"%",
-          meanChkLum: meanChkLum.toFixed(1), meanChinLum: meanChinLum.toFixed(1), lumDrop: (meanChkLum - meanChinLum).toFixed(1),
-          lipContrast: (lipRedness - chkRedness).toFixed(3),
-          headCenterX: headCenterX.toFixed(0), headCenterY: headCenterY.toFixed(0),
-          headRadiusX: headRadiusX.toFixed(0), headRadiusY: headRadiusY.toFixed(0),
-          canvasW: w, canvasH: h, detectedGender
+        const pFemale = 1.0 - pMale;
+        const detectedGender = pFemale >= 0.50 ? "Female" : "Male";
+        const genderConfidence = Math.min(99, Math.max(82, Math.round(Math.max(pMale, pFemale) * 100)));
+        console.log("[OTTERLOOK GENDER TELEMETRY]", {{
+          scoreMale: scoreMale.toFixed(2), scoreFemale: scoreFemale.toFixed(2),
+          pFemale: (pFemale*100).toFixed(1)+"%", pMale: (pMale*100).toFixed(1)+"%",
+          lipContrast: lipContrast.toFixed(3), lumDrop: lumDrop.toFixed(1),
+          hairRatio: hairRatio.toFixed(2), detectedGender, confidence: genderConfidence
         }});
 
         // CIELAB Color Conversion
@@ -2360,10 +2410,11 @@ body {{
         }};
       }}
 
-      function updateGenderView() {{
+      function updateGenderView(activeG) {{
+        const targetG = activeG || currentGender;
         const makeupBtn = document.getElementById("tab-btn-makeup");
         if (makeupBtn) {{
-          if (currentGender === "male") {{
+          if (targetG === "male") {{
             makeupBtn.style.display = "none";
             if (makeupBtn.classList.contains("active")) {{
               const clothingBtn = document.querySelector('[data-tab="clothing"]');
@@ -2376,60 +2427,83 @@ body {{
       }}
 
       function handleGenderSelect(selectedGender, isManual = true) {{
-        currentGender = selectedGender === "female" ? "female" : "male";
+        currentGender = selectedGender;
 
         // Sync upload selector pills
         document.querySelectorAll("#upload-gender-options .gender-pill").forEach((p) => {{
-          if (p.getAttribute("data-gender") === currentGender) {{
-            p.classList.add("active");
-          }} else {{
-            p.classList.remove("active");
-          }}
+          p.classList.toggle("active", p.getAttribute("data-gender") === currentGender);
         }});
 
-        // Show only the detected gender in results
+        // Determine effective gender
+        let effectiveGender = currentGender;
+        if (effectiveGender === "auto") {{
+          effectiveGender = (cachedAnalysisData && cachedAnalysisData.gender && cachedAnalysisData.gender.label)
+            ? cachedAnalysisData.gender.label.toLowerCase()
+            : "female";
+        }}
+
+        // Render interactive style switcher in results banner
         const resultsGenderOptions = document.getElementById("results-gender-options");
         if (resultsGenderOptions) {{
-          if (currentGender === "female") {{
-            resultsGenderOptions.innerHTML = '<div class="gender-pill active" data-gender="female" id="results-gender-pill"> Female</div>';
-          }} else {{
-            resultsGenderOptions.innerHTML = '<div class="gender-pill active" data-gender="male" id="results-gender-pill"> Male</div>';
-          }}
+          resultsGenderOptions.innerHTML = `
+            <button type="button" class="gender-pill ${{effectiveGender === 'female' ? 'active' : ''}}" data-gender="female">👗 Women's</button>
+            <button type="button" class="gender-pill ${{effectiveGender === 'male' ? 'active' : ''}}" data-gender="male">👔 Men's</button>
+            <button type="button" class="gender-pill ${{effectiveGender === 'all' ? 'active' : ''}}" data-gender="all">👥 All Styles</button>
+          `;
+          resultsGenderOptions.querySelectorAll(".gender-pill").forEach((pill) => {{
+            pill.addEventListener("click", () => {{
+              const g = pill.getAttribute("data-gender");
+              handleGenderSelect(g, true);
+            }});
+          }});
         }}
 
         const switchLabel = document.getElementById("gender-switch-label");
-        if (switchLabel) switchLabel.textContent = "Gender:";
+        if (switchLabel) switchLabel.textContent = "Switch Style:";
 
-        updateGenderView();
+        updateGenderView(effectiveGender);
 
         const bannerTitleText = document.getElementById("gender-banner-title-text");
-        if (bannerTitleText) bannerTitleText.textContent = "Detected Gender:";
+        if (bannerTitleText) bannerTitleText.textContent = "Style Profile:";
 
         const bannerIcon = document.getElementById("gender-banner-icon");
         const bannerLabel = document.getElementById("gender-banner-label");
         const bannerBadge = document.getElementById("gender-banner-badge");
         const bannerDesc = document.getElementById("gender-banner-desc");
 
-        const displayGender = currentGender === "female" ? "Female" : "Male";
-        if (bannerIcon) bannerIcon.textContent = currentGender === "female" ? "" : "";
+        const aiDetected = (cachedAnalysisData && cachedAnalysisData.gender && cachedAnalysisData.gender.detected) || "Female";
+        const aiConf = (cachedAnalysisData && cachedAnalysisData.gender && cachedAnalysisData.gender.confidence) || 88;
 
-        if (bannerLabel) {{
-          if (cachedAnalysisData && cachedAnalysisData.gender && cachedAnalysisData.gender.confidence) {{
-            bannerLabel.textContent = `${{displayGender}} (${{cachedAnalysisData.gender.confidence}}% Confidence)`;
-          }} else {{
-            bannerLabel.textContent = displayGender;
+        if (effectiveGender === "female") {{
+          if (bannerIcon) bannerIcon.textContent = "👗";
+          if (bannerLabel) bannerLabel.textContent = "Women's Style";
+          if (bannerBadge) {{
+            bannerBadge.textContent = (currentGender === "auto") ? ` Detected: ${{aiDetected}} (${{aiConf}}%)` : " Selected Profile";
+            bannerBadge.className = "gender-banner-badge auto-badge";
           }}
-        }}
-
-        if (bannerBadge) {{
-          bannerBadge.textContent = " Auto-Detected & Validated";
-          bannerBadge.className = "gender-banner-badge auto-badge";
-        }}
-
-        if (bannerDesc) {{
-          bannerDesc.textContent = currentGender === "female"
-            ? "Color palettes, cosmetics, evening wear, and fine jewelry are tailored for haute womenswear styling."
-            : "Colorimetry calibrated for male high-contrast suiting, sartorial tailoring, facial shadow absorption, and precious metals horology calibration.";
+          if (bannerDesc) {{
+            bannerDesc.textContent = "Color palettes, cosmetics, evening wear, and fine jewelry are tailored for haute womenswear styling.";
+          }}
+        }} else if (effectiveGender === "male") {{
+          if (bannerIcon) bannerIcon.textContent = "👔";
+          if (bannerLabel) bannerLabel.textContent = "Men's Style";
+          if (bannerBadge) {{
+            bannerBadge.textContent = (currentGender === "auto") ? ` Detected: ${{aiDetected}} (${{aiConf}}%)` : " Selected Profile";
+            bannerBadge.className = "gender-banner-badge auto-badge";
+          }}
+          if (bannerDesc) {{
+            bannerDesc.textContent = "Colorimetry calibrated for male high-contrast suiting, sartorial tailoring, facial shadow absorption, and precious metals horology calibration.";
+          }}
+        }} else {{
+          if (bannerIcon) bannerIcon.textContent = "👥";
+          if (bannerLabel) bannerLabel.textContent = "All Styles (Universal)";
+          if (bannerBadge) {{
+            bannerBadge.textContent = " Universal Harmony";
+            bannerBadge.className = "gender-banner-badge auto-badge";
+          }}
+          if (bannerDesc) {{
+            bannerDesc.textContent = "Comprehensive styling recommendations across tailored suiting, evening wear, cosmetics, and universal color harmonies.";
+          }}
         }}
 
         if (cachedAnalysisData && resultsSection && !resultsSection.classList.contains("hidden")) {{
@@ -2437,7 +2511,7 @@ body {{
             cachedAnalysisData.undertone.label,
             cachedAnalysisData.skin_analysis.metrics,
             cachedAnalysisData.image_atmosphere,
-            currentGender
+            effectiveGender
           );
           renderResults(cachedAnalysisData, recData);
         }}
@@ -2468,14 +2542,18 @@ body {{
           const analysisData = performColorAnalysis(currentImageBitmap);
           cachedAnalysisData = analysisData;
 
-          const autoGender = (analysisData.gender && analysisData.gender.label === "female") ? "female" : "male";
-          handleGenderSelect(autoGender, false);
+          let activeProfile = currentGender;
+          if (currentGender === "auto") {{
+            activeProfile = (analysisData.gender && analysisData.gender.label === "male") ? "male" : "female";
+          }}
+
+          handleGenderSelect(currentGender, false);
 
           const recData = getRecommendationsForUndertone(
             analysisData.undertone.label,
             analysisData.skin_analysis.metrics,
             analysisData.image_atmosphere,
-            autoGender
+            activeProfile
           );
 
           renderResults(analysisData, recData);
@@ -2491,6 +2569,27 @@ body {{
           showError("Analysis error: " + (err.message || err));
         }}
       }});
+
+      function getFabricPairing(name, hex) {{
+        const n = (name || "").toLowerCase();
+        if (n.includes("black") || n.includes("obsidian")) return "Super 160s Worsted";
+        if (n.includes("gold") || n.includes("champagne") || n.includes("ochre")) return "Sartorial Jacquard";
+        if (n.includes("cognac") || n.includes("camel") || n.includes("brown") || n.includes("rust")) return "Cashmere & Wool";
+        if (n.includes("olive") || n.includes("spruce") || n.includes("green")) return "Silk Shantung";
+        if (n.includes("terracotta") || n.includes("crimson") || n.includes("red")) return "Tuscan Velvet";
+        if (n.includes("navy") || n.includes("blue") || n.includes("sapphire")) return "Melton Overcoat";
+        return "Fine Knitwear & Silk";
+      }}
+
+      function getCategoryTag(cat, name) {{
+        const n = (name || "").toLowerCase();
+        if (n.includes("coat") || n.includes("jacket") || n.includes("trench")) return "Outerwear";
+        if (n.includes("suit") || n.includes("tuxedo") || n.includes("blazer")) return "Tailored Suiting";
+        if (n.includes("shirt") || n.includes("blouse") || n.includes("silk")) return "Shirting & Silk";
+        if (n.includes("dress") || n.includes("gown") || n.includes("evening")) return "Formal Eveningwear";
+        if (n.includes("watch") || n.includes("gold") || n.includes("silver") || n.includes("bronze")) return "Fine Horology";
+        return cat || "Haute Curation";
+      }}
 
       function renderResults(data, recs) {{
         updateGenderView();

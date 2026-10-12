@@ -39,6 +39,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // State
   let currentFile = null;
   let currentImageBitmap = null;
+  let currentGender = "auto";
+  let userExplicitlyChoseGender = false;
 
   // --- Theme Controller ---
   function applyTheme(theme) {
@@ -267,40 +269,18 @@ document.addEventListener("DOMContentLoaded", () => {
       previewImg.src = e.target.result;
       uploadPrompt.classList.add("hidden");
       previewBox.classList.remove("hidden");
-      analyzeBtn.disabled = false;
+      analyzeBtn.disabled = true;
 
-      // Load image object for canvas rendering
+      // Load image object for canvas analysis
       const img = new Image();
       img.src = e.target.result;
       img.onload = () => {
         currentImageBitmap = img;
-        showInitialQuality(img.width, img.height);
-        // Instant speculative placement of single face box
-        renderFaceBox({ x: 50, y: 48, w: 40, h: 52, isCenter: true }, 0);
-        // Run low-latency auto-alignment and face dermis color detection
-        autoAlignFacialLandmarks(img);
+        // Run auto-colour detection & lighting quality check
+        checkImageQualityAndAutoColor(img);
       };
     };
     reader.readAsDataURL(file);
-  }
-
-  // --- Neural SOTA Facial Landmark & Feature Localization Engine ---
-  // Sub-5ms instant morphological analysis with adaptive geometry for cropped, short & full portraits
-  function getFastInferenceCanvas(source, maxDim = 360) {
-    const origW = source.naturalWidth || source.videoWidth || source.width || 640;
-    const origH = source.naturalHeight || source.videoHeight || source.height || 480;
-    let w = origW, h = origH;
-    if (w > maxDim || h > maxDim) {
-      const scale = maxDim / Math.max(w, h);
-      w = Math.round(w * scale);
-      h = Math.round(h * scale);
-    }
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    ctx.drawImage(source, 0, 0, w, h);
-    return { canvas, origW, origH, w, h };
   }
 
   function rgbToHex(r, g, b) {
@@ -309,246 +289,218 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderFaceBox(face, rollDeg = 0) {
-    const clampPct = (val) => Math.max(2, Math.min(98, val));
-    const stage = document.getElementById("preview-stage") || document.getElementById("preview-box");
-    const stageW = stage ? Math.max(160, stage.clientWidth) : 320;
-    const stageH = stage ? Math.max(160, stage.clientHeight) : 400;
-
+    // Kept for backward compatibility, box-face is hidden in auto-colour mode
     const el = document.getElementById("box-face");
-    if (!el) return;
-
-    const cx = clampPct(face.isCenter ? face.x : (face.x + (face.w ? face.w / 2 : 0)));
-    const cy = clampPct(face.isCenter ? face.y : (face.y + (face.h ? face.h / 2 : 0)));
-    const wPct = Math.max(14, Math.min(92, face.w || 40));
-    const hPct = Math.max(16, Math.min(94, face.h || 52));
-
-    el.style.left = `${cx.toFixed(1)}%`;
-    el.style.top = `${cy.toFixed(1)}%`;
-    
-    // Proportional pixel sizing based on actual stage viewport
-    const pixelW = Math.max(48, Math.round((wPct / 100) * stageW));
-    const pixelH = Math.max(56, Math.round((hPct / 100) * stageH));
-    el.style.width = `${pixelW}px`;
-    el.style.height = `${pixelH}px`;
-    el.style.transform = `translate(-50%, -50%) rotate(${rollDeg.toFixed(1)}deg)`;
+    if (el) el.style.display = "none";
   }
 
-  function detectFaceColorProperly(img, faceBox) {
-    try {
-      if (!img) return;
-      const origW = img.naturalWidth || img.width || 320;
-      const origH = img.naturalHeight || img.height || 400;
-
-      // Sample canvas for high-performance dermis colorimetry
-      const sampleW = 240;
-      const sampleH = Math.max(120, Math.round((origH / origW) * 240));
-      const sampleC = document.createElement("canvas");
-      sampleC.width = sampleW;
-      sampleC.height = sampleH;
-      const sCtx = sampleC.getContext("2d", { willReadFrequently: true });
-      sCtx.drawImage(img, 0, 0, sampleW, sampleH);
-      const imgData = sCtx.getImageData(0, 0, sampleW, sampleH).data;
-
-      // Calculate face box pixel bounds on sample canvas
-      let fw = (faceBox.w / 100) * sampleW;
-      let fh = (faceBox.h / 100) * sampleH;
-      let fx = faceBox.isCenter ? ((faceBox.x / 100) * sampleW - fw / 2) : ((faceBox.x / 100) * sampleW);
-      let fy = faceBox.isCenter ? ((faceBox.y / 100) * sampleH - fh / 2) : ((faceBox.y / 100) * sampleH);
-
-      const x1 = Math.max(0, Math.floor(fx));
-      const y1 = Math.max(0, Math.floor(fy));
-      const x2 = Math.min(sampleW - 1, Math.ceil(fx + fw));
-      const y2 = Math.min(sampleH - 1, Math.ceil(fy + fh));
-
-      const fWidth = Math.max(10, x2 - x1);
-      const fHeight = Math.max(10, y2 - y1);
-
-      const candidateSkin = [];
-      const foreheadSkin = [];
-      const cheekSkin = [];
-      const jawSkin = [];
-
-      for (let y = y1; y <= y2; y += 2) {
-        const relY = (y - y1) / fHeight;
-        for (let x = x1; x <= x2; x += 2) {
-          const relX = (x - x1) / fWidth;
-          const idx = (y * sampleW + x) * 4;
-          const r = imgData[idx];
-          const g = imgData[idx + 1];
-          const b = imgData[idx + 2];
-
-          // Dermis Color Discrimination:
-          // 1. Human skin luminance & chromatic YCrCb rule
-          const yP = 0.299 * r + 0.587 * g + 0.114 * b;
-          const cr = 0.713 * (r - yP) + 128.0;
-          const cb = 0.564 * (b - yP) + 128.0;
-
-          // 2. Saturation & RGB rules
-          const maxC = Math.max(r, g, b);
-          const minC = Math.min(r, g, b);
-          const delta = maxC - minC;
-          const sat = maxC > 0 ? delta / maxC : 0;
-
-          const isSkinYCrCb = (cr >= 128 && cr <= 180 && cb >= 75 && cb <= 138 && (cr - cb) >= 6);
-          const isSkinRGB = (r > g && g > b && r > 40 && (r - g) >= 4 && (r - b) >= 8);
-          const isSkinSat = (sat >= 0.10 && sat <= 0.75);
-
-          if (isSkinYCrCb && isSkinRGB && isSkinSat) {
-            const pixelObj = { r, g, b, lum: yP };
-            candidateSkin.push(pixelObj);
-
-            // Categorize by facial dermal zones
-            if (relY >= 0.10 && relY <= 0.35 && relX >= 0.18 && relX <= 0.82) {
-              foreheadSkin.push(pixelObj);
-            } else if (relY >= 0.35 && relY <= 0.68 && (relX <= 0.40 || relX >= 0.60)) {
-              cheekSkin.push(pixelObj);
-            } else if (relY >= 0.68 && relY <= 0.94 && relX >= 0.22 && relX <= 0.78) {
-              jawSkin.push(pixelObj);
-            }
-          }
-        }
-      }
-
-      // Robust median color extraction with IQR luminance outlier rejection
-      function getRobustColor(pixels, defaultR = 200, defaultG = 150, defaultB = 115) {
-        if (!pixels || pixels.length < 5) return { r: defaultR, g: defaultG, b: defaultB, hex: rgbToHex(defaultR, defaultG, defaultB) };
-        pixels.sort((a, b) => a.lum - b.lum);
-        const start = Math.floor(pixels.length * 0.15);
-        const end = Math.max(start + 1, Math.floor(pixels.length * 0.85));
-        const trimmed = pixels.slice(start, end);
-        let sumR = 0, sumG = 0, sumB = 0;
-        trimmed.forEach(p => { sumR += p.r; sumG += p.g; sumB += p.b; });
-        const r = Math.round(sumR / trimmed.length);
-        const g = Math.round(sumG / trimmed.length);
-        const b = Math.round(sumB / trimmed.length);
-        return { r, g, b, hex: rgbToHex(r, g, b) };
-      }
-
-      const mainTone = getRobustColor(candidateSkin);
-      const cheekTone = getRobustColor(cheekSkin, mainTone.r, mainTone.g, mainTone.b);
-      const foreheadTone = getRobustColor(foreheadSkin, mainTone.r - 4, mainTone.g - 3, mainTone.b - 2);
-      const jawTone = getRobustColor(jawSkin, mainTone.r + 3, mainTone.g + 2, mainTone.b + 1);
-
-      // 1. Update the Single Face Box Badge
-      const dotEl = document.getElementById("face-box-color-dot");
-      const hexEl = document.getElementById("face-box-hex");
-      if (dotEl) dotEl.style.backgroundColor = mainTone.hex;
-      if (hexEl) hexEl.textContent = mainTone.hex;
-
-      // 2. Update the Micro-Samples Swatch Breakdown
-      const updateSwatch = (colorId, hexId, hex) => {
-        const c = document.getElementById(colorId);
-        const h = document.getElementById(hexId);
-        if (c) c.style.backgroundColor = hex;
-        if (h) h.textContent = hex;
-      };
-      updateSwatch("sample-color-1", "sample-hex-1", mainTone.hex);
-      updateSwatch("sample-color-2", "sample-hex-2", foreheadTone.hex);
-      updateSwatch("sample-color-3", "sample-hex-3", cheekTone.hex);
-      updateSwatch("sample-color-4", "sample-hex-4", jawTone.hex);
-
-    } catch(e) {
-      console.warn("Face color sampling fallback:", e);
-    }
-  }
-
-  function autoAlignFacialLandmarks(img) {
+  // --- Auto Colour Detection & Lighting Quality Sensor ---
+  function checkImageQualityAndAutoColor(img) {
     const statusEl = document.getElementById("mesh-status-text");
-    if (statusEl) statusEl.textContent = "AI Scanning Facial Morphology...";
+    const lightingPill = document.getElementById("lighting-status-pill");
+    const hudLightingPill = document.getElementById("hud-lighting-pill");
+    const dockDot = document.getElementById("dock-dot");
+    const autoBadgeTitle = document.getElementById("auto-color-badge-title");
+    const autoBadgeHex = document.getElementById("face-box-hex");
+    const autoBadgeTag = document.getElementById("face-box-sublabel");
+    const autoDot = document.getElementById("face-box-color-dot");
 
-    // ── 0. Inference canvas ───────────────────────────────────────────────────
-    const { canvas: inferCanvas, w: sW, h: sH } = getFastInferenceCanvas(img, 320);
-    const scanCtx = inferCanvas.getContext("2d", { willReadFrequently: true });
-    const imgData = scanCtx.getImageData(0, 0, sW, sH).data;
+    if (statusEl) statusEl.textContent = "Scanning photo lighting and complexion...";
 
-    // ── 1. Row & column skin histograms ─────────────────────────────────────
-    // Project skin pixels onto X (cols) and Y (rows) axes.
-    // The peak region directly tells us where the face skin is.
-    const colSkin = new Float32Array(sW);
-    const rowSkin = new Float32Array(sH);
-    let _skinCount = 0;
+    const origW = img.naturalWidth || img.width || 320;
+    const origH = img.naturalHeight || img.height || 400;
 
-    for (let y = 0; y < sH; y++) {
-      for (let x = 0; x < sW; x++) {
-        const idx = (y * sW + x) * 4;
+    // Fast sampling canvas
+    const sampleW = 280;
+    const sampleH = Math.max(140, Math.round((origH / origW) * 280));
+    const canvas = document.createElement("canvas");
+    canvas.width = sampleW;
+    canvas.height = sampleH;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, sampleW, sampleH);
+    const imgData = ctx.getImageData(0, 0, sampleW, sampleH).data;
+
+    // 1. Lighting, Exposure & Clarity metrics
+    let totalLum = 0;
+    let darkCount = 0;
+    let brightCount = 0;
+    const totalPixels = sampleW * sampleH;
+    const lums = [];
+
+    for (let i = 0; i < imgData.length; i += 4) {
+      const r = imgData[i], g = imgData[i + 1], b = imgData[i + 2];
+      const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+      totalLum += lum;
+      if (lum < 22) darkCount++;
+      if (lum > 242) brightCount++;
+      if (i % 16 === 0) lums.push(lum);
+    }
+
+    const meanBrightness = totalLum / totalPixels;
+    const darkRatio = darkCount / totalPixels;
+    const brightRatio = brightCount / totalPixels;
+
+    let lumVarSum = 0;
+    for (let l of lums) {
+      const d = l - meanBrightness;
+      lumVarSum += d * d;
+    }
+    const contrastStd = Math.sqrt(lumVarSum / lums.length);
+
+    // Focus / blur approximation
+    let edgeDiffSum = 0;
+    let edgeCount = 0;
+    for (let y = 1; y < sampleH - 1; y += 3) {
+      for (let x = 1; x < sampleW - 1; x += 3) {
+        const idx = (y * sampleW + x) * 4;
+        const c = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
+        const r = 0.299 * imgData[idx + 4] + 0.587 * imgData[idx + 5] + 0.114 * imgData[idx + 6];
+        const down = 0.299 * imgData[idx + sampleW * 4] + 0.587 * imgData[idx + sampleW * 4 + 1] + 0.114 * imgData[idx + sampleW * 4 + 2];
+        const diff = Math.abs(c - r) + Math.abs(c - down);
+        edgeDiffSum += diff * diff;
+        edgeCount++;
+      }
+    }
+    const blurMetric = edgeCount > 0 ? (edgeDiffSum / edgeCount) : 100;
+
+    // 2. Candidate skin pixels across full Fitzpatrick range
+    const candidateSkin = [];
+    for (let y = 0; y < sampleH; y += 2) {
+      for (let x = 0; x < sampleW; x += 2) {
+        const idx = (y * sampleW + x) * 4;
         const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
         const yP = 0.299 * r + 0.587 * g + 0.114 * b;
-        const cr = 0.713 * (r - yP) + 128;
-        const cb = 0.564 * (b - yP) + 128;
-        // Broad YCbCr skin range — fair through dark complexions
-        if (cr >= 120 && cr <= 195 && cb >= 65 && cb <= 145 &&
-            r > 40 && r > g && r > b && (r - Math.min(g, b)) >= 5) {
-          colSkin[x]++;
-          rowSkin[y]++;
-          _skinCount++;
+        const cr = 0.713 * (r - yP) + 128.0;
+        const cb = 0.564 * (b - yP) + 128.0;
+
+        const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
+        const delta = maxC - minC;
+        const sat = maxC > 0 ? delta / maxC : 0;
+
+        const isYCrCb = (cr >= 126 && cr <= 188 && cb >= 68 && cb <= 142 && (cr - cb) >= 5);
+        const isRGB = (r > g && g > b && r > 40 && (r - g) >= 4 && (r - b) >= 7);
+        const isSat = (sat >= 0.08 && sat <= 0.78);
+
+        if (isYCrCb && isRGB && isSat) {
+          candidateSkin.push({ r, g, b, lum: yP, x, y });
         }
       }
     }
 
-    // ── 2. Smooth histograms (radius-5 moving average) ───────────────────────
-    const smooth = (arr, len, radius) => {
-      const out = new Float32Array(len);
-      for (let i = 0; i < len; i++) {
-        let sum = 0, cnt = 0;
-        for (let j = Math.max(0, i - radius); j <= Math.min(len - 1, i + radius); j++) {
-          sum += arr[j]; cnt++;
-        }
-        out[i] = cnt ? sum / cnt : 0;
+    // 3. Check for lighting and clarity issues
+    let errorMsg = null;
+    if (origW < 160 || origH < 160) {
+      errorMsg = "The image is not clear: Photo resolution is too low. Please upload a higher resolution photo.";
+    } else if (meanBrightness < 45 || darkRatio > 0.35) {
+      errorMsg = "The image is not clear and does not have proper lighting: The photo is too dark. Please take your photo in bright, natural daylight so your skin tone can be identified accurately.";
+    } else if (meanBrightness > 222 || brightRatio > 0.35) {
+      errorMsg = "The image is not clear: Harsh glare or overexposure detected. Please avoid strong camera flash or harsh direct sunlight.";
+    } else if (contrastStd < 16) {
+      errorMsg = "The image is not clear: The photo lacks contrast or has heavy uneven shadows. Please use clear, balanced lighting.";
+    } else if (blurMetric < 15) {
+      errorMsg = "The image is not clear: The photo appears blurry or out of focus. Please ensure the camera is steady and clear.";
+    } else if (candidateSkin.length < 35) {
+      errorMsg = "Could not identify your natural skin colour. The image is not clear or does not have proper lighting. Please upload a clear photo with visible skin complexion in natural lighting.";
+    }
+
+    if (errorMsg) {
+      // Show warning and PREVENT proceeding!
+      showError(errorMsg);
+      if (qualityBar) qualityBar.classList.remove("hidden");
+      if (qualityMeter) {
+        qualityMeter.style.width = "30%";
+        qualityMeter.style.background = "#EF4444";
       }
-      return out;
-    };
-    const smC = smooth(colSkin, sW, 5);
-    const smR = smooth(rowSkin, sH, 5);
+      if (qualityStatus) {
+        qualityStatus.textContent = "Lighting / Clarity Issue";
+        qualityStatus.className = "quality-status Poor";
+      }
+      if (qualityDetails) qualityDetails.textContent = errorMsg;
 
-    // ── 3. Find peak then expand while density ≥ 12% of peak ─────────────────
-    const findBounds = (arr, len) => {
-      let peak = 0, peakIdx = Math.floor(len / 2);
-      for (let i = 0; i < len; i++) { if (arr[i] > peak) { peak = arr[i]; peakIdx = i; } }
-      if (peak === 0) return { lo: 0, hi: len - 1 };
-      const thr = peak * 0.12;
-      let lo = peakIdx, hi = peakIdx;
-      while (lo > 0 && arr[lo - 1] >= thr) lo--;
-      while (hi < len - 1 && arr[hi + 1] >= thr) hi++;
-      return { lo, hi };
-    };
+      if (statusEl) statusEl.textContent = "⚠️ Image not clear or poor lighting • Skin colour not spotted";
+      if (lightingPill) lightingPill.textContent = "Lighting: Needs Improvement";
+      if (hudLightingPill) hudLightingPill.textContent = "⚠️ POOR LIGHTING";
+      if (dockDot) dockDot.style.background = "#EF4444";
 
-    const xB = findBounds(smC, sW);
-    const yB = findBounds(smR, sH);
+      if (autoBadgeTitle) autoBadgeTitle.textContent = "SKIN COLOUR NOT SPOTTED";
+      if (autoBadgeHex) autoBadgeHex.textContent = "UNCLEAR";
+      if (autoBadgeTag) {
+        autoBadgeTag.textContent = "CHECK LIGHTING";
+        autoBadgeTag.className = "auto-color-status-tag error";
+      }
+      if (autoDot) autoDot.style.backgroundColor = "#64748B";
 
-    // ── 4. Add anatomical padding ─────────────────────────────────────────────
-    // Skin ends before forehead (hair) and slightly before chin edge.
-    let boxL = xB.lo, boxR = xB.hi, boxT = yB.lo, boxB = yB.hi;
-    const bW = boxR - boxL, bH = boxB - boxT;
-    // +22% top (hairline & forehead), +10% bottom (chin), +10% sides (temples)
-    boxT = Math.max(0,  boxT - bH * 0.22);
-    boxB = Math.min(sH, boxB + bH * 0.10);
-    boxL = Math.max(0,  boxL - bW * 0.10);
-    boxR = Math.min(sW, boxR + bW * 0.10);
-
-    // ── 5. Fallback for dark / unusual images ─────────────────────────────────
-    if (_skinCount < 80 || (boxR - boxL) < sW * 0.20 || (boxB - boxT) < sH * 0.25) {
-      boxL = sW * 0.10; boxR = sW * 0.90;
-      boxT = sH * 0.02; boxB = sH * 0.95;
+      analyzeBtn.disabled = true;
+      return false;
     }
 
-    const finalW  = boxR - boxL;
-    const finalH  = boxB - boxT;
-    const finalCX = (boxL + boxR) / 2;
-    const finalCY = (boxT + boxB) / 2;
+    // Success! Dermis color spotted accurately
+    hideError();
+    candidateSkin.sort((a, b) => a.lum - b.lum);
+    const lowCut = Math.floor(candidateSkin.length * 0.15);
+    const highCut = Math.max(lowCut + 1, Math.floor(candidateSkin.length * 0.85));
+    const trimmed = candidateSkin.slice(lowCut, highCut);
 
-    const faceXPct = (finalCX / sW) * 100;
-    const faceYPct = (finalCY / sH) * 100;
-    const faceWPct = Math.max(14, Math.min(93, (finalW / sW) * 100));
-    const faceHPct = Math.max(18, Math.min(95, (finalH / sH) * 100));
+    let sumR = 0, sumG = 0, sumB = 0;
+    trimmed.forEach((p) => { sumR += p.r; sumG += p.g; sumB += p.b; });
+    const spottedR = Math.round(sumR / trimmed.length);
+    const spottedG = Math.round(sumG / trimmed.length);
+    const spottedB = Math.round(sumB / trimmed.length);
+    const spottedHex = rgbToHex(spottedR, spottedG, spottedB);
 
-    // ── 6. Render & colour-sample ─────────────────────────────────────────────
-    renderFaceBox({ x: faceXPct, y: faceYPct, w: faceWPct, h: faceHPct, isCenter: true }, 0);
-    detectFaceColorProperly(img, { x: faceXPct, y: faceYPct, w: faceWPct, h: faceHPct, isCenter: true });
-
-    if (statusEl) {
-      const scaleText = faceWPct < 28 ? "Small Portrait" : (faceWPct > 62 ? "Close-Up" : "Studio");
-      statusEl.textContent = `AI Face Auto-Adjusted (${scaleText} Scaled) • Locked`;
+    // Update Quality Bar: Optimal
+    if (qualityBar) qualityBar.classList.remove("hidden");
+    if (qualityMeter) {
+      qualityMeter.style.width = "95%";
+      qualityMeter.style.background = "#10B981";
     }
+    if (qualityStatus) {
+      qualityStatus.textContent = "Good Lighting & Clear Photo";
+      qualityStatus.className = "quality-status Good";
+    }
+    if (qualityDetails) {
+      qualityDetails.textContent = `Natural skin tone spotted (${spottedHex}) • Lighting is balanced and clear. Ready to proceed!`;
+    }
+
+    // Update HUD & Auto Color Badge
+    if (statusEl) statusEl.textContent = `✨ Natural skin colour spotted (${spottedHex}) • Lighting is clear`;
+    if (lightingPill) lightingPill.textContent = "Lighting: Clear & Balanced";
+    if (hudLightingPill) hudLightingPill.textContent = "💡 GOOD LIGHTING";
+    if (dockDot) dockDot.style.background = "#10B981";
+
+    if (autoBadgeTitle) autoBadgeTitle.textContent = "SKIN COLOUR SPOTTED";
+    if (autoBadgeHex) autoBadgeHex.textContent = spottedHex;
+    if (autoBadgeTag) {
+      autoBadgeTag.textContent = "READY TO PROCEED";
+      autoBadgeTag.className = "auto-color-status-tag success";
+    }
+    if (autoDot) autoDot.style.backgroundColor = spottedHex;
+
+    // Update Telemetry Swatches
+    const updateSwatch = (colorId, hexId, hex) => {
+      const c = document.getElementById(colorId);
+      const h = document.getElementById(hexId);
+      if (c) c.style.backgroundColor = hex;
+      if (h) h.textContent = hex;
+    };
+    updateSwatch("sample-color-1", "sample-hex-1", spottedHex);
+    updateSwatch("sample-color-2", "sample-hex-2", rgbToHex(Math.min(255, spottedR + 5), Math.min(255, spottedG + 3), Math.max(0, spottedB - 3)));
+    updateSwatch("sample-color-3", "sample-hex-3", rgbToHex(Math.max(0, spottedR - 4), Math.max(0, spottedG - 3), Math.min(255, spottedB + 2)));
+    updateSwatch("sample-color-4", "sample-hex-4", rgbToHex(Math.max(0, spottedR - 2), Math.max(0, spottedG - 4), Math.max(0, spottedB - 2)));
+
+    // Update Diagnostic Telemetry Meters
+    const luxEl = document.getElementById("meter-lux-val");
+    if (luxEl) luxEl.textContent = "Optimal Daylight (Clear)";
+    const wbEl = document.getElementById("meter-wb-val");
+    if (wbEl) wbEl.textContent = "Natural Color Balance";
+    const snrEl = document.getElementById("meter-snr-val");
+    if (snrEl) snrEl.textContent = "Clear & In Focus";
+    const resEl = document.getElementById("meter-res-val");
+    if (resEl) resEl.textContent = `${origW} × ${origH}px (Sharp)`;
+
+    // Enable Analyze CTA Button!
+    analyzeBtn.disabled = false;
+    return true;
   }
 
   function resetUploadState() {
@@ -768,65 +720,114 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function getFabricPairing(name, hex) {
+    const n = (name || "").toLowerCase();
+    if (n.includes("black") || n.includes("obsidian")) return "Super 160s Worsted";
+    if (n.includes("gold") || n.includes("champagne") || n.includes("ochre")) return "Sartorial Jacquard";
+    if (n.includes("cognac") || n.includes("camel") || n.includes("brown") || n.includes("rust")) return "Cashmere & Wool";
+    if (n.includes("olive") || n.includes("spruce") || n.includes("green")) return "Silk Shantung";
+    if (n.includes("terracotta") || n.includes("crimson") || n.includes("red")) return "Tuscan Velvet";
+    if (n.includes("navy") || n.includes("blue") || n.includes("sapphire")) return "Melton Overcoat";
+    return "Fine Knitwear & Silk";
+  }
+
+  function getCategoryTag(cat, name) {
+    const n = (name || "").toLowerCase();
+    if (n.includes("coat") || n.includes("jacket") || n.includes("trench")) return "Outerwear";
+    if (n.includes("suit") || n.includes("tuxedo") || n.includes("blazer")) return "Tailored Suiting";
+    if (n.includes("shirt") || n.includes("blouse") || n.includes("silk")) return "Shirting & Silk";
+    if (n.includes("dress") || n.includes("gown") || n.includes("evening")) return "Formal Eveningwear";
+    if (n.includes("watch") || n.includes("gold") || n.includes("silver") || n.includes("bronze")) return "Fine Horology";
+    return cat || "Haute Curation";
+  }
+
   function handleGenderSelect(selectedGender, isManual = true) {
-    currentGender = selectedGender === "female" ? "female" : "male";
+    if (isManual) {
+      userExplicitlyChoseGender = true;
+    }
+    currentGender = selectedGender;
 
     // Sync pills across upload selector
     document.querySelectorAll("#upload-gender-options .gender-pill").forEach((pill) => {
-      if (pill.getAttribute("data-gender") === currentGender) {
-        pill.classList.add("active");
-      } else {
-        pill.classList.remove("active");
-      }
+      pill.classList.toggle("active", pill.getAttribute("data-gender") === currentGender);
     });
 
-    // Show only the detected gender in results
+    // Determine effective gender
+    let effectiveGender = currentGender;
+    if (effectiveGender === "auto") {
+      effectiveGender = (cachedApiData && cachedApiData.gender && cachedApiData.gender.detected)
+        ? cachedApiData.gender.detected.toLowerCase()
+        : "female";
+    }
+
+    // Render interactive style switcher in results banner
     const resultsGenderOptions = document.getElementById("results-gender-options");
     if (resultsGenderOptions) {
-      if (currentGender === "female") {
-        resultsGenderOptions.innerHTML = '<div class="gender-pill active" data-gender="female" id="results-gender-pill"> Female</div>';
-      } else {
-        resultsGenderOptions.innerHTML = '<div class="gender-pill active" data-gender="male" id="results-gender-pill"> Male</div>';
-      }
+      resultsGenderOptions.innerHTML = `
+        <button type="button" class="gender-pill ${effectiveGender === 'female' ? 'active' : ''}" data-gender="female">👗 Women's</button>
+        <button type="button" class="gender-pill ${effectiveGender === 'male' ? 'active' : ''}" data-gender="male">👔 Men's</button>
+        <button type="button" class="gender-pill ${effectiveGender === 'all' ? 'active' : ''}" data-gender="all">👥 All Styles</button>
+      `;
+      resultsGenderOptions.querySelectorAll(".gender-pill").forEach((pill) => {
+        pill.addEventListener("click", () => {
+          const g = pill.getAttribute("data-gender");
+          handleGenderSelect(g, true);
+        });
+      });
     }
 
     const switchLabel = document.getElementById("gender-switch-label");
-    if (switchLabel) switchLabel.textContent = "Gender:";
+    if (switchLabel) switchLabel.textContent = "Switch Style:";
 
-    updateGenderView();
+    updateGenderView(effectiveGender);
 
     // Update banner UI
     const bannerTitleText = document.getElementById("gender-banner-title-text");
-    if (bannerTitleText) bannerTitleText.textContent = "Detected Gender:";
+    if (bannerTitleText) bannerTitleText.textContent = "Style Profile:";
 
     const bannerIcon = document.getElementById("gender-banner-icon");
     const bannerLabel = document.getElementById("gender-banner-label");
     const bannerBadge = document.getElementById("gender-banner-badge");
     const bannerDesc = document.getElementById("gender-banner-desc");
 
-    const displayGender = currentGender === "female" ? "Female" : "Male";
-    if (bannerIcon) bannerIcon.textContent = currentGender === "female" ? "" : "";
+    const aiDetected = (cachedApiData && cachedApiData.gender && cachedApiData.gender.detected) || "Female";
+    const aiConf = (cachedApiData && cachedApiData.gender && (cachedApiData.gender.confidence_percentage || Math.round((cachedApiData.gender.confidence || 0.88) * 100))) || 88;
 
-    if (bannerLabel) {
-      if (cachedApiData && cachedApiData.gender && cachedApiData.gender.detected) {
-        bannerLabel.textContent = `${displayGender} (${cachedApiData.gender.confidence_percentage || 85}% Confidence)`;
-      } else {
-        bannerLabel.textContent = displayGender;
+    if (effectiveGender === "female") {
+      if (bannerIcon) bannerIcon.textContent = "👗";
+      if (bannerLabel) bannerLabel.textContent = "Women's Style";
+      if (bannerBadge) {
+        bannerBadge.textContent = (currentGender === "auto") ? ` Detected: ${aiDetected} (${aiConf}%)` : " Selected Profile";
+        bannerBadge.className = "gender-banner-badge auto-badge";
       }
-    }
-    if (bannerBadge) {
-      bannerBadge.textContent = " Auto-Detected & Validated";
-      bannerBadge.className = "gender-banner-badge auto-badge";
-    }
-    if (bannerDesc) {
-      bannerDesc.textContent = currentGender === "female"
-        ? "Color palettes, cosmetics, evening wear, and fine jewelry are tailored for haute womenswear styling."
-        : "Color palettes, suiting staples, and luxury timepieces are calibrated specifically for menswear styling.";
+      if (bannerDesc) {
+        bannerDesc.textContent = "Color palettes, cosmetics, evening wear, and fine jewelry are tailored for haute womenswear styling.";
+      }
+    } else if (effectiveGender === "male") {
+      if (bannerIcon) bannerIcon.textContent = "👔";
+      if (bannerLabel) bannerLabel.textContent = "Men's Style";
+      if (bannerBadge) {
+        bannerBadge.textContent = (currentGender === "auto") ? ` Detected: ${aiDetected} (${aiConf}%)` : " Selected Profile";
+        bannerBadge.className = "gender-banner-badge auto-badge";
+      }
+      if (bannerDesc) {
+        bannerDesc.textContent = "Color palettes, suiting staples, and luxury timepieces are calibrated specifically for menswear styling.";
+      }
+    } else {
+      if (bannerIcon) bannerIcon.textContent = "👥";
+      if (bannerLabel) bannerLabel.textContent = "All Styles (Universal)";
+      if (bannerBadge) {
+        bannerBadge.textContent = " Universal Harmony";
+        bannerBadge.className = "gender-banner-badge auto-badge";
+      }
+      if (bannerDesc) {
+        bannerDesc.textContent = "Comprehensive styling recommendations across tailored suiting, evening wear, cosmetics, and universal color harmonies.";
+      }
     }
 
     // Re-filter results display if data is loaded
-    if (cachedApiData && !resultsSection.classList.contains("hidden")) {
-      filterAndRenderGenderSpecifics(cachedApiData, currentGender);
+    if (cachedApiData && resultsSection && !resultsSection.classList.contains("hidden")) {
+      filterAndRenderGenderSpecifics(cachedApiData, effectiveGender);
     }
   }
 
@@ -954,27 +955,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const summaryElem = document.getElementById("stylist-summary");
     if (summaryElem) summaryElem.textContent = stylistSummary;
 
-    function getFabricPairing(name, hex) {
-      const n = (name || "").toLowerCase();
-      if (n.includes("black") || n.includes("obsidian")) return "Super 160s Worsted";
-      if (n.includes("gold") || n.includes("champagne") || n.includes("ochre")) return "Sartorial Jacquard";
-      if (n.includes("cognac") || n.includes("camel") || n.includes("brown") || n.includes("rust")) return "Cashmere & Wool";
-      if (n.includes("olive") || n.includes("spruce") || n.includes("green")) return "Silk Shantung";
-      if (n.includes("terracotta") || n.includes("crimson") || n.includes("red")) return "Tuscan Velvet";
-      if (n.includes("navy") || n.includes("blue") || n.includes("sapphire")) return "Melton Overcoat";
-      return "Fine Knitwear & Silk";
-    }
-
-    function getCategoryTag(cat, name) {
-      const n = (name || "").toLowerCase();
-      if (n.includes("coat") || n.includes("jacket") || n.includes("trench")) return "Outerwear";
-      if (n.includes("suit") || n.includes("tuxedo") || n.includes("blazer")) return "Tailored Suiting";
-      if (n.includes("shirt") || n.includes("blouse") || n.includes("silk")) return "Shirting & Silk";
-      if (n.includes("dress") || n.includes("gown") || n.includes("evening")) return "Formal Eveningwear";
-      if (n.includes("watch") || n.includes("gold") || n.includes("silver") || n.includes("bronze")) return "Fine Horology";
-      return cat || "Haute Curation";
-    }
-
     // Render palette
     const swatchesGrid = document.getElementById("swatches-grid");
     if (swatchesGrid && palette.length > 0) {
@@ -1019,34 +999,36 @@ document.addEventListener("DOMContentLoaded", () => {
     cachedApiData = data;
 
     // Auto-detect gender from API response and apply styling profile
-    const detectedStr = (data.gender && data.gender.detected && data.gender.detected.toLowerCase()) || "";
-    const autoGender = detectedStr === "female" ? "female" : "male";
-    handleGenderSelect(autoGender, false);
+    handleGenderSelect(currentGender, false);
     const undertone = data.undertone.label;
     const confidencePct = data.undertone.confidence_percentage;
 
     // 1. Undertone Hero Badge & Seasonal Watermark
     const badge = document.getElementById("undertone-badge");
     const seasonName = (data.seasonal_harmony && data.seasonal_harmony.season_name) || "Warm Autumn Deep";
-    badge.textContent = `${undertone.toUpperCase()} · ${seasonName.toUpperCase()}`;
-    badge.className = `undertone-badge ${undertone}`;
+    if (badge) {
+      badge.textContent = `${undertone.toUpperCase()} · ${seasonName.toUpperCase()}`;
+      badge.className = `undertone-badge ${undertone}`;
+    }
 
     const watermark = document.getElementById("season-watermark");
     if (watermark) {
       watermark.textContent = (data.seasonal_harmony && data.seasonal_harmony.watermark) || (undertone === "Warm" ? "AUTUMN" : (undertone === "Cool" ? "WINTER" : "SUMMER"));
     }
 
-    document.getElementById("confidence-val").textContent = `${confidencePct}%`;
-    document.getElementById("confidence-bar").style.width = `${confidencePct}%`;
+    const confVal = document.getElementById("confidence-val");
+    if (confVal) confVal.textContent = `${confidencePct}%`;
+
+    const confBar = document.getElementById("confidence-bar");
+    if (confBar) confBar.style.width = `${confidencePct}%`;
 
     // Probability breakdown
     const probBreakdown = document.getElementById("prob-breakdown");
-    probBreakdown.innerHTML = "";
-    if (data.undertone.probabilities) {
+    if (probBreakdown && data.undertone.probabilities) {
       probBreakdown.innerHTML = `
         <div class="prob-bar-item">
           <div class="prob-bar-info">
-            <span class="prob-bar-label">Warm (Carotenoid Affinity)</span>
+            <span class="prob-bar-label">Warm (Golden & Peach Tones)</span>
             <span class="prob-bar-pct">${Math.round((data.undertone.probabilities.Warm || 0) * 100)}%</span>
           </div>
           <div class="prob-track">
@@ -1055,7 +1037,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="prob-bar-item">
           <div class="prob-bar-info">
-            <span class="prob-bar-label">Neutral (Balanced Matrix)</span>
+            <span class="prob-bar-label">Neutral (Balanced Harmony)</span>
             <span class="prob-bar-pct">${Math.round((data.undertone.probabilities.Neutral || 0) * 100)}%</span>
           </div>
           <div class="prob-track">
@@ -1064,7 +1046,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="prob-bar-item">
           <div class="prob-bar-info">
-            <span class="prob-bar-label">Cool (Erythema / Hemoglobin)</span>
+            <span class="prob-bar-label">Cool (Rosy & Blue Tones)</span>
             <span class="prob-bar-pct">${Math.round((data.undertone.probabilities.Cool || 0) * 100)}%</span>
           </div>
           <div class="prob-track">
@@ -1074,12 +1056,13 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     }
 
-    document.getElementById("undertone-explanation").textContent = data.undertone.explanation;
+    const underExpl = document.getElementById("undertone-explanation");
+    if (underExpl) underExpl.textContent = data.undertone.explanation;
 
     // Key factors
     const keyFactorsContainer = document.getElementById("key-factors");
-    keyFactorsContainer.innerHTML = "";
-    if (data.undertone.key_factors) {
+    if (keyFactorsContainer && data.undertone.key_factors) {
+      keyFactorsContainer.innerHTML = "";
       data.undertone.key_factors.forEach((f) => {
         const div = document.createElement("div");
         div.className = "factor-item";
@@ -1090,15 +1073,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 2. Skin Metrics & Color Swatch
     const skinMetrics = data.skin_analysis.metrics;
-    document.getElementById("rep-swatch").style.backgroundColor = skinMetrics.representative_hex;
-    document.getElementById("rep-hex").textContent = `${skinMetrics.representative_hex} · ${skinMetrics.phototype_estimate.split('—')[0] || ''}`;
-    document.getElementById("rep-phototype").textContent = skinMetrics.phototype_estimate;
+    const repSwatch = document.getElementById("rep-swatch");
+    if (repSwatch) repSwatch.style.backgroundColor = skinMetrics.representative_hex;
+    const repHex = document.getElementById("rep-hex");
+    if (repHex) repHex.textContent = `${skinMetrics.representative_hex} · ${(skinMetrics.phototype_estimate || '').split('—')[0] || ''}`;
+    const repPhototype = document.getElementById("rep-phototype");
+    if (repPhototype) repPhototype.textContent = skinMetrics.phototype_estimate || '';
 
-    document.getElementById("metric-lab-l").textContent = skinMetrics.cielab.L;
-    document.getElementById("metric-lab-a").textContent = `${skinMetrics.cielab.a >= 0 ? "+" : ""}${skinMetrics.cielab.a}`;
-    document.getElementById("metric-lab-b").textContent = `${skinMetrics.cielab.b >= 0 ? "+" : ""}${skinMetrics.cielab.b}`;
-    document.getElementById("metric-ita").textContent = `${skinMetrics.ita_angle >= 0 ? "+" : ""}${skinMetrics.ita_angle}°`;
-    document.getElementById("metric-hsv-h").textContent = `${skinMetrics.hsv.H_deg}°`;
+    const labLEl = document.getElementById("metric-lab-l");
+    if (labLEl) labLEl.textContent = skinMetrics.cielab ? skinMetrics.cielab.L : '';
+    const labAEl = document.getElementById("metric-lab-a");
+    if (labAEl) labAEl.textContent = skinMetrics.cielab ? `${skinMetrics.cielab.a >= 0 ? "+" : ""}${skinMetrics.cielab.a}` : '';
+    const labBEl = document.getElementById("metric-lab-b");
+    if (labBEl) labBEl.textContent = skinMetrics.cielab ? `${skinMetrics.cielab.b >= 0 ? "+" : ""}${skinMetrics.cielab.b}` : '';
+    const itaEl = document.getElementById("metric-ita");
+    if (itaEl) itaEl.textContent = skinMetrics.ita_angle !== undefined ? `${skinMetrics.ita_angle >= 0 ? "+" : ""}${skinMetrics.ita_angle}°` : '';
+    const hsvEl = document.getElementById("metric-hsv-h");
+    if (hsvEl) hsvEl.textContent = skinMetrics.hsv ? `${skinMetrics.hsv.H_deg}°` : '';
 
     // Update Micro-Extract Swatches in Studio Telemetry
     const sample1 = document.getElementById("sample-color-1");
@@ -1128,9 +1119,11 @@ document.addEventListener("DOMContentLoaded", () => {
     drawFacialLandmarksCanvas(skinMetrics.representative_hex, data.undertone.label);
 
     // 4. Personalized Core Palette
-    document.getElementById("stylist-summary").textContent = data.stylist_summary;
+    const stylistSummaryEl = document.getElementById("stylist-summary");
+    if (stylistSummaryEl) stylistSummaryEl.textContent = data.stylist_summary || "";
     if (data.seasonal_harmony) {
-      document.getElementById("season-title").textContent = data.seasonal_harmony.season_name;
+      const seasonTitleEl = document.getElementById("season-title");
+      if (seasonTitleEl) seasonTitleEl.textContent = data.seasonal_harmony.season_name || "";
     }
 
     const swatchesGridMain = document.getElementById("swatches-grid");

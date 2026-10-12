@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Otterlook AI - Project Synopsis</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 16mm 18mm 16mm 18mm;
+  }
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1e293b;
+    background: #ffffff;
+    line-height: 1.55;
+    font-size: 10pt;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Header Section */
+  .header-card {
+    border-bottom: 2px solid #0284c7;
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .header-title-area {
+    max-width: 75%;
+  }
+  .tagline {
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 700;
+    color: #0284c7;
+    margin-bottom: 4px;
+  }
+  h1 {
+    font-size: 17pt;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 6px 0;
+    line-height: 1.2;
+  }
+  .subtitle {
+    font-size: 9.5pt;
+    color: #475569;
+    font-weight: 500;
+    margin: 0;
+  }
+  .meta-badges {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+  }
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 7.5pt;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+  }
+  .badge-primary {
+    background: #e0f2fe;
+    color: #0369a1;
+    border-color: #bae6fd;
+  }
+
+  /* Section Styling */
+  .section-block {
+    margin-bottom: 16px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  h2 {
+    font-size: 11pt;
+    font-weight: 700;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin: 0 0 8px 0;
+    padding-bottom: 4px;
+    border-bottom: 1.5px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  h2::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 12px;
+    background: #0284c7;
+    border-radius: 2px;
+  }
+  p {
+    margin: 0 0 8px 0;
+    color: #334155;
+    text-align: justify;
+  }
+
+  /* Problem Statement Callouts */
+  .problem-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .problem-item {
+    background: #fff1f2;
+    border-left: 3.5px solid #f43f5e;
+    padding: 7px 10px;
+    border-radius: 0 6px 6px 0;
+    font-size: 9pt;
+  }
+  .problem-item strong {
+    color: #9f1239;
+  }
+
+  /* Solution Grid & Cards */
+  .solution-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .bullet-list {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .bullet-list li {
+    margin-bottom: 5px;
+    font-size: 9pt;
+    color: #334155;
+  }
+  .bullet-list li strong {
+    color: #0f172a;
+  }
+
+  /* Two Column Layout */
+  .two-col {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .col {
+    flex: 1;
+  }
+
+  /* Key Modules Grid */
+  .module-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .module-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-top: 2.5px solid #0284c7;
+    padding: 7px 9px;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+  .module-title {
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: #0369a1;
+    margin-bottom: 3px;
+  }
+  .module-desc {
+    font-size: 8pt;
+    color: #475569;
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+    font-size: 8.5pt;
+  }
+  th, td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  th {
+    background-color: #f8fafc;
+    font-weight: 600;
+    color: #0f172a;
+    border-bottom: 1.5px solid #cbd5e1;
+  }
+  tr:last-child td {
+    border-bottom: none;
+  }
+  .metric-highlight {
+    font-weight: 700;
+    color: #0369a1;
+  }
+
+  /* Outcome Pills */
+  .outcome-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .outcome-card {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-left: 3.5px solid #16a34a;
+    padding: 7px 10px;
+    border-radius: 0 6px 6px 0;
+  }
+  .outcome-card-title {
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: #15803d;
+    margin-bottom: 2px;
+  }
+  .outcome-card-text {
+    font-size: 8pt;
+    color: #166534;
+    margin: 0;
+    line-height: 1.35;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 14px;
+    padding-top: 8px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 7.5pt;
+    color: #94a3b8;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header-card">
+    <div class="header-title-area">
+      <div class="tagline">Project Synopsis & Engineering Specification</div>
+      <h1>Otterlook AI: Personal Colour Analysis & Recommendation System</h1>
+      <p class="subtitle">AI/ML-Driven Dermatological Colorimetry & Precision Styling Engine</p>
+    </div>
+    <div class="meta-badges">
+      <span class="badge badge-primary">Computer Vision & Machine Learning</span>
+      <span class="badge">FastAPI & OpenCV & Scikit-Learn</span>
+      <span class="badge">MediaPipe FaceMesh</span>
+    </div>
+  </div>
+
+  <!-- Project Idea Overview -->
+  <div class="section-block">
+    <h2>1. Project Idea</h2>
+    <p>
+      <strong>Otterlook AI</strong> is an end-to-end computer vision and dermatological colorimetry platform that analyzes facial portraits, isolates anatomically stable skin regions, extracts multi-space colorimetric feature moments, predicts biological skin undertones (<strong>Warm</strong>, <strong>Cool</strong>, or <strong>Neutral</strong>) using machine learning classifiers, and generates tailored styling palettes for wardrobe, cosmetics, accessories, and seasonal harmonies.
+    </p>
+  </div>
+
+  <!-- Problem Statement -->
+  <div class="section-block">
+    <h2>2. Problem Statement</h2>
+    <div class="problem-list">
+      <div class="problem-item">
+        <strong>1. Subjectivity & Prohibitive Cost of In-Person Draping:</strong> Conventional personal color consultation relies on manual fabric draping by human stylists, which is expensive, geographically inaccessible, subjective, and highly prone to ambient lighting variations and human bias.
+      </div>
+      <div class="problem-item">
+        <strong>2. Failure Across Diverse Skin Phototypes:</strong> Existing automated smartphone apps and consumer camera filters sample single random pixels or enforce hardcoded RGB threshold rules. These approaches fail catastrophically across global skin diversity (Fitzpatrick types I–VI).
+      </div>
+      <div class="problem-item">
+        <strong>3. Contamination by Non-Skin Artifacts:</strong> Naive facial sampling without anatomical landmark isolation gets distorted by facial hair, cosmetics, lips, eyes, specular camera flash highlights, and shadows, leading to inaccurate undertone predictions and clashing wardrobe suggestions.
+      </div>
+    </div>
+  </div>
+
+  <!-- Proposed AI/ML & CS Solution -->
+  <div class="section-block">
+    <h2>3. Proposed AI/ML & CS Solution</h2>
+    <div class="solution-box">
+      <ul class="bullet-list">
+        <li><strong>Automated Quality Control (QC):</strong> Image validation verifying dimensions, exposure/contrast histogram clipping, and blur using the Laplacian variance operator before execution.</li>
+        <li><strong>Anatomical Multi-Region Landmark Segmentation:</strong> Employs MediaPipe FaceMesh (468 landmarks) with OpenCV Haar cascade fallback to precisely isolate 4 stable skin regions (Forehead, Left Cheek, Right Cheek, Jaw/Chin) while eliminating lips, eyes, eyebrows, and hair.</li>
+        <li><strong>Dual-Space Glare & Outlier Rejection:</strong> Combines YCrCb ($Cr \in [128, 178], Cb \in [75, 135]$) and HSV skin masks with statistical Interquartile Range (IQR) luminance trimming (removing upper/lower 20% tails) to reject specular flash glare and cast shadows.</li>
+        <li><strong>Multi-Space Dermatological Colorimetry:</strong> Extracts statistical moments across sRGB, HSV, and CIELAB ($L^*a^*b^*$), deriving the Individual Typology Angle ($\text{ITA}^\circ$) and the yellow-to-erythema chromatic ratio ($b^*/a^*$).</li>
+        <li><strong>Supervised Ensemble Inference:</strong> Deploys a trained <code>RandomForestClassifier</code> pipeline to generate calibrated classification probabilities across Warm, Cool, and Neutral classes.</li>
+        <li><strong>Expert Knowledge Recommendation Engine:</strong> Generates tailored styling profiles including core wardrobe colors, foundation/lipstick cosmetic guidelines, jewelry metal compatibilities (Gold vs. Silver), and clashing colors to avoid.</li>
+        <li><strong>Privacy-First & Low-Latency API:</strong> Asynchronous FastAPI service processing images strictly in-memory (RAM) with no persistent facial storage.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Key Modules -->
+  <div class="section-block">
+    <h2>4. Key Modules</h2>
+    <div class="module-grid">
+      <div class="module-card">
+        <div class="module-title">Module 1: Image Quality Assessment (IQA)</div>
+        <p class="module-desc">Checks resolution, exposure/contrast clipping, and computes Laplacian variance to reject blurry or poorly lit portrait uploads.</p>
+      </div>
+      <div class="module-card">
+        <div class="module-title">Module 2: Facial Landmark & Anatomical ROI Segmenter</div>
+        <p class="module-desc">Uses 468-point MediaPipe FaceMesh to construct sub-orbital cheek patches, forehead band, and mentalis jawline region.</p>
+      </div>
+      <div class="module-card">
+        <div class="module-title">Module 3: Glare, Shadow & Outlier Filter</div>
+        <p class="module-desc">Executes joint YCrCb/HSV skin masks coupled with 20% IQR luminance trimming to isolate pristine, unadulterated skin pixels.</p>
+      </div>
+      <div class="module-card">
+        <div class="module-title">Module 4: Colorimetric Feature Extraction Engine</div>
+        <p class="module-desc">Computes 20+ numerical descriptors across sRGB, HSV, CIELAB ($L^*, a^*, b^*$), $\text{ITA}^\circ$, and chromatic ratios ($b^*/a^*, R/G, R/B$).</p>
+      </div>
+      <div class="module-card">
+        <div class="module-title">Module 5: ML Undertone Classification Engine</div>
+        <p class="module-desc">StandardScaler normalized Random Forest ensemble predicting Warm, Cool, or Neutral undertone with class probabilities.</p>
+      </div>
+      <div class="module-card">
+        <div class="module-title">Module 6: Styling & Palette Recommendation Engine</div>
+        <p class="module-desc">Knowledge-based mapping connecting undertone and 4-season subtypes to wardrobe swatches, cosmetics, jewelry, and colors to avoid.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Algorithms and Techniques -->
+  <div class="section-block">
+    <h2>5. Algorithms / Techniques</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 28%;">Domain / Step</th>
+          <th style="width: 38%;">Algorithms / Methodologies</th>
+          <th style="width: 34%;">Operational Role & Impact</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Facial Landmark Mesh</strong></td>
+          <td>MediaPipe FaceMesh (468 3D points) + OpenCV Haar Cascade fallback</td>
+          <td>Sub-millimeter anatomical skin patch localization without feature overlap.</td>
+        </tr>
+        <tr>
+          <td><strong>Image Quality & Glare Filtering</strong></td>
+          <td>Laplacian Variance + YCrCb/HSV Thresholds + IQR Luminance Trimming</td>
+          <td>Rejects blurry images and purges flash glare, hot spots, and shadow noise.</td>
+        </tr>
+        <tr>
+          <td><strong>Dermatological Colorimetry</strong></td>
+          <td>CIELAB ($L^*a^*b^*$) & $\text{ITA}^\circ = \arctan((L^*-50)/b^*) \times (180/\pi)$</td>
+          <td>Quantifies biological melanin and yellow/red balance independently of ambient lightness.</td>
+        </tr>
+        <tr>
+          <td><strong>Machine Learning Classifier</strong></td>
+          <td><strong>Random Forest Classifier</strong> (150 trees, max depth 10, balanced)</td>
+          <td>Non-linear decision boundaries yielding <span class="metric-highlight">90.74% test accuracy</span> and 0.9075 Macro F1.</td>
+        </tr>
+        <tr>
+          <td><strong>Comparative Baselines</strong></td>
+          <td>Support Vector Machines (Linear & RBF), Multinomial Logistic Regression</td>
+          <td>Benchmarked across 5-fold stratified cross-validation for validation rigor.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Datasets -->
+  <div class="section-block">
+    <h2>6. Datasets</h2>
+    <div class="solution-box">
+      <ul class="bullet-list">
+        <li><strong>Personal Color Face Dataset:</strong> Asian/Korean 4-season portrait facial images labelled with seasonal color classifications (Spring Warm, Autumn Warm, Summer Cool, Winter Cool) for real-world facial validation.</li>
+        <li><strong>The Pudding / TidyTuesday Global Complexion & Undertone Dataset:</strong> 6,800+ commercial foundation formulations spanning diverse global skin tones (Fitzpatrick I–VI) and labeled undertones (Warm, Cool, Neutral).</li>
+        <li><strong>Google Monk Skin Tone (MST) Scale & Fitzpatrick Reference Index:</strong> 10-shade inclusive dermatological benchmark scale used for colorimetric calibration across equitable demographic phototypes.</li>
+        <li><strong>Derived Feature Matrix (<code>data/training.csv</code>):</strong> Extracted numerical dataset combining multi-space color moments ($sRGB, HSV, L^*a^*b^*$, $\text{ITA}^\circ$, and ratios) mapped to ground-truth undertone labels.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Expected Outcome -->
+  <div class="section-block">
+    <h2>7. Expected Outcome</h2>
+    <div class="outcome-grid">
+      <div class="outcome-card">
+        <div class="outcome-card-title">Objective Undertone Classification</div>
+        <p class="outcome-card-text">Accurate determination of Warm, Cool, or Neutral undertone with calibrated class probabilities (>90% accuracy).</p>
+      </div>
+      <div class="outcome-card">
+        <div class="outcome-card-title">Dermatological Color Profile</div>
+        <p class="outcome-card-text">Representative skin hex code, CIELAB ($L^*, a^*, b^*$), and Individual Typology Angle ($\text{ITA}^\circ$) extracted in real time.</p>
+      </div>
+      <div class="outcome-card">
+        <div class="outcome-card-title">Personalized Styling Palettes</div>
+        <p class="outcome-card-text">Curated clothing swatches, cosmetic foundation/lip/blush recommendations, metals (Gold vs. Silver), and clashing colors to avoid.</p>
+      </div>
+      <div class="outcome-card">
+        <div class="outcome-card-title">Interactive Visual Feedback & Privacy</div>
+        <p class="outcome-card-text">Live portrait preview with Canvas ROI patch overlays; sub-1.5s latency with zero persistent facial storage in RAM.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>Otterlook AI &bull; AI-Based Personal Colour Analysis & Personalized Colour Palette Recommendation System</span>
+    <span>CONFIDENTIAL &bull; ENGINEERING SPECIFICATION &bull; 2026</span>
+  </div>
+
+</body>
+</html>

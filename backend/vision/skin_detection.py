@@ -103,10 +103,17 @@ class SkinExtractor:
             if auto_res["total_pixels"] > len(combined_pixels):
                 return auto_res
 
+        rep_hex = None
+        if len(combined_pixels) > 0:
+            mean_all_bgr = np.mean(combined_pixels, axis=0)
+            rep_hex = f"#{int(mean_all_bgr[2]):02X}{int(mean_all_bgr[1]):02X}{int(mean_all_bgr[0]):02X}"
+
         return {
             "pixels_bgr": combined_pixels,
             "region_samples": region_details,
-            "total_pixels": int(len(combined_pixels))
+            "total_pixels": int(len(combined_pixels)),
+            "representative_hex": rep_hex,
+            "spotted": len(combined_pixels) >= 30
         }
 
     def extract_skin_pixels_autonomous(self, image_bgr: np.ndarray, bbox: Optional[List[int]] = None) -> Dict[str, Any]:
@@ -132,19 +139,19 @@ class SkinExtractor:
         g = roi[:, :, 1].astype(np.float64)
         r = roi[:, :, 2].astype(np.float64)
 
-        # YCrCb Skin Rule with strict Wood/Background discrimination
+        # Broad YCrCb Skin Rule supporting fair through deep complexions
         y_plane = 0.299 * r + 0.587 * g + 0.114 * b
         cr_plane = (r - y_plane) * 0.713 + 128.0
         cb_plane = (b - y_plane) * 0.564 + 128.0
-        ycrcb_mask = (cr_plane >= 133) & (cr_plane <= 175) & (cb_plane >= 80) & (cb_plane <= 130) & ((cr_plane - cb_plane) >= 12)
+        ycrcb_mask = (cr_plane >= 126) & (cr_plane <= 186) & (cb_plane >= 68) & (cb_plane <= 142) & ((cr_plane - cb_plane) >= 5)
 
         # RGB & Saturation Skin Rule
-        rgb_mask = (r > g) & (g > b) & (r > 70) & (g > 45) & (b > 30) & ((r - g) >= 10) & ((r - b) >= 16)
+        rgb_mask = (r > g) & (g > b) & (r > 42) & ((r - g) >= 4) & ((r - b) >= 7)
         
         cmax = np.maximum(np.maximum(r, g), b)
         cmin = np.minimum(np.minimum(r, g), b)
         sat = np.where(cmax > 0, (cmax - cmin) / np.maximum(cmax, 1e-6), 0)
-        sat_mask = (sat >= 0.16) & (sat <= 0.68)
+        sat_mask = (sat >= 0.08) & (sat <= 0.78)
 
         combined_mask = ycrcb_mask & rgb_mask & sat_mask
 
@@ -158,17 +165,25 @@ class SkinExtractor:
         mean_rgb = [int(mean_bgr[2]), int(mean_bgr[1]), int(mean_bgr[0])]
         hex_code = f"#{mean_rgb[0]:02X}{mean_rgb[1]:02X}{mean_rgb[2]:02X}"
 
+        # Estimate complexion region bounding box
+        if bbox is not None:
+            comp_box = {"x": bbox[0], "y": bbox[1], "w": bbox[2], "h": bbox[3]}
+        else:
+            comp_box = {"x": int(img_w * 0.2), "y": int(img_h * 0.15), "w": int(img_w * 0.6), "h": int(img_h * 0.6)}
+
         return {
             "pixels_bgr": clean_pixels,
             "region_samples": {
-                "autonomous_skin": {
-                    "box": {"x": 0, "y": 0, "w": img_w, "h": img_h},
+                "auto_complexion": {
+                    "box": comp_box,
                     "pixel_count": len(clean_pixels),
                     "mean_rgb": mean_rgb,
                     "hex": hex_code
                 }
             },
-            "total_pixels": int(len(clean_pixels))
+            "total_pixels": int(len(clean_pixels)),
+            "spotted": len(clean_pixels) >= 30,
+            "representative_hex": hex_code
         }
 
     def _remove_outliers(self, pixels: np.ndarray) -> np.ndarray:

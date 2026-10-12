@@ -562,28 +562,63 @@ class FaceDetector:
                 chin_lum = float(np.mean(0.114 * chin[:,:,0] + 0.587 * chin[:,:,1] + 0.299 * chin[:,:,2]))
                 lum_drop = chk_lum - chin_lum
 
-                if lum_drop > 20.0:
-                    score_male += min(3.5, (lum_drop - 20.0) / 10.0 + 1.2)
+                if lum_drop > 15.0:
+                    score_male += min(3.2, (lum_drop - 15.0) * 0.22 + 1.0)
                 elif lum_drop < 8.0:
-                    score_female += min(2.5, (8.0 - lum_drop) / 8.0 + 0.8)
+                    score_female += min(2.8, (8.0 - lum_drop) * 0.28 + 0.9)
 
-            # Lip contrast
+            # Lip contrast (extract top 30% mucosal redness in mouth region)
             if lip.size > 0 and chk.size > 0:
-                lip_r = float(np.mean(lip[:,:,2]))
-                lip_g = float(np.mean(lip[:,:,1]))
-                lip_b = float(np.mean(lip[:,:,0]))
-                chk_r = float(np.mean(chk[:,:,2]))
-                chk_g = float(np.mean(chk[:,:,1]))
-                chk_b = float(np.mean(chk[:,:,0]))
+                lip_pixels = lip.reshape(-1, 3).astype(np.float32)
+                lip_b = lip_pixels[:, 0]
+                lip_g = lip_pixels[:, 1]
+                lip_r = lip_pixels[:, 2]
+                lip_redness = lip_r / np.maximum(1.0, (lip_g + lip_b) / 2.0)
 
-                chk_red = chk_r / max(1.0, (chk_g + chk_b) / 2.0)
-                lip_red = lip_r / max(1.0, (lip_g + lip_b) / 2.0)
-                lip_contrast = lip_red - chk_red
+                sorted_idx = np.argsort(lip_redness)[::-1]
+                top_cut = max(4, int(len(lip_redness) * 0.30))
+                top_redness = float(np.mean(lip_redness[sorted_idx[:top_cut]]))
 
-                if lip_contrast > 0.12:
-                    score_female += min(3.0, (lip_contrast - 0.12) * 12.0 + 1.0)
-                elif lip_contrast < 0.05:
-                    score_male += min(2.5, (0.05 - lip_contrast) * 15.0 + 1.2)
+                chk_b = float(np.mean(chk[:, :, 0]))
+                chk_g = float(np.mean(chk[:, :, 1]))
+                chk_r = float(np.mean(chk[:, :, 2]))
+                chk_redness = chk_r / max(1.0, (chk_g + chk_b) / 2.0)
+
+                lip_contrast = top_redness - chk_redness
+
+                if lip_contrast > 0.08:
+                    score_female += min(3.5, (lip_contrast - 0.08) * 16.0 + 1.2)
+                elif lip_contrast < 0.04:
+                    score_male += min(3.0, (0.04 - lip_contrast) * 22.0 + 1.0)
+                else:
+                    t = (lip_contrast - 0.04) / 0.04
+                    score_female += t * 0.8
+                    score_male += (1.0 - t) * 0.8
+
+            # Lateral hair volume (hair framing the jaw & neck)
+            side_y1 = max(0, min(int(cy - ry * 0.2), img_h - 1))
+            side_y2 = max(side_y1 + 10, min(int(cy + ry * 1.1), img_h))
+            l_side_x1 = max(0, int(cx - rx * 1.35))
+            l_side_x2 = max(l_side_x1 + 4, int(cx - rx * 0.95))
+            r_side_x1 = min(img_w - 4, int(cx + rx * 0.95))
+            r_side_x2 = min(img_w, int(cx + rx * 1.35))
+
+            l_side = image_bgr[side_y1:side_y2, l_side_x1:l_side_x2]
+            r_side = image_bgr[side_y1:side_y2, r_side_x1:r_side_x2]
+
+            hair_count = 0
+            total_side = 0
+            for side_roi in [l_side, r_side]:
+                if side_roi.size > 0:
+                    side_lum = 0.114 * side_roi[:, :, 0] + 0.587 * side_roi[:, :, 1] + 0.299 * side_roi[:, :, 2]
+                    hair_count += int(np.sum(side_lum < 85))
+                    total_side += side_roi.shape[0] * side_roi.shape[1]
+
+            hair_ratio = (hair_count / max(1, total_side)) if total_side > 20 else 0.0
+            if hair_ratio > 0.22:
+                score_female += min(2.5, (hair_ratio - 0.22) * 8.0 + 1.0)
+            elif hair_ratio < 0.05 and total_side > 20:
+                score_male += 0.8
         except Exception:
             pass
 
@@ -592,7 +627,7 @@ class FaceDetector:
         p_male = float(exp_m / (exp_m + exp_f))
         p_female = float(1.0 - p_male)
 
-        detected = "Male" if p_male >= 0.50 else "Female"
+        detected = "Female" if p_female >= 0.50 else "Male"
         conf = float(max(p_male, p_female))
 
         return {

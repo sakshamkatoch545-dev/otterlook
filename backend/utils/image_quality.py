@@ -99,7 +99,7 @@ def analyze_image_quality(image_bgr: np.ndarray) -> Dict[str, Any]:
     else:
         status = "Poor"
         msg_details = " ".join(issues) if issues else "Lighting or focus is insufficient."
-        message = f"Image quality note: {msg_details}"
+        message = f"The image is not clear or does not have proper lighting. {msg_details} Please take your photo in good, natural daylight."
         is_valid = False
         
     return {

@@ -1115,6 +1115,89 @@ body {
   border-bottom-right-radius: 4px;
 }
 
+/* Auto Colour Detection Overlay & Badge */
+.auto-color-badge-container {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: none;
+  width: auto;
+  max-width: 90%;
+}
+
+.auto-color-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 19, 28, 0.94);
+  backdrop-filter: blur(14px);
+  border: 1.5px solid var(--border-gold, #D4AF37);
+  border-radius: 999px;
+  padding: 6px 16px 6px 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.25);
+  transition: all 0.3s ease;
+}
+
+.auto-color-swatch-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+  transition: background-color 0.3s ease;
+}
+
+.auto-color-badge-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.auto-color-badge-title {
+  font-family: var(--font-sans);
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--text-muted, #94A3B8);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.auto-color-badge-hex {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent-gold, #F2CA50);
+  letter-spacing: 0.05em;
+}
+
+.auto-color-status-tag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(212, 175, 55, 0.15);
+  color: var(--accent-gold, #F2CA50);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.auto-color-status-tag.error {
+  background: rgba(239, 68, 68, 0.18);
+  color: #F87171;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.auto-color-status-tag.success {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34D399;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
 /* Face Box Live Telemetry Badge */
 .face-box-tag {
   position: absolute;
