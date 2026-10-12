@@ -702,20 +702,31 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Gender / Styling Profile Tracking ---
-  let currentGender = "all";
-  let cachedApiData = null;
-
-  function updateGenderView() {
+  function updateGenderView(activeG) {
+    const targetG = (activeG || currentGender || "female").toLowerCase();
     const makeupBtn = document.getElementById("tab-btn-makeup");
-    if (makeupBtn) {
-      if (currentGender === "male") {
+    const makeupTab = document.getElementById("tab-makeup");
+    const clothingBtn = document.querySelector('[data-tab="clothing"]');
+    const clothingTab = document.getElementById("tab-clothing");
+
+    if (targetG === "male") {
+      if (makeupBtn) {
         makeupBtn.style.display = "none";
-        if (makeupBtn.classList.contains("active")) {
-          const clothingBtn = document.querySelector('[data-tab="clothing"]');
-          if (clothingBtn) clothingBtn.click();
-        }
-      } else {
-        makeupBtn.style.display = "";
+        makeupBtn.classList.remove("active");
+      }
+      if (makeupTab) {
+        makeupTab.style.display = "none";
+        makeupTab.classList.remove("active");
+      }
+      if (clothingBtn) clothingBtn.classList.add("active");
+      if (clothingTab) {
+        clothingTab.style.display = "";
+        clothingTab.classList.add("active");
+      }
+    } else {
+      if (makeupBtn) makeupBtn.style.display = "";
+      if (makeupTab && makeupBtn && makeupBtn.classList.contains("active")) {
+        makeupTab.style.display = "";
       }
     }
   }
@@ -864,7 +875,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (genderMode === "male") {
       const maleTags = ["core", "warm_earthy", "deep", "earthy", "classic", "autumn", "winter"];
       if (allMatching.length > 0) {
-        palette = allMatching.filter(c => c.category === "Clothing" || c.category === "Neutrals")
+        palette = allMatching.filter(c => {
+          const cat = (c.category || "").toLowerCase();
+          const name = (c.name || "").toLowerCase();
+          const desc = (c.description || "").toLowerCase();
+          return (cat === "Clothing" || cat === "Neutrals") &&
+                 !name.includes("lip") &&
+                 !name.includes("lipstick") &&
+                 !name.includes("gloss") &&
+                 !name.includes("blush") &&
+                 !name.includes("eyeshadow") &&
+                 !desc.includes("lipstick");
+        })
           .slice()
           .sort((a, b) => {
             const aM = (a.tags || []).filter(t => maleTags.includes(t)).length + (["blue", "green", "brown", "metal", "neutral"].includes(a.family) ? 2 : 0);
@@ -1149,33 +1171,6 @@ document.addEventListener("DOMContentLoaded", () => {
       swatchesGridMain.appendChild(card);
     });
 
-    // Render Dynamic Skin Harmonies
-    const skinBadge = document.getElementById("skin-coords-badge");
-    if (skinBadge) skinBadge.textContent = skinMetrics.representative_hex;
-
-    const skinGrid = document.getElementById("skin-harmonies-grid");
-    if (skinGrid && data.skin_harmonies) {
-      skinGrid.innerHTML = "";
-      data.skin_harmonies.forEach((h) => {
-        const card = document.createElement("div");
-        card.className = "skin-harmony-card";
-        card.innerHTML = `
-          <div class="harmony-color" style="background-color: ${h.hex}"></div>
-          <div class="harmony-type">${h.badge || h.harmony_type || "Harmony"}</div>
-          <div class="harmony-hex">${h.hex}</div>
-        `;
-        card.addEventListener("click", () => copyToClipboard(h.hex, h.name));
-        skinGrid.appendChild(card);
-      });
-    }
-
-    // Render Analyzed Image Atmosphere
-    const atmSwatches = document.getElementById("atmosphere-swatches");
-    if (atmSwatches) {
-      atmSwatches.innerHTML = `
-        <div class="atmosphere-dot" style="background: ${skinMetrics.representative_hex}" title="Skin Tone (${skinMetrics.representative_hex})"></div>
-      `;
-    }
 
     // 5. Categorized Recommendations
     renderRecGrid("rec-clothing-grid", data.recommendations.clothing, "Clothing");

@@ -263,6 +263,12 @@ class PaletteGenerator:
             dict(c, affinity_score=calculate_affinity(c))
             for c in matching_colors
         ]
+        if gender_mode == "male":
+            scored_colors = [
+                c for c in scored_colors
+                if (c.get("category") or "").lower() != "makeup"
+                and not any(w in (c.get("name", "") + " " + c.get("description", "") + " " + c.get("sub_category", "")).lower() for w in ("lip", "lipstick", "gloss", "blush", "eyeshadow", "mascara", "rouge", "cosmetic"))
+            ]
         scored_colors.sort(key=lambda x: x["affinity_score"], reverse=True)
 
         # 5. Synthesize 7-Swatch Signature Master Palette

@@ -714,33 +714,6 @@ body {{
         </div>
       </div>
 
-      <!-- Skin-Tone Calibrated Harmonies Section -->
-      <div class="card skin-harmonies-card" id="skin-harmonies-card">
-        <div class="palette-header">
-          <div>
-            <span class="card-tag">Color Wheel Matches</span>
-            <h3 class="palette-title">Harmonious Color Combinations</h3>
-            <p class="palette-desc">
-              Complementary and analogous color harmonies matched directly to your detected skin tone (<strong id="skin-coords-badge">#C68B59</strong>).
-            </p>
-          </div>
-        </div>
-
-        <div class="skin-harmonies-grid" id="skin-harmonies-grid">
-          <!-- Rendered dynamically -->
-        </div>
-
-        <!-- Analyzed Image Atmosphere Bar -->
-        <div class="image-atmosphere-box" id="image-atmosphere-box">
-          <div class="atmosphere-label">
-            <span class="material-symbols-outlined" style="font-size: 18px;">palette</span>
-            <span>Analyzed Photo Colors:</span>
-          </div>
-          <div class="atmosphere-swatches" id="atmosphere-swatches">
-            <!-- Rendered dynamically -->
-          </div>
-        </div>
-      </div>
 
       <!-- Recommendation Categories Tabs -->
       <div class="recommendations-container" id="curations">
@@ -2188,10 +2161,31 @@ body {{
         }}
 
         // Score and sort all colors dynamically for this face
-        const scoredColors = matching.map(c => ({{
+        let scoredColors = matching.map(c => ({{
           ...c,
           affinityScore: calculateAffinityScore(c)
         }})).sort((a, b) => b.affinityScore - a.affinityScore);
+
+        if (activeGender === "male") {{
+          scoredColors = scoredColors.filter(c => {{
+            const cat = (c.category || "").toLowerCase();
+            const name = (c.name || "").toLowerCase();
+            const desc = (c.description || "").toLowerCase();
+            const sub = (c.sub_category || "").toLowerCase();
+            return cat !== "makeup" &&
+                   !name.includes("lip") &&
+                   !name.includes("lipstick") &&
+                   !name.includes("gloss") &&
+                   !name.includes("blush") &&
+                   !name.includes("eyeshadow") &&
+                   !name.includes("mascara") &&
+                   !desc.includes("lipstick") &&
+                   !desc.includes("lip tint") &&
+                   !desc.includes("blush") &&
+                   !sub.includes("lipstick") &&
+                   !sub.includes("blush");
+          }});
+        }}
 
         // Synthesize 7-Swatch Signature Master Palette dynamically
         const chosenPalette = [];
@@ -2411,17 +2405,30 @@ body {{
       }}
 
       function updateGenderView(activeG) {{
-        const targetG = activeG || currentGender;
+        const targetG = (activeG || currentGender || "female").toLowerCase();
         const makeupBtn = document.getElementById("tab-btn-makeup");
-        if (makeupBtn) {{
-          if (targetG === "male") {{
+        const makeupTab = document.getElementById("tab-makeup");
+        const clothingBtn = document.querySelector('[data-tab="clothing"]');
+        const clothingTab = document.getElementById("tab-clothing");
+
+        if (targetG === "male") {{
+          if (makeupBtn) {{
             makeupBtn.style.display = "none";
-            if (makeupBtn.classList.contains("active")) {{
-              const clothingBtn = document.querySelector('[data-tab="clothing"]');
-              if (clothingBtn) clothingBtn.click();
-            }}
-          }} else {{
-            makeupBtn.style.display = "";
+            makeupBtn.classList.remove("active");
+          }}
+          if (makeupTab) {{
+            makeupTab.style.display = "none";
+            makeupTab.classList.remove("active");
+          }}
+          if (clothingBtn) clothingBtn.classList.add("active");
+          if (clothingTab) {{
+            clothingTab.style.display = "";
+            clothingTab.classList.add("active");
+          }}
+        }} else {{
+          if (makeupBtn) makeupBtn.style.display = "";
+          if (makeupTab && makeupBtn && makeupBtn.classList.contains("active")) {{
+            makeupTab.style.display = "";
           }}
         }}
       }}
@@ -2557,6 +2564,7 @@ body {{
           );
 
           renderResults(analysisData, recData);
+          updateGenderView(activeProfile);
 
           processingSection.classList.add("hidden");
           resultsSection.classList.remove("hidden");
@@ -2687,35 +2695,6 @@ body {{
           swatchesGrid.appendChild(card);
         }});
 
-        // Render Dynamic Skin-Tone Harmonies
-        const skinBadge = document.getElementById("skin-coords-badge");
-        if (skinBadge) skinBadge.textContent = recs.skinHex;
-
-        const skinGrid = document.getElementById("skin-harmonies-grid");
-        if (skinGrid && recs.skinHarmonies) {{
-          skinGrid.innerHTML = "";
-          recs.skinHarmonies.forEach((h) => {{
-            const card = document.createElement("div");
-            card.className = "skin-harmony-card";
-            card.innerHTML = `
-              <div class="harmony-color" style="background-color: ${{h.hex}}"></div>
-              <div class="harmony-type">${{h.badge || h.harmony_type}}</div>
-              <div class="harmony-hex">${{h.hex}}</div>
-            `;
-            card.addEventListener("click", () => copyToClipboard(h.hex, h.name));
-            skinGrid.appendChild(card);
-          }});
-        }}
-
-        // Render Analyzed Image Atmosphere
-        const atmSwatches = document.getElementById("atmosphere-swatches");
-        if (atmSwatches && recs.atmosphere) {{
-          atmSwatches.innerHTML = `
-            <div class="atmosphere-dot" style="background: ${{recs.skinHex}}" title="Skin Tone (${{recs.skinHex}})"></div>
-            <div class="atmosphere-dot" style="background: ${{recs.atmosphere.background_hex}}" title="Ambient Backdrop (${{recs.atmosphere.background_hex}})"></div>
-            <div class="atmosphere-dot" style="background: ${{recs.atmosphere.outfit_hex}}" title="Detected Outfit (${{recs.atmosphere.outfit_hex}})"></div>
-          `;
-        }}
 
         renderRecGrid("rec-clothing-grid", recs.clothing, "Clothing");
         renderRecGrid("rec-makeup-grid", recs.makeup, "Cosmetics");
