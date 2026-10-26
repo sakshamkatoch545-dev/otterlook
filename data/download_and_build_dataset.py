@@ -203,8 +203,9 @@ def download_and_build_dataset(output_csv: str):
         shutil.copy2(output_csv, backup_csv)
         print(f"Backed up original dataset to: {backup_csv}")
         
-    raw_cache_path = os.path.join(data_dir, "raw_all_shades.csv")
+    raw_cache_path = os.path.join(data_dir, "raw", "pudding_foundation_shades", "allShades.csv")
     if not os.path.exists(raw_cache_path):
+        os.makedirs(os.path.dirname(raw_cache_path), exist_ok=True)
         print(f"Fetching global complexion data from:\n  {TIDYTUESDAY_SHADES_URL}")
         urllib.request.urlretrieve(TIDYTUESDAY_SHADES_URL, raw_cache_path)
         print(f"Saved raw cache to {raw_cache_path}")

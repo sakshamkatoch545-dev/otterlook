@@ -144,7 +144,7 @@ Actual Warm:     55       119    178
 
 ### To download raw datasets:
 ```powershell
-python download_datasets.py
+python data/download_datasets.py
 ```
 
 ### To run data cleaning, deduplication, and train/val/test splitting:

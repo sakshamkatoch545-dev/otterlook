@@ -63,3 +63,25 @@ This registry documents all source datasets acquired, evaluated, and integrated 
 - **Purpose:** Auditing fairness, verifying that color spaces (ITA, $L^*$) span all skin lightness levels without racial or phototype bias.
 - **Download Date:** 2026-09-18
 - **Restrictions / Notes:** Per ethical guidelines, images without ground truth biological undertones remain marked `unlabeled`.
+
+---
+
+## 4. FairFace: Face Attribute Dataset for Balanced Race, Gender, and Age
+
+- **Dataset Name:** FairFace (Fair Face Attribute Dataset)
+- **Source:** Stanford / UCLA (Kärkkäinen & Joo, WACV 2021)
+- **URL:** [https://github.com/joojs/fairface](https://github.com/joojs/fairface) / [https://huggingface.co/datasets/HuggingFaceM4/FairFace](https://huggingface.co/datasets/HuggingFaceM4/FairFace)
+- **License:** Open Access / Custom Research & Non-Commercial License (Free for academic and development research)
+- **Commercial / Research Permitted:** Yes (Non-commercial research, benchmarking, and fair AI evaluation)
+- **Number of Images:** 108,501 portraits (86,744 train, 10,954 validation, 10,803 test)
+- **Demographic Groups Covered:** 7 balanced racial/ethnic groups:
+  - White
+  - Black
+  - Indian
+  - East Asian
+  - Southeast Asian
+  - Middle Eastern
+  - Latino / Hispanic
+- **Purpose in Otterlook:** Used as an external multi-ethnic benchmark to test facial landmark localization (MediaPipe FaceMesh), skin segmentation robustness under diverse real-world lighting conditions (YFCC-100M Flickr in-the-wild photography), and evaluate phototype fairness across global demographic distributions.
+- **Download Date:** 2026-10-17
+- **Restrictions / Notes:** Used for audit and vision pipeline robustness testing across demographic subgroups. Does not replace dermatological undertone labels.

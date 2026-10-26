@@ -29,7 +29,7 @@ To minimize I/O latency and satisfy strict privacy regulations (GDPR/CCPA):
 - **Entry Point:** [`Procfile`](file:///c:/MY%20PROJECTS/otterlook/Procfile) (`web: uvicorn backend.main:app --host 0.0.0.0 --port $PORT`)
 - **PaaS Manifest:** [`render.yaml`](file:///c:/MY%20PROJECTS/otterlook/render.yaml) for automated CI/CD deployment on Render.
 - **Python Version:** [`runtime.txt`](file:///c:/MY%20PROJECTS/otterlook/runtime.txt) pinning Python 3.10+.
-- **Edge Tunnel:** [`cloudflared.exe`](file:///c:/MY%20PROJECTS/otterlook/cloudflared.exe) integration for secure local-to-cloud tunneling.
+- **Edge Tunnel:** Cloudflare Tunnel (`cloudflared`) support for secure local-to-cloud public demo tunneling.
 
 ---
 

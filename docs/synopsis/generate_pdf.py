@@ -376,4 +376,5 @@ def build_pdf(filename="Otterlook_Project_Synopsis.pdf"):
     print(f"Successfully generated PDF: {filename}")
 
 if __name__ == "__main__":
-    build_pdf("c:/MY PROJECTS/otterlook/Otterlook_Project_Synopsis.pdf")
+    out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Otterlook_Project_Synopsis.pdf")
+    build_pdf(out_path)

@@ -6,8 +6,16 @@ Author: AI Personal Colour Analysis System
 import os
 import sys
 import io
+import logging
 import cv2
 import numpy as np
+
+# Load .env file for local development (no-op if file doesn't exist)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 # Ensure root directory is in sys.path
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,7 +26,8 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
-from typing import Dict, Any
+from pydantic import BaseModel
+from typing import Dict, Any, Optional
 
 from backend.utils.image_quality import analyze_image_quality
 from backend.vision.face_detection import FaceDetector
@@ -26,6 +35,15 @@ from backend.vision.skin_detection import SkinExtractor
 from backend.vision.colour_extraction import ColourFeatureExtractor
 from backend.ml.predictor import UndertonePredictor
 from backend.recommendations.palette_generator import PaletteGenerator
+from backend.db import supabase_client
+
+logger = logging.getLogger("otterlook.api")
+
+
+# Pydantic model for feedback requests
+class FeedbackRequest(BaseModel):
+    analysis_id: str
+    corrected_undertone: str  # "Warm", "Cool", or "Neutral"
 
 app = FastAPI(
     title="AI-Based Personal Colour Analysis API",
@@ -175,9 +193,22 @@ async def analyze_portrait(file: UploadFile = File(...)):
         gender=detected_gender.lower()
     )
 
+    # Persist analysis to Supabase (non-blocking, graceful fallback)
+    analysis_id = None
+    try:
+        analysis_id = supabase_client.save_analysis(
+            features=color_features["ml_features"],
+            predicted_undertone=predicted_undertone,
+            confidence=ml_prediction["confidence"],
+            quality_score=quality_result["score"]
+        )
+    except Exception as e:
+        logger.error("Supabase save_analysis failed (non-fatal): %s", e)
+
     # Return comprehensive structured response
     return {
         "success": True,
+        "analysis_id": analysis_id,
         "quality": {
             "score": quality_result["score"],
             "status": quality_result["status"],
@@ -214,6 +245,51 @@ async def analyze_portrait(file: UploadFile = File(...)):
         "stylist_summary": recommendations_result["stylist_summary"],
         "foundation_advice": recommendations_result["foundation_advice"]
     }
+
+@app.post("/api/feedback")
+async def submit_feedback(feedback: FeedbackRequest):
+    """
+    Accepts user corrections to undertone predictions.
+    Stores feedback in Supabase for active learning / model retraining.
+    """
+    valid_undertones = ["Warm", "Cool", "Neutral"]
+    corrected = feedback.corrected_undertone.capitalize()
+    if corrected not in valid_undertones:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid corrected_undertone. Choose from: {valid_undertones}"
+        )
+
+    if not feedback.analysis_id:
+        raise HTTPException(status_code=400, detail="analysis_id is required.")
+
+    feedback_id = supabase_client.save_feedback(
+        analysis_id=feedback.analysis_id,
+        corrected_undertone=corrected
+    )
+
+    if feedback_id:
+        return {
+            "success": True,
+            "feedback_id": feedback_id,
+            "message": "Thank you for your feedback! It will help improve our model."
+        }
+    else:
+        return {
+            "success": False,
+            "message": "Feedback storage is currently unavailable. Thank you for trying."
+        }
+
+
+@app.get("/api/db-status")
+async def db_status():
+    """
+    Check whether Supabase is connected and operational.
+    """
+    return {
+        "supabase_connected": supabase_client.is_available(),
+    }
+
 
 @app.get("/api/palette/{undertone}")
 async def get_palette_by_undertone(undertone: str):

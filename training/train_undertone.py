@@ -218,7 +218,7 @@ def train_and_compare_models(
         "training_samples": len(X_full_train)
     }
 
-    joblib.dump(model_artifact, model_save_path)
+    joblib.dump(model_artifact, model_save_path, compress=3)
     print(f"\n>> Saved production model artifact to: {model_save_path}")
 
     # Save evaluation reports in models/ and results/

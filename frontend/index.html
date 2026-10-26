@@ -475,7 +475,27 @@
             <div class="micro-metric-item">
               <div class="micro-metric-val">Clear</div>
               <div class="micro-metric-label">Depth Level</div>
+          </div>
+
+          <!-- Feedback & Active Learning Widget -->
+          <div class="feedback-widget" id="feedback-widget">
+            <div class="feedback-header">
+              <span class="feedback-title">Does this analysis feel accurate?</span>
+              <span class="feedback-subtitle">Help train our model with your real-world impression</span>
             </div>
+            <div class="feedback-actions" id="feedback-actions">
+              <button type="button" class="feedback-btn feedback-confirm" id="feedback-confirm-btn">
+                <span class="material-symbols-outlined" style="font-size: 16px;">check_circle</span>
+                <span>Accurate</span>
+              </button>
+              <div class="feedback-alternatives">
+                <span class="feedback-alt-label">Or correct:</span>
+                <button type="button" class="feedback-btn feedback-chip" data-undertone="Warm">Warm</button>
+                <button type="button" class="feedback-btn feedback-chip" data-undertone="Neutral">Neutral</button>
+                <button type="button" class="feedback-btn feedback-chip" data-undertone="Cool">Cool</button>
+              </div>
+            </div>
+            <div class="feedback-status hidden" id="feedback-status"></div>
           </div>
         </div>
 

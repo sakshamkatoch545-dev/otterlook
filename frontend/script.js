@@ -1019,6 +1019,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Render Results ---
   function renderResults(data) {
     cachedApiData = data;
+    resetFeedbackWidget(data);
 
     // Auto-detect gender from API response and apply styling profile
     handleGenderSelect(currentGender, false);
@@ -1315,7 +1316,89 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     });
   });
-  
+
+  // --- Active Learning / Feedback Widget Logic ---
+  const feedbackWidget = document.getElementById("feedback-widget");
+  const feedbackConfirmBtn = document.getElementById("feedback-confirm-btn");
+  const feedbackStatus = document.getElementById("feedback-status");
+  const feedbackChips = document.querySelectorAll(".feedback-chip");
+
+  function resetFeedbackWidget(data) {
+    if (!feedbackWidget) return;
+    if (feedbackStatus) {
+      feedbackStatus.classList.add("hidden");
+      feedbackStatus.className = "feedback-status hidden";
+      feedbackStatus.textContent = "";
+    }
+    if (feedbackConfirmBtn) {
+      feedbackConfirmBtn.disabled = false;
+    }
+    feedbackChips.forEach((chip) => {
+      chip.disabled = false;
+      chip.classList.remove("active");
+    });
+  }
+
+  async function handleFeedbackSubmission(correctedUndertone) {
+    if (!cachedApiData || !cachedApiData.analysis_id) {
+      if (feedbackStatus) {
+        feedbackStatus.textContent = "Analysis ID unavailable. Feedback requires database connection.";
+        feedbackStatus.className = "feedback-status error";
+        feedbackStatus.classList.remove("hidden");
+      }
+      return;
+    }
+
+    if (feedbackConfirmBtn) feedbackConfirmBtn.disabled = true;
+    feedbackChips.forEach((chip) => (chip.disabled = true));
+
+    try {
+      const resp = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          analysis_id: cachedApiData.analysis_id,
+          corrected_undertone: correctedUndertone,
+        }),
+      });
+
+      const resData = await resp.json();
+      if (resp.ok && resData.success) {
+        if (feedbackStatus) {
+          feedbackStatus.innerHTML = `<span class="material-symbols-outlined" style="font-size: 16px;">check</span> Feedback recorded (${correctedUndertone}). Thank you for helping refine the model!`;
+          feedbackStatus.className = "feedback-status";
+          feedbackStatus.classList.remove("hidden");
+        }
+      } else {
+        throw new Error(resData.detail || resData.error || "Failed to save feedback.");
+      }
+    } catch (err) {
+      if (feedbackStatus) {
+        feedbackStatus.textContent = err.message || "Could not submit feedback.";
+        feedbackStatus.className = "feedback-status error";
+        feedbackStatus.classList.remove("hidden");
+      }
+      if (feedbackConfirmBtn) feedbackConfirmBtn.disabled = false;
+      feedbackChips.forEach((chip) => (chip.disabled = false));
+    }
+  }
+
+  if (feedbackConfirmBtn) {
+    feedbackConfirmBtn.addEventListener("click", () => {
+      const currentLabel = (cachedApiData && cachedApiData.undertone && cachedApiData.undertone.label) || "Warm";
+      handleFeedbackSubmission(currentLabel);
+    });
+  }
+
+  feedbackChips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      feedbackChips.forEach((c) => c.classList.remove("active"));
+      chip.classList.add("active");
+      const chosen = chip.getAttribute("data-undertone");
+      if (chosen) handleFeedbackSubmission(chosen);
+    });
+  });
+
   // Global restrictions to disable copy, cut, paste and context menu
   document.addEventListener('copy', (e) => e.preventDefault());
   document.addEventListener('cut', (e) => e.preventDefault());

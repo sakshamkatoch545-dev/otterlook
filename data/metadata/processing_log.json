@@ -3,17 +3,45 @@
     "total_files_scanned": 253,
     "duplicates_removed": 6,
     "corrupted_or_unreadable": 0,
-    "face_detection_failed": 0,
+    "face_detection_failed": 8,
     "insufficient_skin_pixels": 0,
-    "successfully_processed": 247,
+    "successfully_processed": 239,
     "rejection_details": [
+      {
+        "file": "data\\raw\\personal_color_faces\\train\\\uac00\uc744 \uc6dc\ud1a4\\fall (17).jpg",
+        "reason": "FaceDetector could not localize facial landmarks or skin regions"
+      },
+      {
+        "file": "data\\raw\\personal_color_faces\\train\\\uac00\uc744 \uc6dc\ud1a4\\fall (27).jpg",
+        "reason": "FaceDetector could not localize facial landmarks or skin regions"
+      },
+      {
+        "file": "data\\raw\\personal_color_faces\\train\\\uac00\uc744 \uc6dc\ud1a4\\fall (28).JPG",
+        "reason": "FaceDetector could not localize facial landmarks or skin regions"
+      },
+      {
+        "file": "data\\raw\\personal_color_faces\\train\\\uac00\uc744 \uc6dc\ud1a4\\fall (33).JPG",
+        "reason": "FaceDetector could not localize facial landmarks or skin regions"
+      },
       {
         "file": "data\\raw\\personal_color_faces\\train\\\uac00\uc744 \uc6dc\ud1a4\\fall (36).jpg",
         "reason": "Duplicate image file (matching MD5 hash)"
       },
       {
+        "file": "data\\raw\\personal_color_faces\\train\\\uac00\uc744 \uc6dc\ud1a4\\fall (9).jpg",
+        "reason": "FaceDetector could not localize facial landmarks or skin regions"
+      },
+      {
         "file": "data\\raw\\personal_color_faces\\train\\\ubd04 \uc6dc\ud1a4\\spr (1).JPG",
         "reason": "Duplicate image file (matching MD5 hash)"
+      },
+      {
+        "file": "data\\raw\\personal_color_faces\\train\\\ubd04 \uc6dc\ud1a4\\spr (34).JPG",
+        "reason": "FaceDetector could not localize facial landmarks or skin regions"
+      },
+      {
+        "file": "data\\raw\\personal_color_faces\\train\\\ubd04 \uc6dc\ud1a4\\spr (38).JPG",
+        "reason": "FaceDetector could not localize facial landmarks or skin regions"
       },
       {
         "file": "data\\raw\\personal_color_faces\\train\\\ubd04 \uc6dc\ud1a4\\spr (42).jpg",
@@ -30,19 +58,23 @@
       {
         "file": "data\\raw\\personal_color_faces\\train\\\uc5ec\ub984 \ucfe8\ud1a4\\smr (38).JPG",
         "reason": "Duplicate image file (matching MD5 hash)"
+      },
+      {
+        "file": "data\\raw\\personal_color_faces\\train\\\uc5ec\ub984 \ucfe8\ud1a4\\smr (9).jpg",
+        "reason": "FaceDetector could not localize facial landmarks or skin regions"
       }
     ]
   },
   "total_dataset_counts": {
-    "personal_color_faces": 247,
+    "personal_color_faces": 239,
     "pudding_foundation_shades": 5501,
     "fitzpatrick_mst_benchmarks": 10,
-    "total_entries": 5758
+    "total_entries": 5750
   },
   "undertone_distribution": {
-    "warm": 2345,
+    "warm": 2338,
     "neutral": 2084,
-    "cool": 1319,
+    "cool": 1318,
     "unlabeled": 10
   }
 }

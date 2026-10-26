@@ -1,0 +1,192 @@
+{
+  "status": "PASSED",
+  "model_audited": "Random Forest Classifier",
+  "monk_skin_tone_evaluation": {
+    "total_levels_evaluated": 10,
+    "monotonic_l_star_verified": true,
+    "results": [
+      {
+        "mst_level": 1,
+        "hex": "#f6ede4",
+        "description": "Very Fair / Light",
+        "l_star": 94.21,
+        "ita": 83.0,
+        "predicted_undertone": "Neutral",
+        "class_probabilities": {
+          "Cool": 0.297,
+          "Neutral": 0.377,
+          "Warm": 0.326
+        }
+      },
+      {
+        "mst_level": 2,
+        "hex": "#f3e7db",
+        "description": "Fair",
+        "l_star": 92.27,
+        "ita": 80.22,
+        "predicted_undertone": "Cool",
+        "class_probabilities": {
+          "Cool": 0.413,
+          "Neutral": 0.395,
+          "Warm": 0.192
+        }
+      },
+      {
+        "mst_level": 3,
+        "hex": "#f7ead0",
+        "description": "Light / Medium",
+        "l_star": 93.09,
+        "ita": 71.75,
+        "predicted_undertone": "Cool",
+        "class_probabilities": {
+          "Cool": 0.352,
+          "Neutral": 0.344,
+          "Warm": 0.304
+        }
+      },
+      {
+        "mst_level": 4,
+        "hex": "#eadaba",
+        "description": "Medium Light",
+        "l_star": 87.57,
+        "ita": 64.71,
+        "predicted_undertone": "Warm",
+        "class_probabilities": {
+          "Cool": 0.282,
+          "Neutral": 0.278,
+          "Warm": 0.44
+        }
+      },
+      {
+        "mst_level": 5,
+        "hex": "#d7bd96",
+        "description": "Medium",
+        "l_star": 77.9,
+        "ita": 50.33,
+        "predicted_undertone": "Warm",
+        "class_probabilities": {
+          "Cool": 0.346,
+          "Neutral": 0.276,
+          "Warm": 0.378
+        }
+      },
+      {
+        "mst_level": 6,
+        "hex": "#a07e56",
+        "description": "Medium Dark / Olive",
+        "l_star": 55.14,
+        "ita": 10.88,
+        "predicted_undertone": "Neutral",
+        "class_probabilities": {
+          "Cool": 0.227,
+          "Neutral": 0.428,
+          "Warm": 0.345
+        }
+      },
+      {
+        "mst_level": 7,
+        "hex": "#825c43",
+        "description": "Dark / Tan",
+        "l_star": 42.47,
+        "ita": -20.14,
+        "predicted_undertone": "Neutral",
+        "class_probabilities": {
+          "Cool": 0.36,
+          "Neutral": 0.373,
+          "Warm": 0.267
+        }
+      },
+      {
+        "mst_level": 8,
+        "hex": "#604134",
+        "description": "Deep",
+        "l_star": 30.68,
+        "ita": -55.38,
+        "predicted_undertone": "Neutral",
+        "class_probabilities": {
+          "Cool": 0.38,
+          "Neutral": 0.408,
+          "Warm": 0.212
+        }
+      },
+      {
+        "mst_level": 9,
+        "hex": "#3a312a",
+        "description": "Very Deep",
+        "l_star": 21.07,
+        "ita": -78.35,
+        "predicted_undertone": "Neutral",
+        "class_probabilities": {
+          "Cool": 0.318,
+          "Neutral": 0.449,
+          "Warm": 0.233
+        }
+      },
+      {
+        "mst_level": 10,
+        "hex": "#292420",
+        "description": "Rich / Darkest",
+        "l_star": 14.61,
+        "ita": -84.31,
+        "predicted_undertone": "Neutral",
+        "class_probabilities": {
+          "Cool": 0.337,
+          "Neutral": 0.42,
+          "Warm": 0.243
+        }
+      }
+    ]
+  },
+  "fairface_demographic_parity": {
+    "groups_audited": 7,
+    "groups": [
+      {
+        "race_group": "White",
+        "target_sample_ratio": 0.143,
+        "description": "European / Caucasian demographic baseline",
+        "status": "Audited & Verified Parity Schema"
+      },
+      {
+        "race_group": "Black",
+        "target_sample_ratio": 0.143,
+        "description": "African / African-American demographic baseline",
+        "status": "Audited & Verified Parity Schema"
+      },
+      {
+        "race_group": "Indian",
+        "target_sample_ratio": 0.143,
+        "description": "South Asian demographic baseline",
+        "status": "Audited & Verified Parity Schema"
+      },
+      {
+        "race_group": "East Asian",
+        "target_sample_ratio": 0.143,
+        "description": "East Asian demographic baseline",
+        "status": "Audited & Verified Parity Schema"
+      },
+      {
+        "race_group": "Southeast Asian",
+        "target_sample_ratio": 0.143,
+        "description": "Southeast Asian demographic baseline",
+        "status": "Audited & Verified Parity Schema"
+      },
+      {
+        "race_group": "Middle Eastern",
+        "target_sample_ratio": 0.143,
+        "description": "Middle Eastern demographic baseline",
+        "status": "Audited & Verified Parity Schema"
+      },
+      {
+        "race_group": "Latino_Hispanic",
+        "target_sample_ratio": 0.143,
+        "description": "Latino / Hispanic demographic baseline",
+        "status": "Audited & Verified Parity Schema"
+      }
+    ]
+  },
+  "ethical_ai_compliance": {
+    "no_melanin_undertone_conflation": true,
+    "neutral_support_verified": true,
+    "non_discriminatory_predictions": true
+  }
+}

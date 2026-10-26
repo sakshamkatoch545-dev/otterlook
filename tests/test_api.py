@@ -52,3 +52,23 @@ def test_api_analyze_sample(client):
     assert "undertone" in res_data
     assert "palette" in res_data
     assert "recommendations" in res_data
+    assert "analysis_id" in res_data
+
+def test_api_db_status(client):
+    response = client.get("/api/db-status")
+    assert response.status_code == 200
+    data = response.json()
+    assert "supabase_connected" in data
+
+
+def test_api_feedback_validation(client):
+    # Invalid undertone should return 400
+    response = client.post("/api/feedback", json={"analysis_id": "test-uuid", "corrected_undertone": "Invalid"})
+    assert response.status_code == 400
+
+    # Valid format
+    response = client.post("/api/feedback", json={"analysis_id": "test-uuid", "corrected_undertone": "Warm"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "success" in data
+
