@@ -1115,6 +1115,109 @@ body {
   border-bottom-right-radius: 4px;
 }
 
+/* Auto-Selected Facial Regions & Real-Time Face Mesh Overlay */
+.face-regions-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.preview-face-box {
+  position: absolute;
+  border: 1.5px solid rgba(242, 202, 80, 0.65);
+  background: radial-gradient(circle at center, rgba(242, 202, 80, 0.08) 0%, rgba(242, 202, 80, 0.02) 75%, transparent 100%);
+  border-radius: 8px;
+  box-shadow: 0 0 24px rgba(242, 202, 80, 0.25), inset 0 0 14px rgba(242, 202, 80, 0.08);
+  pointer-events: none;
+  transition: all 0.35s cubic-bezier(0.2, 0.9, 0.3, 1);
+  z-index: 4;
+}
+
+.preview-face-box-tag {
+  position: absolute;
+  top: -11px;
+  left: 12px;
+  background: rgba(10, 14, 22, 0.94);
+  border: 1px solid var(--border-gold, #D4AF37);
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--accent-gold, #F2CA50);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Biometric Region Target Pins */
+.preview-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  z-index: 8;
+  transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.pin-reticle {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pin-ring {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid rgba(242, 202, 80, 0.85);
+  border-radius: 50%;
+  animation: pinPulse 2.2s infinite ease-in-out;
+}
+
+.pin-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid #FFFFFF;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+  z-index: 2;
+  transition: background-color 0.3s ease;
+}
+
+.pin-badge {
+  margin-left: 7px;
+  background: rgba(10, 14, 22, 0.92);
+  border: 1px solid rgba(212, 175, 55, 0.55);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: #F8FAFC;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  line-height: 1.25;
+}
+
+.pin-badge strong {
+  color: var(--accent-gold, #F2CA50);
+  font-weight: 700;
+  margin-right: 5px;
+}
+
+@keyframes pinPulse {
+  0% { transform: scale(0.92); opacity: 0.6; }
+  50% { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(0.92); opacity: 0.6; }
+}
+
 /* Auto Colour Detection Overlay & Badge */
 .auto-color-badge-container {
   position: absolute;

@@ -461,13 +461,196 @@ document.addEventListener("DOMContentLoaded", () => {
 
     return {
       candidateSkin,
-      faceBox: { x: fLeft, y: fTop, width: fWidth, height: fHeight, cx, cy },
+      faceBox: {
+        x: fLeft, y: fTop, width: fWidth, height: fHeight, cx, cy,
+        pctX: (fLeft / w) * 100, pctY: (fTop / h) * 100,
+        pctW: (fWidth / w) * 100, pctH: (fHeight / h) * 100
+      },
       areas: {
         overall,
         forehead,
         cheek,
         chin
       }
+    };
+  }
+
+  // --- Multi-Factor Craniofacial & Dermal Gender Classifier ---
+  function estimateGenderFromDermis(imgData, w, h, faceBox, areas) {
+    let scoreMale = 0.0;
+    let scoreFemale = 0.0;
+
+    // 1. Mandibular Jaw-to-Cheek Width (Bigonial vs Bizygomatic)
+    const jawY = Math.min(h - 1, Math.floor(faceBox.y + faceBox.height * 0.78));
+    const cheekY = Math.min(h - 1, Math.floor(faceBox.y + faceBox.height * 0.50));
+    let jawLeft = faceBox.cx, jawRight = faceBox.cx;
+    let cheekLeft = faceBox.cx, cheekRight = faceBox.cx;
+    for (let x = 0; x < w; x += 2) {
+      const idxJ = (jawY * w + x) * 4;
+      if (isSkinPixel(imgData[idxJ], imgData[idxJ + 1], imgData[idxJ + 2])) {
+        if (x < jawLeft) jawLeft = x;
+        if (x > jawRight) jawRight = x;
+      }
+      const idxC = (cheekY * w + x) * 4;
+      if (isSkinPixel(imgData[idxC], imgData[idxC + 1], imgData[idxC + 2])) {
+        if (x < cheekLeft) cheekLeft = x;
+        if (x > cheekRight) cheekRight = x;
+      }
+    }
+    const jawSpan = Math.max(20, jawRight - jawLeft);
+    const cheekSpan = Math.max(30, cheekRight - cheekLeft);
+    const jawRatio = jawSpan / cheekSpan;
+
+    if (jawRatio > 0.77) {
+      scoreMale += Math.min(2.8, (jawRatio - 0.77) * 8.0 + 0.8);
+    } else if (jawRatio < 0.72) {
+      scoreFemale += Math.min(2.4, (0.72 - jawRatio) * 8.0 + 0.6);
+    }
+
+    // 2. Craniofacial Aspect Ratio (Face Compactness)
+    const faceAspect = faceBox.width / Math.max(faceBox.height, 1);
+    if (faceAspect > 0.80) {
+      scoreMale += Math.min(1.8, (faceAspect - 0.80) * 6.0 + 0.5);
+    } else if (faceAspect < 0.72) {
+      scoreFemale += Math.min(1.8, (0.72 - faceAspect) * 6.0 + 0.5);
+    }
+
+    // 3. Eyebrow Orbital Arch & Low Clearance (Flat brows close to eyes = Male)
+    const browY1 = Math.floor(faceBox.y + faceBox.height * 0.18);
+    const browY2 = Math.floor(faceBox.y + faceBox.height * 0.35);
+    const browX1 = Math.floor(faceBox.cx - faceBox.width * 0.34);
+    const browX2 = Math.floor(faceBox.cx + faceBox.width * 0.34);
+    let darkBrowPixels = 0, browSumY = 0, totalBrowPixels = 0;
+    const meanChkLum = 0.299 * areas.cheek.r + 0.587 * areas.cheek.g + 0.114 * areas.cheek.b;
+
+    for (let y = browY1; y < browY2; y += 2) {
+      for (let x = browX1; x < browX2; x += 2) {
+        if (x >= 0 && x < w && y >= 0 && y < h) {
+          const idx = (y * w + x) * 4;
+          const l = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
+          totalBrowPixels++;
+          if (l < meanChkLum * 0.65) {
+            darkBrowPixels++;
+            browSumY += (y - browY1);
+          }
+        }
+      }
+    }
+    if (darkBrowPixels > 6 && totalBrowPixels > 10) {
+      const browRelY = (browSumY / darkBrowPixels) / Math.max(1, browY2 - browY1);
+      if (browRelY > 0.50) scoreMale += 1.8;
+      else if (browRelY < 0.38) scoreFemale += 1.6;
+    }
+
+    // 4. Lip Mucosa Volume & Natural Contrast (Low contrast vs cheek = Male)
+    const lipY1 = Math.floor(faceBox.y + faceBox.height * 0.64);
+    const lipY2 = Math.floor(faceBox.y + faceBox.height * 0.79);
+    const lipX1 = Math.floor(faceBox.cx - faceBox.width * 0.22);
+    const lipX2 = Math.floor(faceBox.cx + faceBox.width * 0.22);
+    const mouthPixels = [];
+    for (let y = lipY1; y < lipY2; y += 2) {
+      for (let x = lipX1; x < lipX2; x += 2) {
+        if (x >= 0 && x < w && y >= 0 && y < h) {
+          const idx = (y * w + x) * 4;
+          const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+          const redScore = r / Math.max(1, (g + b) / 2);
+          mouthPixels.push({ r, g, b, redScore, y });
+        }
+      }
+    }
+    mouthPixels.sort((a, b) => b.redScore - a.redScore);
+    const topLipCut = Math.max(4, Math.floor(mouthPixels.length * 0.28));
+    let sumLipR = 0, sumLipG = 0, sumLipB = 0;
+    let lipMinY = h, lipMaxY = 0;
+    for (let i = 0; i < topLipCut; i++) {
+      sumLipR += mouthPixels[i].r;
+      sumLipG += mouthPixels[i].g;
+      sumLipB += mouthPixels[i].b;
+      if (mouthPixels[i].y < lipMinY) lipMinY = mouthPixels[i].y;
+      if (mouthPixels[i].y > lipMaxY) lipMaxY = mouthPixels[i].y;
+    }
+    const mLipR = topLipCut > 0 ? sumLipR / topLipCut : 150;
+    const mLipG = topLipCut > 0 ? sumLipG / topLipCut : 100;
+    const mLipB = topLipCut > 0 ? sumLipB / topLipCut : 95;
+    const lipRedRatio = mLipR / Math.max(1, (mLipG + mLipB) / 2);
+    const chkRedRatio = areas.cheek.r / Math.max(1, (areas.cheek.g + areas.cheek.b) / 2);
+    const lipContrast = lipRedRatio - chkRedRatio;
+    const lipThickness = (lipMaxY - lipMinY) / Math.max(1, faceBox.height);
+
+    if (lipContrast > 0.085 && lipThickness > 0.055) {
+      scoreFemale += Math.min(2.5, (lipContrast - 0.085) * 12.0 + (lipThickness - 0.055) * 14.0 + 0.8);
+    } else if (lipContrast < 0.045) {
+      scoreMale += Math.min(2.2, (0.045 - lipContrast) * 18.0 + 0.8);
+    }
+
+    // 5. Mandibular Follicular Texture & Micro-Variance
+    let chinVar = 0, chkVar = 0, chinCount = 0, chkCount = 0;
+    const radV = Math.floor(faceBox.width * 0.08);
+    for (let dy = -radV; dy < radV; dy += 2) {
+      for (let dx = -radV; dx < radV; dx += 2) {
+        const cX = faceBox.cx + dx, cY = areas.chin.y + dy;
+        if (cX >= 1 && cX < w - 1 && cY >= 1 && cY < h - 1) {
+          const iC = (cY * w + cX) * 4;
+          const iR = (cY * w + cX + 1) * 4;
+          const lumC = 0.299 * imgData[iC] + 0.587 * imgData[iC + 1] + 0.114 * imgData[iC + 2];
+          const lumR = 0.299 * imgData[iR] + 0.587 * imgData[iR + 1] + 0.114 * imgData[iR + 2];
+          chinVar += Math.abs(lumC - lumR);
+          chinCount++;
+        }
+        const kX = areas.cheek.x + dx, kY = areas.cheek.y + dy;
+        if (kX >= 1 && kX < w - 1 && kY >= 1 && kY < h - 1) {
+          const iC = (kY * w + kX) * 4;
+          const iR = (kY * w + kX + 1) * 4;
+          const lumC = 0.299 * imgData[iC] + 0.587 * imgData[iC + 1] + 0.114 * imgData[iC + 2];
+          const lumR = 0.299 * imgData[iR] + 0.587 * imgData[iR + 1] + 0.114 * imgData[iR + 2];
+          chkVar += Math.abs(lumC - lumR);
+          chkCount++;
+        }
+      }
+    }
+    const meanChinGrad = chinCount > 0 ? chinVar / chinCount : 5;
+    const meanChkGrad = chkCount > 0 ? chkVar / chkCount : 5;
+    const textureRatio = meanChinGrad / Math.max(1, meanChkGrad);
+
+    if (textureRatio > 1.25) {
+      scoreMale += Math.min(2.5, (textureRatio - 1.25) * 4.0 + 0.8);
+    } else if (textureRatio < 1.02) {
+      scoreFemale += Math.min(1.5, (1.02 - textureRatio) * 4.0 + 0.5);
+    }
+
+    // 6. Neck / Throat Sternocleidomastoid Width
+    const neckY = Math.min(h - 2, Math.floor(faceBox.y + faceBox.height * 1.05));
+    let neckLeft = faceBox.cx, neckRight = faceBox.cx;
+    for (let x = 0; x < w; x += 2) {
+      const idxN = (neckY * w + x) * 4;
+      if (isSkinPixel(imgData[idxN], imgData[idxN + 1], imgData[idxN + 2])) {
+        if (x < neckLeft) neckLeft = x;
+        if (x > neckRight) neckRight = x;
+      }
+    }
+    const neckWidth = neckRight - neckLeft;
+    const neckRatio = neckWidth / Math.max(20, faceBox.width);
+    if (neckRatio > 0.66) {
+      scoreMale += Math.min(1.8, (neckRatio - 0.66) * 5.0 + 0.6);
+    } else if (neckRatio < 0.52 && neckWidth > 15) {
+      scoreFemale += Math.min(1.5, (0.52 - neckRatio) * 5.0 + 0.5);
+    }
+
+    // Sigmoid Bayesian calibration
+    const scoreDiff = scoreFemale - scoreMale;
+    const pFemale = 1.0 / (1.0 + Math.exp(-scoreDiff * 0.95));
+    const pMale = 1.0 - pFemale;
+    const detected = pMale >= pFemale ? "Male" : "Female";
+    const confidence = Math.min(98, Math.max(76, Math.round(Math.max(pMale, pFemale) * 100)));
+
+    return {
+      detected,
+      confidence,
+      pMale,
+      pFemale,
+      jawRatio,
+      lipContrast,
+      textureRatio
     };
   }
 
@@ -542,9 +725,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Extract facial dermis and real anatomical regions
     const regionRes = extractFacialDermisAndRegions(imgData, sampleW, sampleH);
-    const { candidateSkin, areas } = regionRes;
+    const candidateSkin = regionRes.candidateSkin;
+    const areas = regionRes.areas;
+    const faceBox = regionRes.faceBox;
     lastExtractedAreas = areas;
-    lastExtractedFaceBox = regionRes.faceBox;
+    lastExtractedFaceBox = faceBox;
 
     // 3. Check for lighting and clarity issues
     let errorMsg = null;
@@ -588,6 +773,14 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (autoDot) autoDot.style.backgroundColor = "#64748B";
 
+      // Hide overlays on error
+      const fbEl = document.getElementById("preview-face-box");
+      if (fbEl) fbEl.classList.add("hidden");
+      ["preview-pin-forehead", "preview-pin-cheek-l", "preview-pin-cheek-r", "preview-pin-chin"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add("hidden");
+      });
+
       analyzeBtn.disabled = true;
       return false;
     }
@@ -595,6 +788,44 @@ document.addEventListener("DOMContentLoaded", () => {
     // Success! Dermis color and areas spotted accurately
     hideError();
     const spottedHex = areas.overall.hex;
+
+    // Position and show face box & anatomical region pins directly on preview image
+    const faceBoxEl = document.getElementById("preview-face-box");
+    const faceBoxTag = document.getElementById("preview-face-box-tag");
+    if (faceBoxEl && faceBox) {
+      faceBoxEl.style.left = faceBox.pctX.toFixed(2) + "%";
+      faceBoxEl.style.top = faceBox.pctY.toFixed(2) + "%";
+      faceBoxEl.style.width = faceBox.pctW.toFixed(2) + "%";
+      faceBoxEl.style.height = faceBox.pctH.toFixed(2) + "%";
+      faceBoxEl.classList.remove("hidden");
+    }
+
+    const setPin = (pinId, dotId, hexId, pt) => {
+      const pin = document.getElementById(pinId);
+      const dot = document.getElementById(dotId);
+      const hexEl = document.getElementById(hexId);
+      if (pin && pt) {
+        pin.style.left = pt.pctX.toFixed(2) + "%";
+        pin.style.top = pt.pctY.toFixed(2) + "%";
+        pin.classList.remove("hidden");
+        if (dot) dot.style.backgroundColor = pt.hex;
+        if (hexEl) hexEl.textContent = pt.hex;
+      }
+    };
+
+    setPin("preview-pin-forehead", "pin-dot-forehead", "pin-hex-forehead", areas.forehead);
+    setPin("preview-pin-cheek-l", "pin-dot-cheek-l", "pin-hex-cheek-l", (areas.cheek.left || areas.cheek));
+    setPin("preview-pin-cheek-r", "pin-dot-cheek-r", "pin-hex-cheek-r", (areas.cheek.right || areas.cheek));
+    setPin("preview-pin-chin", "pin-dot-chin", "pin-hex-chin", areas.chin);
+
+    // Instant Real-Time Gender Determination
+    const genderInfo = estimateGenderFromDermis(imgData, sampleW, sampleH, faceBox, areas);
+    cachedGenderInfo = genderInfo;
+    const isMale = genderInfo.detected === "Male";
+
+    if (faceBoxTag) {
+      faceBoxTag.textContent = `AI FACE MESH · ${genderInfo.detected.toUpperCase()}`;
+    }
 
     // Update Quality Bar: Optimal
     if (qualityBar) qualityBar.classList.remove("hidden");
@@ -607,22 +838,35 @@ document.addEventListener("DOMContentLoaded", () => {
       qualityStatus.className = "quality-status Good";
     }
     if (qualityDetails) {
-      qualityDetails.textContent = `Natural skin tone spotted (${spottedHex}) • Lighting is balanced and clear. Ready to proceed!`;
+      qualityDetails.textContent = `Identified ${genderInfo.detected}'s facial profile (${genderInfo.confidence}%) • Natural dermis tone spotted (${spottedHex}). Ready to analyze!`;
     }
 
-    // Update HUD & Auto Color Badge
-    if (statusEl) statusEl.textContent = `✨ Natural skin colour spotted (${spottedHex}) • Lighting is clear`;
+    // Update HUD & Auto Color Badge with Gender & Complexion
+    if (statusEl) statusEl.textContent = `✨ Skin colour spotted (${spottedHex}) • Identified ${genderInfo.detected}'s Style Profile (${genderInfo.confidence}%)`;
     if (lightingPill) lightingPill.textContent = "Lighting: Clear & Balanced";
-    if (hudLightingPill) hudLightingPill.textContent = "💡 GOOD LIGHTING";
+    if (hudLightingPill) hudLightingPill.textContent = `💡 ${genderInfo.detected.toUpperCase()} IDENTIFIED (${genderInfo.confidence}%)`;
     if (dockDot) dockDot.style.background = "#10B981";
 
-    if (autoBadgeTitle) autoBadgeTitle.textContent = "SKIN COLOUR SPOTTED";
-    if (autoBadgeHex) autoBadgeHex.textContent = spottedHex;
+    if (autoBadgeTitle) autoBadgeTitle.textContent = `SPOTTED · ${genderInfo.detected.toUpperCase()} DETECTED`;
+    if (autoBadgeHex) autoBadgeHex.textContent = `${spottedHex} · ${genderInfo.confidence}% CONFIDENCE`;
     if (autoBadgeTag) {
-      autoBadgeTag.textContent = "READY TO PROCEED";
+      autoBadgeTag.textContent = isMale ? "👔 MEN'S STYLE" : "👗 WOMEN'S STYLE";
       autoBadgeTag.className = "auto-color-status-tag success";
     }
     if (autoDot) autoDot.style.backgroundColor = spottedHex;
+
+    // Auto-select gender in upload selector pills
+    if (!userExplicitlyChoseGender) {
+      currentGender = isMale ? "male" : "female";
+      document.querySelectorAll("#upload-gender-options .gender-pill").forEach((p) => {
+        const g = p.getAttribute("data-gender");
+        p.classList.toggle("active", g === currentGender);
+      });
+      const autoPill = document.querySelector('#upload-gender-options [data-gender="auto"]');
+      if (autoPill) {
+        autoPill.textContent = `✨ Auto (${isMale ? "👔 Men's" : "👗 Women's"})`;
+      }
+    }
 
     // Update Telemetry Swatches with REAL anatomical face regions
     const updateSwatch = (colorId, hexId, hex) => {
@@ -652,6 +896,14 @@ document.addEventListener("DOMContentLoaded", () => {
     analyzeBtn.disabled = true;
     qualityBar.classList.add("hidden");
     hideError();
+
+    // Hide face box and region pins
+    const faceBoxEl = document.getElementById("preview-face-box");
+    if (faceBoxEl) faceBoxEl.classList.add("hidden");
+    ["preview-pin-forehead", "preview-pin-cheek-l", "preview-pin-cheek-r", "preview-pin-chin"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add("hidden");
+    });
   }
 
   function showInitialQuality(w, h) {

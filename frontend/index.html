@@ -156,6 +156,49 @@
                     </div>
                   </div>
 
+                  <!-- Auto-Selected Facial Regions & Real-Time Face Mesh Overlay -->
+                  <div class="face-regions-overlay" id="face-regions-overlay">
+                    <div class="preview-face-box hidden" id="preview-face-box">
+                      <div class="corner-bracket corner-tl"></div>
+                      <div class="corner-bracket corner-tr"></div>
+                      <div class="corner-bracket corner-bl"></div>
+                      <div class="corner-bracket corner-br"></div>
+                      <div class="preview-face-box-tag" id="preview-face-box-tag">AI FACE MESH</div>
+                    </div>
+                    <!-- Forehead Region Pin -->
+                    <div class="preview-pin hidden" id="preview-pin-forehead">
+                      <div class="pin-reticle">
+                        <div class="pin-ring"></div>
+                        <div class="pin-dot" id="pin-dot-forehead" style="background: #C68B59;"></div>
+                      </div>
+                      <div class="pin-badge"><strong>FOREHEAD</strong><span id="pin-hex-forehead">#C68B59</span></div>
+                    </div>
+                    <!-- Left Cheek Region Pin -->
+                    <div class="preview-pin hidden" id="preview-pin-cheek-l">
+                      <div class="pin-reticle">
+                        <div class="pin-ring"></div>
+                        <div class="pin-dot" id="pin-dot-cheek-l" style="background: #BA8152;"></div>
+                      </div>
+                      <div class="pin-badge"><strong>CHEEK</strong><span id="pin-hex-cheek-l">#BA8152</span></div>
+                    </div>
+                    <!-- Right Cheek Region Pin -->
+                    <div class="preview-pin hidden" id="preview-pin-cheek-r">
+                      <div class="pin-reticle">
+                        <div class="pin-ring"></div>
+                        <div class="pin-dot" id="pin-dot-cheek-r" style="background: #BA8152;"></div>
+                      </div>
+                      <div class="pin-badge"><strong>CHEEK</strong><span id="pin-hex-cheek-r">#BA8152</span></div>
+                    </div>
+                    <!-- Jaw / Chin Region Pin -->
+                    <div class="preview-pin hidden" id="preview-pin-chin">
+                      <div class="pin-reticle">
+                        <div class="pin-ring"></div>
+                        <div class="pin-dot" id="pin-dot-chin" style="background: #BF8555;"></div>
+                      </div>
+                      <div class="pin-badge"><strong>JAW</strong><span id="pin-hex-chin">#BF8555</span></div>
+                    </div>
+                  </div>
+
                   <!-- Reference anchor for backward compatibility -->
                   <div id="box-face" style="display: none;"></div>
 

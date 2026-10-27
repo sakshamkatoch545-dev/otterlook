@@ -614,13 +614,31 @@ class FaceDetector:
                     score_female += t * 0.6
                     score_male += (1.0 - t) * 0.6
 
-            # Lateral hair volume (hair framing the jaw & neck)
-            side_y1 = max(0, min(int(cy - ry * 0.2), img_h - 1))
-            side_y2 = max(side_y1 + 10, min(int(cy + ry * 1.1), img_h))
-            l_side_x1 = max(0, int(cx - rx * 1.35))
+            # Eyebrow vertical clearance & thickness (Flat horizontal brows close to eyes = Male)
+            brow_y1 = max(0, min(int(cy - ry * 0.65), img_h - 1))
+            brow_y2 = max(brow_y1 + 4, min(int(cy - ry * 0.30), img_h))
+            brow_x1 = max(0, min(int(cx - rx * 0.70), img_w - 1))
+            brow_x2 = max(brow_x1 + 4, min(int(cx + rx * 0.70), img_w))
+            brow_roi = image_bgr[brow_y1:brow_y2, brow_x1:brow_x2]
+            if brow_roi.size > 0 and chk.size > 0:
+                brow_gray = 0.114 * brow_roi[:, :, 0] + 0.587 * brow_roi[:, :, 1] + 0.299 * brow_roi[:, :, 2]
+                chk_gray_mean = float(np.mean(0.114 * chk[:, :, 0] + 0.587 * chk[:, :, 1] + 0.299 * chk[:, :, 2]))
+                dark_mask = brow_gray < (chk_gray_mean * 0.65)
+                if np.sum(dark_mask) > 10:
+                    y_indices = np.where(dark_mask)[0]
+                    mean_dark_y = float(np.mean(y_indices)) / max(1, brow_roi.shape[0])
+                    if mean_dark_y > 0.48:
+                        score_male += 1.8
+                    elif mean_dark_y < 0.35:
+                        score_female += 1.5
+
+            # Shoulder-level hair volume (only below chin level, preventing curtain hair misclassification)
+            side_y1 = max(0, min(int(cy + ry * 0.85), img_h - 1))
+            side_y2 = max(side_y1 + 10, min(int(cy + ry * 1.35), img_h))
+            l_side_x1 = max(0, int(cx - rx * 1.40))
             l_side_x2 = max(l_side_x1 + 4, int(cx - rx * 0.95))
             r_side_x1 = min(img_w - 4, int(cx + rx * 0.95))
-            r_side_x2 = min(img_w, int(cx + rx * 1.35))
+            r_side_x2 = min(img_w, int(cx + rx * 1.40))
 
             l_side = image_bgr[side_y1:side_y2, l_side_x1:l_side_x2]
             r_side = image_bgr[side_y1:side_y2, r_side_x1:r_side_x2]
@@ -630,14 +648,14 @@ class FaceDetector:
             for side_roi in [l_side, r_side]:
                 if side_roi.size > 0:
                     side_lum = 0.114 * side_roi[:, :, 0] + 0.587 * side_roi[:, :, 1] + 0.299 * side_roi[:, :, 2]
-                    hair_count += int(np.sum(side_lum < 85))
+                    hair_count += int(np.sum(side_lum < 80))
                     total_side += side_roi.shape[0] * side_roi.shape[1]
 
             hair_ratio = (hair_count / max(1, total_side)) if total_side > 20 else 0.0
-            if hair_ratio > 0.24:
-                score_female += min(2.5, (hair_ratio - 0.24) * 8.0 + 0.8)
-            elif hair_ratio < 0.06 and total_side > 20:
-                score_male += 0.9
+            if hair_ratio > 0.40:
+                score_female += min(1.2, (hair_ratio - 0.40) * 3.0 + 0.5)
+            elif hair_ratio < 0.08 and total_side > 20:
+                score_male += 0.8
         except Exception:
             pass
 
