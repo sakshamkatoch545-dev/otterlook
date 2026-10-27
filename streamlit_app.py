@@ -275,48 +275,7 @@ body {{
                     </div>
                   </div>
 
-                  <!-- Auto-Selected Facial Regions & Real-Time Face Mesh Overlay -->
-                  <div class="face-regions-overlay" id="face-regions-overlay">
-                    <div class="preview-face-box hidden" id="preview-face-box">
-                      <div class="corner-bracket corner-tl"></div>
-                      <div class="corner-bracket corner-tr"></div>
-                      <div class="corner-bracket corner-bl"></div>
-                      <div class="corner-bracket corner-br"></div>
-                      <div class="preview-face-box-tag" id="preview-face-box-tag">AI FACE MESH</div>
-                    </div>
-                    <!-- Forehead Region Pin -->
-                    <div class="preview-pin hidden" id="preview-pin-forehead">
-                      <div class="pin-reticle">
-                        <div class="pin-ring"></div>
-                        <div class="pin-dot" id="pin-dot-forehead" style="background: #C68B59;"></div>
-                      </div>
-                      <div class="pin-badge"><strong>FOREHEAD</strong><span id="pin-hex-forehead">#C68B59</span></div>
-                    </div>
-                    <!-- Left Cheek Region Pin -->
-                    <div class="preview-pin hidden" id="preview-pin-cheek-l">
-                      <div class="pin-reticle">
-                        <div class="pin-ring"></div>
-                        <div class="pin-dot" id="pin-dot-cheek-l" style="background: #BA8152;"></div>
-                      </div>
-                      <div class="pin-badge"><strong>CHEEK</strong><span id="pin-hex-cheek-l">#BA8152</span></div>
-                    </div>
-                    <!-- Right Cheek Region Pin -->
-                    <div class="preview-pin hidden" id="preview-pin-cheek-r">
-                      <div class="pin-reticle">
-                        <div class="pin-ring"></div>
-                        <div class="pin-dot" id="pin-dot-cheek-r" style="background: #BA8152;"></div>
-                      </div>
-                      <div class="pin-badge"><strong>CHEEK</strong><span id="pin-hex-cheek-r">#BA8152</span></div>
-                    </div>
-                    <!-- Jaw / Chin Region Pin -->
-                    <div class="preview-pin hidden" id="preview-pin-chin">
-                      <div class="pin-reticle">
-                        <div class="pin-ring"></div>
-                        <div class="pin-dot" id="pin-dot-chin" style="background: #BF8555;"></div>
-                      </div>
-                      <div class="pin-badge"><strong>JAW</strong><span id="pin-hex-chin">#BF8555</span></div>
-                    </div>
-                  </div>
+
 
                   <!-- Reference anchor for backward compatibility -->
                   <div id="box-face" style="display: none;"></div>
@@ -1602,54 +1561,9 @@ body {{
           }}
           if (autoDot) autoDot.style.backgroundColor = "#64748B";
 
-          // Hide overlays on error
-          const fbEl = document.getElementById("preview-face-box");
-          if (fbEl) fbEl.classList.add("hidden");
-          ["preview-pin-forehead", "preview-pin-cheek-l", "preview-pin-cheek-r", "preview-pin-chin"].forEach((id) => {{
-            const el = document.getElementById(id);
-            if (el) el.classList.add("hidden");
-          }});
-
-          analyzeBtn.disabled = true;
-          return false;
-        }}
-
         // Success! Dermis color and areas spotted accurately
         hideError();
         const spottedHex = areas.overall.hex;
-
-        // Position and show face box & anatomical region pins directly on preview image
-        const faceBoxEl = document.getElementById("preview-face-box");
-        const faceBoxTag = document.getElementById("preview-face-box-tag");
-        if (faceBoxEl && faceBox) {{
-          faceBoxEl.style.left = faceBox.pctX.toFixed(2) + "%";
-          faceBoxEl.style.top = faceBox.pctY.toFixed(2) + "%";
-          faceBoxEl.style.width = faceBox.pctW.toFixed(2) + "%";
-          faceBoxEl.style.height = faceBox.pctH.toFixed(2) + "%";
-          faceBoxEl.classList.remove("hidden");
-        }}
-
-        const setPin = (pinId, dotId, hexId, pt) => {{
-          const pin = document.getElementById(pinId);
-          const dot = document.getElementById(dotId);
-          const hexEl = document.getElementById(hexId);
-          if (pin && pt) {{
-            pin.style.left = pt.pctX.toFixed(2) + "%";
-            pin.style.top = pt.pctY.toFixed(2) + "%";
-            pin.classList.remove("hidden");
-            if (dot) dot.style.backgroundColor = pt.hex;
-            if (hexEl) hexEl.textContent = pt.hex;
-          }}
-        }};
-
-        setPin("preview-pin-forehead", "pin-dot-forehead", "pin-hex-forehead", areas.forehead);
-        setPin("preview-pin-cheek-l", "pin-dot-cheek-l", "pin-hex-cheek-l", (areas.cheek.left || areas.cheek));
-        setPin("preview-pin-cheek-r", "pin-dot-cheek-r", "pin-hex-cheek-r", (areas.cheek.right || areas.cheek));
-        setPin("preview-pin-chin", "pin-dot-chin", "pin-hex-chin", areas.chin);
-
-        if (faceBoxTag) {{
-          faceBoxTag.textContent = "AI FACE MESH";
-        }}
 
         // Update Quality Bar: Optimal
         if (qualityBar) qualityBar.classList.remove("hidden");
@@ -1724,14 +1638,6 @@ body {{
         analyzeBtn.disabled = true;
         qualityBar.classList.add("hidden");
         hideError();
-
-        // Hide face box and region pins
-        const faceBoxEl = document.getElementById("preview-face-box");
-        if (faceBoxEl) faceBoxEl.classList.add("hidden");
-        ["preview-pin-forehead", "preview-pin-cheek-l", "preview-pin-cheek-r", "preview-pin-chin"].forEach((id) => {{
-          const el = document.getElementById(id);
-          if (el) el.classList.add("hidden");
-        }});
       }}
 
       function showInitialQuality(w, h) {{

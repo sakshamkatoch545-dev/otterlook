@@ -717,54 +717,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (autoDot) autoDot.style.backgroundColor = "#64748B";
 
-      // Hide overlays on error
-      const fbEl = document.getElementById("preview-face-box");
-      if (fbEl) fbEl.classList.add("hidden");
-      ["preview-pin-forehead", "preview-pin-cheek-l", "preview-pin-cheek-r", "preview-pin-chin"].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.classList.add("hidden");
-      });
-
-      analyzeBtn.disabled = true;
-      return false;
-    }
-
-    // Success! Dermis color and areas spotted accurately
-    hideError();
-    const spottedHex = areas.overall.hex;
-
-    // Position and show face box & anatomical region pins directly on preview image
-    const faceBoxEl = document.getElementById("preview-face-box");
-    const faceBoxTag = document.getElementById("preview-face-box-tag");
-    if (faceBoxEl && faceBox) {
-      faceBoxEl.style.left = faceBox.pctX.toFixed(2) + "%";
-      faceBoxEl.style.top = faceBox.pctY.toFixed(2) + "%";
-      faceBoxEl.style.width = faceBox.pctW.toFixed(2) + "%";
-      faceBoxEl.style.height = faceBox.pctH.toFixed(2) + "%";
-      faceBoxEl.classList.remove("hidden");
-    }
-
-    const setPin = (pinId, dotId, hexId, pt) => {
-      const pin = document.getElementById(pinId);
-      const dot = document.getElementById(dotId);
-      const hexEl = document.getElementById(hexId);
-      if (pin && pt) {
-        pin.style.left = pt.pctX.toFixed(2) + "%";
-        pin.style.top = pt.pctY.toFixed(2) + "%";
-        pin.classList.remove("hidden");
-        if (dot) dot.style.backgroundColor = pt.hex;
-        if (hexEl) hexEl.textContent = pt.hex;
-      }
-    };
-
-    setPin("preview-pin-forehead", "pin-dot-forehead", "pin-hex-forehead", areas.forehead);
-    setPin("preview-pin-cheek-l", "pin-dot-cheek-l", "pin-hex-cheek-l", (areas.cheek.left || areas.cheek));
-    setPin("preview-pin-cheek-r", "pin-dot-cheek-r", "pin-hex-cheek-r", (areas.cheek.right || areas.cheek));
-    setPin("preview-pin-chin", "pin-dot-chin", "pin-hex-chin", areas.chin);
-
-    if (faceBoxTag) {
-      faceBoxTag.textContent = "AI FACE MESH";
-    }
+        // Success! Dermis color and areas spotted accurately
+        hideError();
+        const spottedHex = areas.overall.hex;
 
     // Update Quality Bar: Optimal
     if (qualityBar) qualityBar.classList.remove("hidden");
@@ -823,14 +778,6 @@ document.addEventListener("DOMContentLoaded", () => {
     analyzeBtn.disabled = true;
     qualityBar.classList.add("hidden");
     hideError();
-
-    // Hide face box and region pins
-    const faceBoxEl = document.getElementById("preview-face-box");
-    if (faceBoxEl) faceBoxEl.classList.add("hidden");
-    ["preview-pin-forehead", "preview-pin-cheek-l", "preview-pin-cheek-r", "preview-pin-chin"].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.classList.add("hidden");
-    });
   }
 
   function showInitialQuality(w, h) {

@@ -1127,51 +1127,14 @@ body {
   border-bottom-right-radius: 4px;
 }
 
-/* Auto-Selected Facial Regions & Real-Time Face Mesh Overlay */
-.face-regions-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 5;
-}
-
-.preview-face-box {
-  position: absolute;
-  border: 1.5px solid rgba(242, 202, 80, 0.65);
-  background: radial-gradient(circle at center, rgba(242, 202, 80, 0.08) 0%, rgba(242, 202, 80, 0.02) 75%, transparent 100%);
-  border-radius: 8px;
-  box-shadow: 0 0 24px rgba(242, 202, 80, 0.25), inset 0 0 14px rgba(242, 202, 80, 0.08);
-  pointer-events: none;
-  transition: all 0.35s cubic-bezier(0.2, 0.9, 0.3, 1);
-  z-index: 4;
-}
-
-.preview-face-box-tag {
-  position: absolute;
-  top: -11px;
-  left: 12px;
-  background: rgba(10, 14, 22, 0.94);
-  border: 1px solid var(--border-gold, #D4AF37);
-  border-radius: 4px;
-  padding: 1px 7px;
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  font-weight: 700;
-  color: var(--accent-gold, #F2CA50);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-/* Biometric Region Target Pins */
+/* Auto-Selected Facial Regions & Real-Time Face Mesh Overlay (Disabled & Hidden) */
+.face-regions-overlay,
+.preview-face-box,
 .preview-pin {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  pointer-events: none;
-  z-index: 8;
-  transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 .pin-reticle {
