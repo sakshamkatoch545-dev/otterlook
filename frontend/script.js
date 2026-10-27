@@ -39,8 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // State
   let currentFile = null;
   let currentImageBitmap = null;
-  let currentGender = "auto";
-  let userExplicitlyChoseGender = false;
+  let currentGender = "male";
 
   // --- Theme Controller ---
   function applyTheme(theme) {
@@ -838,35 +837,22 @@ document.addEventListener("DOMContentLoaded", () => {
       qualityStatus.className = "quality-status Good";
     }
     if (qualityDetails) {
-      qualityDetails.textContent = `Identified ${genderInfo.detected}'s facial profile (${genderInfo.confidence}%) • Natural dermis tone spotted (${spottedHex}). Ready to analyze!`;
+      qualityDetails.textContent = `Natural dermis tone spotted (${spottedHex}) across facial regions • Ready to analyze!`;
     }
 
-    // Update HUD & Auto Color Badge with Gender & Complexion
-    if (statusEl) statusEl.textContent = `✨ Skin colour spotted (${spottedHex}) • Identified ${genderInfo.detected}'s Style Profile (${genderInfo.confidence}%)`;
+    // Update HUD & Auto Color Badge with Complexion
+    if (statusEl) statusEl.textContent = `✨ Skin colour spotted (${spottedHex}) • Lighting is clear`;
     if (lightingPill) lightingPill.textContent = "Lighting: Clear & Balanced";
-    if (hudLightingPill) hudLightingPill.textContent = `💡 ${genderInfo.detected.toUpperCase()} IDENTIFIED (${genderInfo.confidence}%)`;
+    if (hudLightingPill) hudLightingPill.textContent = "💡 NATURAL LIGHT SENSOR";
     if (dockDot) dockDot.style.background = "#10B981";
 
-    if (autoBadgeTitle) autoBadgeTitle.textContent = `SPOTTED · ${genderInfo.detected.toUpperCase()} DETECTED`;
-    if (autoBadgeHex) autoBadgeHex.textContent = `${spottedHex} · ${genderInfo.confidence}% CONFIDENCE`;
+    if (autoBadgeTitle) autoBadgeTitle.textContent = "SKIN COLOUR SPOTTED";
+    if (autoBadgeHex) autoBadgeHex.textContent = spottedHex;
     if (autoBadgeTag) {
-      autoBadgeTag.textContent = isMale ? "👔 MEN'S STYLE" : "👗 WOMEN'S STYLE";
+      autoBadgeTag.textContent = "READY TO PROCEED";
       autoBadgeTag.className = "auto-color-status-tag success";
     }
     if (autoDot) autoDot.style.backgroundColor = spottedHex;
-
-    // Auto-select gender in upload selector pills
-    if (!userExplicitlyChoseGender) {
-      currentGender = isMale ? "male" : "female";
-      document.querySelectorAll("#upload-gender-options .gender-pill").forEach((p) => {
-        const g = p.getAttribute("data-gender");
-        p.classList.toggle("active", g === currentGender);
-      });
-      const autoPill = document.querySelector('#upload-gender-options [data-gender="auto"]');
-      if (autoPill) {
-        autoPill.textContent = `✨ Auto (${isMale ? "👔 Men's" : "👗 Women's"})`;
-      }
-    }
 
     // Update Telemetry Swatches with REAL anatomical face regions
     const updateSwatch = (colorId, hexId, hex) => {
@@ -1144,30 +1130,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleGenderSelect(selectedGender, isManual = true) {
-    if (isManual) {
-      userExplicitlyChoseGender = true;
-    }
-    currentGender = selectedGender;
+    currentGender = selectedGender || "male";
 
     // Sync pills across upload selector
     document.querySelectorAll("#upload-gender-options .gender-pill").forEach((pill) => {
       pill.classList.toggle("active", pill.getAttribute("data-gender") === currentGender);
     });
 
-    // Determine effective gender
-    let effectiveGender = currentGender;
-    if (effectiveGender === "auto") {
-      effectiveGender = (cachedApiData && cachedApiData.gender && cachedApiData.gender.detected)
-        ? cachedApiData.gender.detected.toLowerCase()
-        : "female";
-    }
+    const effectiveGender = currentGender;
 
     // Render interactive style switcher in results banner
     const resultsGenderOptions = document.getElementById("results-gender-options");
     if (resultsGenderOptions) {
       resultsGenderOptions.innerHTML = `
-        <button type="button" class="gender-pill ${effectiveGender === 'female' ? 'active' : ''}" data-gender="female">👗 Women's</button>
         <button type="button" class="gender-pill ${effectiveGender === 'male' ? 'active' : ''}" data-gender="male">👔 Men's</button>
+        <button type="button" class="gender-pill ${effectiveGender === 'female' ? 'active' : ''}" data-gender="female">👗 Women's</button>
         <button type="button" class="gender-pill ${effectiveGender === 'all' ? 'active' : ''}" data-gender="all">👥 All Styles</button>
       `;
       resultsGenderOptions.querySelectorAll(".gender-pill").forEach((pill) => {
@@ -1192,14 +1169,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const bannerBadge = document.getElementById("gender-banner-badge");
     const bannerDesc = document.getElementById("gender-banner-desc");
 
-    const aiDetected = (cachedApiData && cachedApiData.gender && cachedApiData.gender.detected) || "Female";
-    const aiConf = (cachedApiData && cachedApiData.gender && (cachedApiData.gender.confidence_percentage || Math.round((cachedApiData.gender.confidence || 0.88) * 100))) || 88;
-
     if (effectiveGender === "female") {
       if (bannerIcon) bannerIcon.textContent = "👗";
       if (bannerLabel) bannerLabel.textContent = "Women's Style";
       if (bannerBadge) {
-        bannerBadge.textContent = (currentGender === "auto") ? ` Detected: ${aiDetected} (${aiConf}%)` : " Selected Profile";
+        bannerBadge.textContent = "Selected Profile";
         bannerBadge.className = "gender-banner-badge auto-badge";
       }
       if (bannerDesc) {
@@ -1209,7 +1183,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (bannerIcon) bannerIcon.textContent = "👔";
       if (bannerLabel) bannerLabel.textContent = "Men's Style";
       if (bannerBadge) {
-        bannerBadge.textContent = (currentGender === "auto") ? ` Detected: ${aiDetected} (${aiConf}%)` : " Selected Profile";
+        bannerBadge.textContent = "Selected Profile";
         bannerBadge.className = "gender-banner-badge auto-badge";
       }
       if (bannerDesc) {
@@ -1219,7 +1193,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (bannerIcon) bannerIcon.textContent = "👥";
       if (bannerLabel) bannerLabel.textContent = "All Styles (Universal)";
       if (bannerBadge) {
-        bannerBadge.textContent = " Universal Harmony";
+        bannerBadge.textContent = "Universal Harmony";
         bannerBadge.className = "gender-banner-badge auto-badge";
       }
       if (bannerDesc) {
