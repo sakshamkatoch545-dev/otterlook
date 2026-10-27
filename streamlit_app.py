@@ -1392,7 +1392,8 @@ body {{
 
         // Extract facial dermis and real anatomical regions
         const regionRes = extractFacialDermisAndRegions(imgData, sampleW, sampleH);
-        const { candidateSkin, areas } = regionRes;
+        const candidateSkin = regionRes.candidateSkin;
+        const areas = regionRes.areas;
 
         // 3. Check for lighting and clarity issues
         let errorMsg = null;
@@ -1596,8 +1597,14 @@ body {{
 
         // Multi-Region Anatomical Skin Extraction
         const regionData = extractFacialDermisAndRegions(imgData, w, h);
-        const { faceBox, areas } = regionData;
-        const { fLeft, fTop, width: fWidth, height: fHeight, cx: headCenterX, cy: headCenterY } = faceBox;
+        const faceBox = regionData.faceBox;
+        const areas = regionData.areas;
+        const fLeft = faceBox.x;
+        const fTop = faceBox.y;
+        const fWidth = faceBox.width;
+        const fHeight = faceBox.height;
+        const headCenterX = faceBox.cx;
+        const headCenterY = faceBox.cy;
 
         const mainFaceHex = areas.overall.hex;
         const foreheadHex = areas.forehead.hex;
