@@ -717,9 +717,29 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (autoDot) autoDot.style.backgroundColor = "#64748B";
 
-        // Success! Dermis color and areas spotted accurately
-        hideError();
-        const spottedHex = areas.overall.hex;
+      const fbEl = document.getElementById("preview-face-box");
+      if (fbEl) fbEl.classList.add("hidden");
+      analyzeBtn.disabled = true;
+      return false;
+    }
+
+    // Success! Dermis color and areas spotted accurately
+    hideError();
+    const spottedHex = areas.overall.hex;
+
+    // Position and display ONLY the AI Face Bounding Box (just the box, no points)
+    const faceBoxEl = document.getElementById("preview-face-box");
+    const faceBoxTag = document.getElementById("preview-face-box-tag");
+    if (faceBoxEl && faceBox) {
+      faceBoxEl.style.left = faceBox.pctX.toFixed(2) + "%";
+      faceBoxEl.style.top = faceBox.pctY.toFixed(2) + "%";
+      faceBoxEl.style.width = faceBox.pctW.toFixed(2) + "%";
+      faceBoxEl.style.height = faceBox.pctH.toFixed(2) + "%";
+      faceBoxEl.classList.remove("hidden");
+    }
+    if (faceBoxTag) {
+      faceBoxTag.textContent = "AI FACE MESH";
+    }
 
     // Update Quality Bar: Optimal
     if (qualityBar) qualityBar.classList.remove("hidden");
@@ -776,8 +796,9 @@ document.addEventListener("DOMContentLoaded", () => {
     uploadPrompt.classList.remove("hidden");
     previewBox.classList.add("hidden");
     analyzeBtn.disabled = true;
-    qualityBar.classList.add("hidden");
     hideError();
+    const faceBoxEl = document.getElementById("preview-face-box");
+    if (faceBoxEl) faceBoxEl.classList.add("hidden");
   }
 
   function showInitialQuality(w, h) {

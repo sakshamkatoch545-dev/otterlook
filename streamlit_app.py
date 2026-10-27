@@ -275,7 +275,16 @@ body {{
                     </div>
                   </div>
 
-
+                  <!-- Real-Time AI Face Bounding Box (Box only - no points) -->
+                  <div class="face-regions-overlay" id="face-regions-overlay">
+                    <div class="preview-face-box hidden" id="preview-face-box">
+                      <div class="corner-bracket corner-tl"></div>
+                      <div class="corner-bracket corner-tr"></div>
+                      <div class="corner-bracket corner-bl"></div>
+                      <div class="corner-bracket corner-br"></div>
+                      <div class="preview-face-box-tag" id="preview-face-box-tag">AI FACE MESH</div>
+                    </div>
+                  </div>
 
                   <!-- Reference anchor for backward compatibility -->
                   <div id="box-face" style="display: none;"></div>
@@ -1561,9 +1570,29 @@ body {{
           }}
           if (autoDot) autoDot.style.backgroundColor = "#64748B";
 
+          const fbEl = document.getElementById("preview-face-box");
+          if (fbEl) fbEl.classList.add("hidden");
+          analyzeBtn.disabled = true;
+          return false;
+        }}
+
         // Success! Dermis color and areas spotted accurately
         hideError();
         const spottedHex = areas.overall.hex;
+
+        // Position and display ONLY the AI Face Bounding Box (just the box, no points)
+        const faceBoxEl = document.getElementById("preview-face-box");
+        const faceBoxTag = document.getElementById("preview-face-box-tag");
+        if (faceBoxEl && faceBox) {{
+          faceBoxEl.style.left = faceBox.pctX.toFixed(2) + "%";
+          faceBoxEl.style.top = faceBox.pctY.toFixed(2) + "%";
+          faceBoxEl.style.width = faceBox.pctW.toFixed(2) + "%";
+          faceBoxEl.style.height = faceBox.pctH.toFixed(2) + "%";
+          faceBoxEl.classList.remove("hidden");
+        }}
+        if (faceBoxTag) {{
+          faceBoxTag.textContent = "AI FACE MESH";
+        }}
 
         // Update Quality Bar: Optimal
         if (qualityBar) qualityBar.classList.remove("hidden");
@@ -1636,8 +1665,9 @@ body {{
         uploadPrompt.classList.remove("hidden");
         previewBox.classList.add("hidden");
         analyzeBtn.disabled = true;
-        qualityBar.classList.add("hidden");
         hideError();
+        const faceBoxEl = document.getElementById("preview-face-box");
+        if (faceBoxEl) faceBoxEl.classList.add("hidden");
       }}
 
       function showInitialQuality(w, h) {{
