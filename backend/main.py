@@ -22,7 +22,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
@@ -85,7 +85,10 @@ async def health_check():
     }
 
 @app.post("/api/analyze")
-async def analyze_portrait(file: UploadFile = File(...)):
+async def analyze_portrait(
+    file: UploadFile = File(...),
+    gender: str = Form("all")
+):
     """
     Complete analysis pipeline:
     1. Validate image format & dimensions
@@ -162,8 +165,7 @@ async def analyze_portrait(file: UploadFile = File(...)):
             "success": True,
             "face_count": 1,
             "bounding_box": [int(img_w * 0.2), int(img_h * 0.15), int(img_w * 0.6), int(img_h * 0.6)],
-            "regions": skin_result.get("region_samples", {}),
-            "gender": {"detected": "All", "confidence": 0.5, "confidence_percentage": 50}
+            "regions": skin_result.get("region_samples", {})
         }
 
     # Step 4: Statistical Color Feature Extraction (RGB, HSV, CIELAB, ITA)
@@ -183,14 +185,15 @@ async def analyze_portrait(file: UploadFile = File(...)):
     ml_prediction = undertone_predictor.predict(color_features["ml_features"])
     predicted_undertone = ml_prediction["label"]
 
-    detected_gender_info = face_result.get("gender", {"detected": "All", "confidence": 0.5, "confidence_percentage": 50})
-    detected_gender = detected_gender_info.get("detected", "All")
+    user_gender = (gender or "all").lower().strip()
+    if user_gender not in ("male", "female", "all"):
+        user_gender = "all"
 
-    # Step 6: Personalized Palette & Styling Recommendation Engine (Tailored to Detected Gender)
+    # Step 6: Personalized Palette & Styling Recommendation Engine (Tailored to Selected Gender)
     recommendations_result = palette_generator.generate_recommendations(
         undertone=predicted_undertone,
         skin_metrics=color_features["display_metrics"],
-        gender=detected_gender.lower()
+        gender=user_gender
     )
 
     # Persist analysis to Supabase (non-blocking, graceful fallback)
@@ -219,11 +222,10 @@ async def analyze_portrait(file: UploadFile = File(...)):
             "bounding_box": face_result["bounding_box"],
             "regions": face_result["regions"],
             "has_landmarks": face_result.get("landmarks") is not None,
-            "gender": detected_gender_info,
             "auto_color_spotted": bool(skin_result.get("spotted", True)),
             "representative_hex": skin_result.get("representative_hex")
         },
-        "gender": detected_gender_info,
+        "gender": user_gender,
         "skin_analysis": {
             "total_sampled_pixels": skin_result["total_pixels"],
             "region_samples": skin_result["region_samples"],

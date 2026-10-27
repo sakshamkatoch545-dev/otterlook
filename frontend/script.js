@@ -346,26 +346,89 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    let faceSkin = candidateSkin.filter(p => p.y < h * 0.80);
-    if (faceSkin.length < 20) faceSkin = candidateSkin;
+    // 2. PRIMARY FACE DENSITY PEAK FINDER
+    // Locates the subject's face center even when other people or arms are in frame
+    const cellStep = Math.max(8, Math.round(Math.min(w, h) * 0.05));
+    let bestScore = -1;
+    let peakX = Math.round(w * 0.5);
+    let peakY = Math.round(h * 0.42);
 
+    const searchRad = Math.max(30, Math.round(Math.min(w, h) * 0.20));
+    const searchRadSq = searchRad * searchRad;
+
+    const minGridX = Math.floor(w * 0.22);
+    const maxGridX = Math.floor(w * 0.78);
+    const minGridY = Math.floor(h * 0.18);
+    const maxGridY = Math.floor(h * 0.68);
+
+    for (let gy = minGridY; gy <= maxGridY; gy += cellStep) {
+      for (let gx = minGridX; gx <= maxGridX; gx += cellStep) {
+        const dxNorm = (gx - w * 0.5) / (w * 0.28);
+        const dyNorm = (gy - h * 0.42) / (h * 0.26);
+        const centrality = Math.exp(-0.5 * (dxNorm * dxNorm + dyNorm * dyNorm));
+
+        let count = 0;
+        for (let i = 0; i < candidateSkin.length; i++) {
+          const p = candidateSkin[i];
+          const dX = p.x - gx;
+          const dY = p.y - gy;
+          if (dX * dX + dY * dY <= searchRadSq) {
+            count++;
+          }
+        }
+
+        const score = count * (0.35 + 0.65 * centrality);
+        if (score > bestScore) {
+          bestScore = score;
+          peakX = gx;
+          peakY = gy;
+        }
+      }
+    }
+
+    // 3. ISOLATE PRIMARY FACE CLUSTER
+    // Excludes background bystanders, arms, hands, desk
+    const clusterRadX = Math.max(36, Math.min(Math.round(w * 0.24), Math.round(searchRad * 1.05)));
+    const clusterRadY = Math.max(48, Math.min(Math.round(h * 0.32), Math.round(searchRad * 1.35)));
+
+    let faceSkin = candidateSkin.filter(p => 
+      Math.abs(p.x - peakX) <= clusterRadX && 
+      Math.abs(p.y - peakY) <= clusterRadY
+    );
+    if (faceSkin.length < 15) {
+      faceSkin = candidateSkin.filter(p => 
+        Math.abs(p.x - peakX) <= clusterRadX * 1.3 && 
+        Math.abs(p.y - peakY) <= clusterRadY * 1.3
+      );
+    }
+    if (faceSkin.length < 10) faceSkin = candidateSkin;
+
+    // 4. PRECISE BOUNDING BOX CALCULATION
     const xs = faceSkin.map(p => p.x).sort((a, b) => a - b);
     const ys = faceSkin.map(p => p.y).sort((a, b) => a - b);
 
-    const fLeft = xs.length > 0 ? xs[Math.floor(xs.length * 0.08)] : Math.floor(w * 0.2);
-    const fRight = xs.length > 0 ? xs[Math.floor(xs.length * 0.92)] : Math.floor(w * 0.8);
-    const fTop = ys.length > 0 ? ys[Math.floor(ys.length * 0.04)] : Math.floor(h * 0.1);
-    const fBottom = ys.length > 0 ? ys[Math.floor(ys.length * 0.92)] : Math.floor(h * 0.75);
+    const p12X = xs[Math.floor(xs.length * 0.12)];
+    const p88X = xs[Math.floor(xs.length * 0.88)];
 
-    let fWidth = Math.max(50, fRight - fLeft);
-    let fHeight = Math.max(65, fBottom - fTop);
-    if (fHeight < fWidth * 1.05) fHeight = Math.round(fWidth * 1.25);
-    if (fHeight > fWidth * 1.55) fHeight = Math.round(fWidth * 1.40);
-    fHeight = Math.min(fHeight, h - fTop - 2);
+    let rawW = Math.max(45, p88X - p12X);
+    let fWidth = Math.max(Math.round(w * 0.20), Math.min(Math.round(w * 0.48), Math.round(rawW * 1.15)));
+    
+    const cx = xs[Math.floor(xs.length * 0.5)];
+    let fLeft = Math.round(cx - fWidth * 0.5);
+    if (fLeft < 2) fLeft = 2;
+    if (fLeft + fWidth > w - 2) fLeft = Math.max(2, w - fWidth - 2);
+    fWidth = Math.min(fWidth, w - fLeft - 2);
 
-    const cx = Math.round(fLeft + fWidth * 0.5);
-    const cy = Math.round(fTop + fHeight * 0.48);
+    let fHeight = Math.round(fWidth * 1.34);
+    const medianY = ys[Math.floor(ys.length * 0.5)];
+    let fTop = Math.round(medianY - fHeight * 0.46);
+    if (fTop < 2) fTop = 2;
+    if (fTop + fHeight > h - 2) {
+      fHeight = h - fTop - 2;
+    }
+    const cy = Math.round(fTop + fHeight * 0.5);
 
+    // Circular patch sampling with outlier trimming
     const samplePatch = (targetX, targetY, radius, defR, defG, defB) => {
       let sR = 0, sG = 0, sB = 0, count = 0;
       const patchPixels = [];
@@ -376,7 +439,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const idx = (py * w + px) * 4;
             const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
             const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-            if (lum >= 30 && lum <= 248 && r >= g * 0.82 && r >= b * 0.82) {
+            if (lum >= 30 && lum <= 248 && r >= g * 0.80 && r >= b * 0.80) {
               patchPixels.push({ r, g, b, lum });
             }
           }
@@ -406,44 +469,119 @@ document.addEventListener("DOMContentLoaded", () => {
       };
     };
 
-    candidateSkin.sort((a, b) => a.lum - b.lum);
-    const gLow = Math.floor(candidateSkin.length * 0.15);
-    const gHigh = Math.max(gLow + 1, Math.floor(candidateSkin.length * 0.85));
+    // Baseline color from primary face
+    faceSkin.sort((a, b) => a.lum - b.lum);
+    const gLow = Math.floor(faceSkin.length * 0.15);
+    const gHigh = Math.max(gLow + 1, Math.floor(faceSkin.length * 0.85));
     let baseR = 0, baseG = 0, baseB = 0, baseCount = 0;
     for (let i = gLow; i < gHigh; i++) {
-      baseR += candidateSkin[i].r; baseG += candidateSkin[i].g; baseB += candidateSkin[i].b; baseCount++;
+      baseR += faceSkin[i].r; baseG += faceSkin[i].g; baseB += faceSkin[i].b; baseCount++;
     }
     const bR = baseCount > 0 ? Math.round(baseR / baseCount) : 190;
     const bG = baseCount > 0 ? Math.round(baseG / baseCount) : 140;
     const bB = baseCount > 0 ? Math.round(baseB / baseCount) : 105;
 
-    const radArea = Math.max(5, Math.round(fWidth * 0.065));
+    const radArea = Math.max(5, Math.round(fWidth * 0.055));
 
-    const frnX = cx;
-    const frnY = Math.max(4, Math.round(fTop + fHeight * 0.18));
-    const forehead = samplePatch(frnX, frnY, radArea, bR, bG, bB);
+    // 5. ADAPTIVE FOREHEAD LOCALIZATION (AVOID HAIR / BANGS)
+    // Midline scan down hair part to locate exposed glabella / forehead
+    let bestFrnY = Math.round(fTop + fHeight * 0.22);
+    let bestFrnSkinCount = -1;
+    const frnScanMin = Math.round(fTop + fHeight * 0.12);
+    const frnScanMax = Math.round(fTop + fHeight * 0.38);
 
-    const lChkX = Math.round(fLeft + fWidth * 0.22);
-    const rChkX = Math.round(fLeft + fWidth * 0.78);
-    const chkY = Math.round(fTop + fHeight * 0.52);
-    const leftCheek = samplePatch(lChkX, chkY, radArea, bR, bG, bB);
-    const rightCheek = samplePatch(rChkX, chkY, radArea, bR, bG, bB);
+    for (let candY = frnScanMin; candY <= frnScanMax; candY += 3) {
+      let candSkinCount = 0;
+      let candLumSum = 0;
+      let candTotal = 0;
+      for (let dy = -4; dy <= 4; dy += 2) {
+        for (let dx = -4; dx <= 4; dx += 2) {
+          const px = cx + dx, py = candY + dy;
+          if (px >= 0 && px < w && py >= 0 && py < h) {
+            const idx = (py * w + px) * 4;
+            const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+            const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+            candTotal++;
+            candLumSum += lum;
+            if (isSkinPixel(r, g, b) && lum >= 48) {
+              candSkinCount++;
+            }
+          }
+        }
+      }
+      const avgLum = candTotal > 0 ? candLumSum / candTotal : 0;
+      const score = candSkinCount * (avgLum >= 50 ? 1.5 : 0.4);
+      if (score > bestFrnSkinCount) {
+        bestFrnSkinCount = score;
+        bestFrnY = candY;
+      }
+    }
+    const forehead = samplePatch(cx, bestFrnY, radArea, bR, bG, bB);
+
+    // 6. BILATERAL ZYGOMATIC CHEEKS (BOUND TO PRIMARY FACE)
+    const nomLX = Math.round(cx - fWidth * 0.23);
+    const nomRX = Math.round(cx + fWidth * 0.23);
+    const nomChkY = Math.round(fTop + fHeight * 0.52);
+
+    const refineCheek = (nomX, nomY) => {
+      let bestX = nomX, bestY = nomY, bestScore = -1;
+      for (let dy = -6; dy <= 6; dy += 3) {
+        for (let dx = -6; dx <= 6; dx += 3) {
+          const sX = nomX + dx, sY = nomY + dy;
+          let validCount = 0;
+          for (let r = 0; r < 4; r++) {
+            const px = sX + (r % 2 === 0 ? 2 : -2);
+            const py = sY + (r < 2 ? 2 : -2);
+            if (px >= 0 && px < w && py >= 0 && py < h) {
+              const idx = (py * w + px) * 4;
+              if (isSkinPixel(imgData[idx], imgData[idx+1], imgData[idx+2])) validCount++;
+            }
+          }
+          if (validCount > bestScore) {
+            bestScore = validCount;
+            bestX = sX;
+            bestY = sY;
+          }
+        }
+      }
+      return samplePatch(bestX, bestY, radArea, bR, bG, bB);
+    };
+
+    const leftCheek = refineCheek(nomLX, nomChkY);
+    const rightCheek = refineCheek(nomRX, nomChkY);
     const cheekR = Math.round((leftCheek.r + rightCheek.r) / 2);
     const cheekG = Math.round((leftCheek.g + rightCheek.g) / 2);
     const cheekB = Math.round((leftCheek.b + rightCheek.b) / 2);
     const cheek = {
       r: cheekR, g: cheekG, b: cheekB,
       hex: rgbToHex(cheekR, cheekG, cheekB),
-      x: Math.round(fLeft + fWidth * 0.24), y: chkY,
-      pctX: ((fLeft + fWidth * 0.24) / w) * 100,
-      pctY: (chkY / h) * 100,
+      x: leftCheek.x, y: leftCheek.y,
+      pctX: (leftCheek.x / w) * 100,
+      pctY: (leftCheek.y / h) * 100,
       left: leftCheek, right: rightCheek
     };
 
-    const chinX = cx;
-    const chinY = Math.min(h - 4, Math.round(fTop + fHeight * 0.84));
-    const chin = samplePatch(chinX, chinY, radArea, bR, bG, bB);
+    // 7. CHIN / JAW LOCALIZATION
+    let bestChinY = Math.round(fTop + fHeight * 0.82);
+    const chinScanMin = Math.round(fTop + fHeight * 0.74);
+    const chinScanMax = Math.min(h - 4, Math.round(fTop + fHeight * 0.88));
 
+    for (let candY = chinScanMin; candY <= chinScanMax; candY += 2) {
+      let skinCount = 0;
+      for (let dx = -4; dx <= 4; dx += 2) {
+        const px = cx + dx, py = candY;
+        if (px >= 0 && px < w && py >= 0 && py < h) {
+          const idx = (py * w + px) * 4;
+          if (isSkinPixel(imgData[idx], imgData[idx+1], imgData[idx+2])) skinCount++;
+        }
+      }
+      if (skinCount >= 3) {
+        bestChinY = candY;
+      }
+    }
+    const chin = samplePatch(cx, bestChinY, radArea, bR, bG, bB);
+
+    // 8. OVERALL DETECTED CORE DERMIS
     const coreX = cx;
     const coreY = Math.round(fTop + fHeight * 0.44);
     const coreSample = samplePatch(coreX, coreY, Math.round(radArea * 1.2), bR, bG, bB);
@@ -471,185 +609,6 @@ document.addEventListener("DOMContentLoaded", () => {
         cheek,
         chin
       }
-    };
-  }
-
-  // --- Multi-Factor Craniofacial & Dermal Gender Classifier ---
-  function estimateGenderFromDermis(imgData, w, h, faceBox, areas) {
-    let scoreMale = 0.0;
-    let scoreFemale = 0.0;
-
-    // 1. Mandibular Jaw-to-Cheek Width (Bigonial vs Bizygomatic)
-    const jawY = Math.min(h - 1, Math.floor(faceBox.y + faceBox.height * 0.78));
-    const cheekY = Math.min(h - 1, Math.floor(faceBox.y + faceBox.height * 0.50));
-    let jawLeft = faceBox.cx, jawRight = faceBox.cx;
-    let cheekLeft = faceBox.cx, cheekRight = faceBox.cx;
-    for (let x = 0; x < w; x += 2) {
-      const idxJ = (jawY * w + x) * 4;
-      if (isSkinPixel(imgData[idxJ], imgData[idxJ + 1], imgData[idxJ + 2])) {
-        if (x < jawLeft) jawLeft = x;
-        if (x > jawRight) jawRight = x;
-      }
-      const idxC = (cheekY * w + x) * 4;
-      if (isSkinPixel(imgData[idxC], imgData[idxC + 1], imgData[idxC + 2])) {
-        if (x < cheekLeft) cheekLeft = x;
-        if (x > cheekRight) cheekRight = x;
-      }
-    }
-    const jawSpan = Math.max(20, jawRight - jawLeft);
-    const cheekSpan = Math.max(30, cheekRight - cheekLeft);
-    const jawRatio = jawSpan / cheekSpan;
-
-    if (jawRatio > 0.77) {
-      scoreMale += Math.min(2.8, (jawRatio - 0.77) * 8.0 + 0.8);
-    } else if (jawRatio < 0.72) {
-      scoreFemale += Math.min(2.4, (0.72 - jawRatio) * 8.0 + 0.6);
-    }
-
-    // 2. Craniofacial Aspect Ratio (Face Compactness)
-    const faceAspect = faceBox.width / Math.max(faceBox.height, 1);
-    if (faceAspect > 0.80) {
-      scoreMale += Math.min(1.8, (faceAspect - 0.80) * 6.0 + 0.5);
-    } else if (faceAspect < 0.72) {
-      scoreFemale += Math.min(1.8, (0.72 - faceAspect) * 6.0 + 0.5);
-    }
-
-    // 3. Eyebrow Orbital Arch & Low Clearance (Flat brows close to eyes = Male)
-    const browY1 = Math.floor(faceBox.y + faceBox.height * 0.18);
-    const browY2 = Math.floor(faceBox.y + faceBox.height * 0.35);
-    const browX1 = Math.floor(faceBox.cx - faceBox.width * 0.34);
-    const browX2 = Math.floor(faceBox.cx + faceBox.width * 0.34);
-    let darkBrowPixels = 0, browSumY = 0, totalBrowPixels = 0;
-    const meanChkLum = 0.299 * areas.cheek.r + 0.587 * areas.cheek.g + 0.114 * areas.cheek.b;
-
-    for (let y = browY1; y < browY2; y += 2) {
-      for (let x = browX1; x < browX2; x += 2) {
-        if (x >= 0 && x < w && y >= 0 && y < h) {
-          const idx = (y * w + x) * 4;
-          const l = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
-          totalBrowPixels++;
-          if (l < meanChkLum * 0.65) {
-            darkBrowPixels++;
-            browSumY += (y - browY1);
-          }
-        }
-      }
-    }
-    if (darkBrowPixels > 6 && totalBrowPixels > 10) {
-      const browRelY = (browSumY / darkBrowPixels) / Math.max(1, browY2 - browY1);
-      if (browRelY > 0.50) scoreMale += 1.8;
-      else if (browRelY < 0.38) scoreFemale += 1.6;
-    }
-
-    // 4. Lip Mucosa Volume & Natural Contrast (Low contrast vs cheek = Male)
-    const lipY1 = Math.floor(faceBox.y + faceBox.height * 0.64);
-    const lipY2 = Math.floor(faceBox.y + faceBox.height * 0.79);
-    const lipX1 = Math.floor(faceBox.cx - faceBox.width * 0.22);
-    const lipX2 = Math.floor(faceBox.cx + faceBox.width * 0.22);
-    const mouthPixels = [];
-    for (let y = lipY1; y < lipY2; y += 2) {
-      for (let x = lipX1; x < lipX2; x += 2) {
-        if (x >= 0 && x < w && y >= 0 && y < h) {
-          const idx = (y * w + x) * 4;
-          const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
-          const redScore = r / Math.max(1, (g + b) / 2);
-          mouthPixels.push({ r, g, b, redScore, y });
-        }
-      }
-    }
-    mouthPixels.sort((a, b) => b.redScore - a.redScore);
-    const topLipCut = Math.max(4, Math.floor(mouthPixels.length * 0.28));
-    let sumLipR = 0, sumLipG = 0, sumLipB = 0;
-    let lipMinY = h, lipMaxY = 0;
-    for (let i = 0; i < topLipCut; i++) {
-      sumLipR += mouthPixels[i].r;
-      sumLipG += mouthPixels[i].g;
-      sumLipB += mouthPixels[i].b;
-      if (mouthPixels[i].y < lipMinY) lipMinY = mouthPixels[i].y;
-      if (mouthPixels[i].y > lipMaxY) lipMaxY = mouthPixels[i].y;
-    }
-    const mLipR = topLipCut > 0 ? sumLipR / topLipCut : 150;
-    const mLipG = topLipCut > 0 ? sumLipG / topLipCut : 100;
-    const mLipB = topLipCut > 0 ? sumLipB / topLipCut : 95;
-    const lipRedRatio = mLipR / Math.max(1, (mLipG + mLipB) / 2);
-    const chkRedRatio = areas.cheek.r / Math.max(1, (areas.cheek.g + areas.cheek.b) / 2);
-    const lipContrast = lipRedRatio - chkRedRatio;
-    const lipThickness = (lipMaxY - lipMinY) / Math.max(1, faceBox.height);
-
-    if (lipContrast > 0.085 && lipThickness > 0.055) {
-      scoreFemale += Math.min(2.5, (lipContrast - 0.085) * 12.0 + (lipThickness - 0.055) * 14.0 + 0.8);
-    } else if (lipContrast < 0.045) {
-      scoreMale += Math.min(2.2, (0.045 - lipContrast) * 18.0 + 0.8);
-    }
-
-    // 5. Mandibular Follicular Texture & Micro-Variance
-    let chinVar = 0, chkVar = 0, chinCount = 0, chkCount = 0;
-    const radV = Math.floor(faceBox.width * 0.08);
-    for (let dy = -radV; dy < radV; dy += 2) {
-      for (let dx = -radV; dx < radV; dx += 2) {
-        const cX = faceBox.cx + dx, cY = areas.chin.y + dy;
-        if (cX >= 1 && cX < w - 1 && cY >= 1 && cY < h - 1) {
-          const iC = (cY * w + cX) * 4;
-          const iR = (cY * w + cX + 1) * 4;
-          const lumC = 0.299 * imgData[iC] + 0.587 * imgData[iC + 1] + 0.114 * imgData[iC + 2];
-          const lumR = 0.299 * imgData[iR] + 0.587 * imgData[iR + 1] + 0.114 * imgData[iR + 2];
-          chinVar += Math.abs(lumC - lumR);
-          chinCount++;
-        }
-        const kX = areas.cheek.x + dx, kY = areas.cheek.y + dy;
-        if (kX >= 1 && kX < w - 1 && kY >= 1 && kY < h - 1) {
-          const iC = (kY * w + kX) * 4;
-          const iR = (kY * w + kX + 1) * 4;
-          const lumC = 0.299 * imgData[iC] + 0.587 * imgData[iC + 1] + 0.114 * imgData[iC + 2];
-          const lumR = 0.299 * imgData[iR] + 0.587 * imgData[iR + 1] + 0.114 * imgData[iR + 2];
-          chkVar += Math.abs(lumC - lumR);
-          chkCount++;
-        }
-      }
-    }
-    const meanChinGrad = chinCount > 0 ? chinVar / chinCount : 5;
-    const meanChkGrad = chkCount > 0 ? chkVar / chkCount : 5;
-    const textureRatio = meanChinGrad / Math.max(1, meanChkGrad);
-
-    if (textureRatio > 1.25) {
-      scoreMale += Math.min(2.5, (textureRatio - 1.25) * 4.0 + 0.8);
-    } else if (textureRatio < 1.02) {
-      scoreFemale += Math.min(1.5, (1.02 - textureRatio) * 4.0 + 0.5);
-    }
-
-    // 6. Neck / Throat Sternocleidomastoid Width
-    const neckY = Math.min(h - 2, Math.floor(faceBox.y + faceBox.height * 1.05));
-    let neckLeft = faceBox.cx, neckRight = faceBox.cx;
-    for (let x = 0; x < w; x += 2) {
-      const idxN = (neckY * w + x) * 4;
-      if (isSkinPixel(imgData[idxN], imgData[idxN + 1], imgData[idxN + 2])) {
-        if (x < neckLeft) neckLeft = x;
-        if (x > neckRight) neckRight = x;
-      }
-    }
-    const neckWidth = neckRight - neckLeft;
-    const neckRatio = neckWidth / Math.max(20, faceBox.width);
-    if (neckRatio > 0.66) {
-      scoreMale += Math.min(1.8, (neckRatio - 0.66) * 5.0 + 0.6);
-    } else if (neckRatio < 0.52 && neckWidth > 15) {
-      scoreFemale += Math.min(1.5, (0.52 - neckRatio) * 5.0 + 0.5);
-    }
-
-    // Sigmoid Bayesian calibration
-    const scoreDiff = scoreFemale - scoreMale;
-    const pFemale = 1.0 / (1.0 + Math.exp(-scoreDiff * 0.95));
-    const pMale = 1.0 - pFemale;
-    const detected = pMale >= pFemale ? "Male" : "Female";
-    const confidence = Math.min(98, Math.max(76, Math.round(Math.max(pMale, pFemale) * 100)));
-
-    return {
-      detected,
-      confidence,
-      pMale,
-      pFemale,
-      jawRatio,
-      lipContrast,
-      textureRatio
     };
   }
 
@@ -817,13 +776,8 @@ document.addEventListener("DOMContentLoaded", () => {
     setPin("preview-pin-cheek-r", "pin-dot-cheek-r", "pin-hex-cheek-r", (areas.cheek.right || areas.cheek));
     setPin("preview-pin-chin", "pin-dot-chin", "pin-hex-chin", areas.chin);
 
-    // Instant Real-Time Gender Determination
-    const genderInfo = estimateGenderFromDermis(imgData, sampleW, sampleH, faceBox, areas);
-    cachedGenderInfo = genderInfo;
-    const isMale = genderInfo.detected === "Male";
-
     if (faceBoxTag) {
-      faceBoxTag.textContent = `AI FACE MESH · ${genderInfo.detected.toUpperCase()}`;
+      faceBoxTag.textContent = "AI FACE MESH";
     }
 
     // Update Quality Bar: Optimal

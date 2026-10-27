@@ -149,8 +149,6 @@ class FaceDetector:
                             bbox, r_eye, l_eye, nose_tip, r_mouth, l_mouth, img_w, img_h
                         )
 
-                    gender_info = self.estimate_gender(image_bgr, landmarks_list=landmarks_68, bbox=bbox)
-
                     return {
                         "success": True,
                         "face_count": 1,
@@ -158,8 +156,7 @@ class FaceDetector:
                         "detector_type": "opencv_yunet_lbf" if landmarks_68 else "opencv_yunet_ssd",
                         "landmarks": landmarks_68,
                         "bounding_box": bbox,
-                        "regions": regions,
-                        "gender": gender_info
+                        "regions": regions
                     }
             except Exception as e:
                 pass
@@ -194,7 +191,6 @@ class FaceDetector:
                     else:
                         regions = self._get_regions_from_bbox(bbox, img_w, img_h)
 
-                    gender_info = self.estimate_gender(image_bgr, landmarks_list=landmarks_68, bbox=bbox)
                     return {
                         "success": True,
                         "face_count": 1,
@@ -202,8 +198,7 @@ class FaceDetector:
                         "detector_type": "opencv_cascade_lbf" if landmarks_68 else "opencv_cascade",
                         "landmarks": landmarks_68,
                         "bounding_box": bbox,
-                        "regions": regions,
-                        "gender": gender_info
+                        "regions": regions
                     }
             except Exception:
                 pass
@@ -212,7 +207,6 @@ class FaceDetector:
         skin_bbox = self._detect_face_by_skin_contour(image_bgr)
         if skin_bbox is not None:
             regions = self._get_regions_from_bbox(skin_bbox, img_w, img_h)
-            gender_info = self.estimate_gender(image_bgr, landmarks_list=None, bbox=skin_bbox)
             return {
                 "success": True,
                 "face_count": 1,
@@ -220,8 +214,7 @@ class FaceDetector:
                 "detector_type": "skin_density_cluster",
                 "landmarks": None,
                 "bounding_box": skin_bbox,
-                "regions": regions,
-                "gender": gender_info
+                "regions": regions
             }
 
         # 4. Final Fallback: Geometric Adaptive Framing
@@ -231,7 +224,6 @@ class FaceDetector:
         fh = int(img_h * 0.66)
         bbox = [fx, fy, fw, fh]
         regions = self._get_regions_from_bbox(bbox, img_w, img_h)
-        gender_info = self.estimate_gender(image_bgr, landmarks_list=None, bbox=bbox)
 
         return {
             "success": True,
@@ -240,8 +232,7 @@ class FaceDetector:
             "detector_type": "geometric_proportions",
             "landmarks": None,
             "bounding_box": bbox,
-            "regions": regions,
-            "gender": gender_info
+            "regions": regions
         }
 
     def _get_regions_from_68_landmarks(
@@ -482,199 +473,5 @@ class FaceDetector:
                 "y": max(0, min(int(y + h * 0.66), img_h - 12)),
                 "w": max(12, int(w * 0.36)),
                 "h": max(12, int(h * 0.14))
-            }
-        }
-
-    def estimate_gender(
-        self,
-        image_bgr: np.ndarray,
-        landmarks_list: Optional[List[Tuple[int, int, float]]] = None,
-        bbox: Optional[List[int]] = None
-    ) -> Dict[str, Any]:
-        """
-        Estimates biological/perceived gender from facial morphology, anthropometric ratios,
-        lower-facial dermal texture, lip contrast, and eyebrow density.
-        """
-        if image_bgr is None or image_bgr.size == 0:
-            return {"detected": "All", "confidence": 0.5, "confidence_percentage": 50, "probabilities": {"Male": 0.5, "Female": 0.5}}
-
-        img_h, img_w = image_bgr.shape[:2]
-        score_male = 0.0
-        score_female = 0.0
-
-        if bbox is None:
-            bbox = [int(img_w * 0.2), int(img_h * 0.15), int(img_w * 0.6), int(img_h * 0.6)]
-
-        x, y, w, h = bbox
-        cx = x + w / 2.0
-        cy = y + h / 2.0
-        rx = w / 2.0
-        ry = h / 2.0
-
-        # Method A: 68-Point Facial Landmarks if available
-        if landmarks_list and len(landmarks_list) == 68:
-            try:
-                pts = np.array([[p[0], p[1]] for p in landmarks_list], dtype=np.float32)
-                # Bigonial (jaw width at points 4 & 12) vs Bizygomatic (cheek width at points 0 & 16)
-                cheek_w = np.hypot(pts[16, 0] - pts[0, 0], pts[16, 1] - pts[0, 1])
-                jaw_w = np.hypot(pts[12, 0] - pts[4, 0], pts[12, 1] - pts[4, 1])
-                jaw_ratio = jaw_w / max(cheek_w, 1.0)
-
-                if jaw_ratio > 0.76:
-                    score_male += min(3.0, (jaw_ratio - 0.76) * 6.0)
-                else:
-                    score_female += min(3.0, (0.76 - jaw_ratio) * 6.0)
-
-                # Eyebrow arch to eye distance (points 19 to 37 and 24 to 44)
-                brow_eye_dist = ((pts[37, 1] - pts[19, 1]) + (pts[44, 1] - pts[24, 1])) / 2.0
-                eye_h = max(abs(pts[41, 1] - pts[37, 1]), 6.0)
-                brow_ratio = brow_eye_dist / eye_h
-                if brow_ratio > 1.30:
-                    score_female += min(2.5, (brow_ratio - 1.30) * 4.0)
-                else:
-                    score_male += min(2.5, (1.30 - brow_ratio) * 4.0)
-            except Exception:
-                pass
-
-        # Method B: Multi-Region Chromatic, Anthropometric & Texture Sampling
-        try:
-            chk_y1 = max(0, min(int(cy - ry * 0.10), img_h - 1))
-            chk_y2 = max(chk_y1 + 6, min(int(cy + ry * 0.25), img_h))
-            chk_x1 = max(0, min(int(cx - rx * 0.70), img_w - 1))
-            chk_x2 = max(chk_x1 + 6, min(int(cx + rx * 0.70), img_w))
-            chk = image_bgr[chk_y1:chk_y2, chk_x1:chk_x2]
-
-            chin_y1 = max(0, min(int(cy + ry * 0.65), img_h - 1))
-            chin_y2 = max(chin_y1 + 6, min(int(cy + ry * 0.95), img_h))
-            chin_x1 = max(0, min(int(cx - rx * 0.45), img_w - 1))
-            chin_x2 = max(chin_x1 + 6, min(int(cx + rx * 0.45), img_w))
-            chin = image_bgr[chin_y1:chin_y2, chin_x1:chin_x2]
-
-            lip_y1 = max(0, min(int(cy + ry * 0.35), img_h - 1))
-            lip_y2 = max(lip_y1 + 6, min(int(cy + ry * 0.65), img_h))
-            lip_x1 = max(0, min(int(cx - rx * 0.35), img_w - 1))
-            lip_x2 = max(lip_x1 + 6, min(int(cx + rx * 0.35), img_w))
-            lip = image_bgr[lip_y1:lip_y2, lip_x1:lip_x2]
-
-            # Aspect Ratio / Facial Compactness (w / h)
-            face_aspect = float(w) / max(float(h), 1.0)
-            if face_aspect > 0.78:
-                score_male += min(1.8, (face_aspect - 0.78) * 6.0 + 0.5)
-            elif face_aspect < 0.72:
-                score_female += min(1.8, (0.72 - face_aspect) * 6.0 + 0.5)
-
-            # Cheek vs Chin Luminance Drop & Follicular Micro-Texture
-            if chk.size > 0 and chin.size > 0:
-                chk_lum = float(np.mean(0.114 * chk[:,:,0] + 0.587 * chk[:,:,1] + 0.299 * chk[:,:,2]))
-                chin_lum = float(np.mean(0.114 * chin[:,:,0] + 0.587 * chin[:,:,1] + 0.299 * chin[:,:,2]))
-                lum_drop = chk_lum - chin_lum
-
-                if lum_drop > 14.0:
-                    score_male += min(2.8, (lum_drop - 14.0) * 0.20 + 0.9)
-                elif lum_drop < 6.0:
-                    score_female += min(2.5, (6.0 - lum_drop) * 0.25 + 0.8)
-
-                # High-frequency follicular texture via gradient variance
-                chin_gray = 0.114 * chin[:,:,0] + 0.587 * chin[:,:,1] + 0.299 * chin[:,:,2]
-                chk_gray = 0.114 * chk[:,:,0] + 0.587 * chk[:,:,1] + 0.299 * chk[:,:,2]
-                chin_grad_var = float(np.var(np.diff(chin_gray, axis=0))) if chin_gray.shape[0] > 2 else 0.0
-                chk_grad_var = float(np.var(np.diff(chk_gray, axis=0))) if chk_gray.shape[0] > 2 else 0.0
-                texture_ratio = chin_grad_var / max(chk_grad_var, 1.0)
-
-                if texture_ratio > 1.8:
-                    score_male += min(1.8, (texture_ratio - 1.8) * 0.8 + 0.6)
-                elif texture_ratio < 1.1:
-                    score_female += min(1.5, (1.1 - texture_ratio) * 1.2 + 0.5)
-
-            # Lip contrast & mucosa volume
-            if lip.size > 0 and chk.size > 0:
-                lip_pixels = lip.reshape(-1, 3).astype(np.float32)
-                lip_b = lip_pixels[:, 0]
-                lip_g = lip_pixels[:, 1]
-                lip_r = lip_pixels[:, 2]
-                lip_redness = lip_r / np.maximum(1.0, (lip_g + lip_b) / 2.0)
-
-                sorted_idx = np.argsort(lip_redness)[::-1]
-                top_cut = max(4, int(len(lip_redness) * 0.25))
-                top_redness = float(np.mean(lip_redness[sorted_idx[:top_cut]]))
-
-                chk_b = float(np.mean(chk[:, :, 0]))
-                chk_g = float(np.mean(chk[:, :, 1]))
-                chk_r = float(np.mean(chk[:, :, 2]))
-                chk_redness = chk_r / max(1.0, (chk_g + chk_b) / 2.0)
-
-                lip_contrast = top_redness - chk_redness
-
-                if lip_contrast > 0.075:
-                    score_female += min(3.0, (lip_contrast - 0.075) * 18.0 + 1.0)
-                elif lip_contrast < 0.035:
-                    score_male += min(2.5, (0.035 - lip_contrast) * 20.0 + 0.8)
-                else:
-                    t = (lip_contrast - 0.035) / 0.04
-                    score_female += t * 0.6
-                    score_male += (1.0 - t) * 0.6
-
-            # Eyebrow vertical clearance & thickness (Flat horizontal brows close to eyes = Male)
-            brow_y1 = max(0, min(int(cy - ry * 0.65), img_h - 1))
-            brow_y2 = max(brow_y1 + 4, min(int(cy - ry * 0.30), img_h))
-            brow_x1 = max(0, min(int(cx - rx * 0.70), img_w - 1))
-            brow_x2 = max(brow_x1 + 4, min(int(cx + rx * 0.70), img_w))
-            brow_roi = image_bgr[brow_y1:brow_y2, brow_x1:brow_x2]
-            if brow_roi.size > 0 and chk.size > 0:
-                brow_gray = 0.114 * brow_roi[:, :, 0] + 0.587 * brow_roi[:, :, 1] + 0.299 * brow_roi[:, :, 2]
-                chk_gray_mean = float(np.mean(0.114 * chk[:, :, 0] + 0.587 * chk[:, :, 1] + 0.299 * chk[:, :, 2]))
-                dark_mask = brow_gray < (chk_gray_mean * 0.65)
-                if np.sum(dark_mask) > 10:
-                    y_indices = np.where(dark_mask)[0]
-                    mean_dark_y = float(np.mean(y_indices)) / max(1, brow_roi.shape[0])
-                    if mean_dark_y > 0.48:
-                        score_male += 1.8
-                    elif mean_dark_y < 0.35:
-                        score_female += 1.5
-
-            # Shoulder-level hair volume (only below chin level, preventing curtain hair misclassification)
-            side_y1 = max(0, min(int(cy + ry * 0.85), img_h - 1))
-            side_y2 = max(side_y1 + 10, min(int(cy + ry * 1.35), img_h))
-            l_side_x1 = max(0, int(cx - rx * 1.40))
-            l_side_x2 = max(l_side_x1 + 4, int(cx - rx * 0.95))
-            r_side_x1 = min(img_w - 4, int(cx + rx * 0.95))
-            r_side_x2 = min(img_w, int(cx + rx * 1.40))
-
-            l_side = image_bgr[side_y1:side_y2, l_side_x1:l_side_x2]
-            r_side = image_bgr[side_y1:side_y2, r_side_x1:r_side_x2]
-
-            hair_count = 0
-            total_side = 0
-            for side_roi in [l_side, r_side]:
-                if side_roi.size > 0:
-                    side_lum = 0.114 * side_roi[:, :, 0] + 0.587 * side_roi[:, :, 1] + 0.299 * side_roi[:, :, 2]
-                    hair_count += int(np.sum(side_lum < 80))
-                    total_side += side_roi.shape[0] * side_roi.shape[1]
-
-            hair_ratio = (hair_count / max(1, total_side)) if total_side > 20 else 0.0
-            if hair_ratio > 0.40:
-                score_female += min(1.2, (hair_ratio - 0.40) * 3.0 + 0.5)
-            elif hair_ratio < 0.08 and total_side > 20:
-                score_male += 0.8
-        except Exception:
-            pass
-
-        # Temperature-calibrated softmax
-        temp = 1.35
-        exp_m = np.exp(score_male / temp)
-        exp_f = np.exp(score_female / temp)
-        p_male = float(exp_m / (exp_m + exp_f))
-        p_female = float(1.0 - p_male)
-
-        detected = "Female" if p_female >= 0.50 else "Male"
-        conf = float(max(p_male, p_female))
-
-        return {
-            "detected": detected,
-            "confidence": round(conf, 2),
-            "confidence_percentage": int(round(conf * 100)),
-            "probabilities": {
-                "Male": round(p_male, 2),
-                "Female": round(p_female, 2)
             }
         }

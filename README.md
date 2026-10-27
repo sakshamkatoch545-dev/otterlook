@@ -167,7 +167,7 @@ Every file in the repository serves a specific, modular function:
   - Uses OpenCV Laplacian variance for blur, luminance histogram for exposure, and RMS contrast.
 - [`backend/vision/face_detection.py`](file:///c:/MY%20PROJECTS/otterlook/backend/vision/face_detection.py):
   - Multi-tier face detection: OpenCV YuNet ONNX neural detector $\rightarrow$ FacemarkLBF 68 landmarks $\rightarrow$ Haar Cascade.
-  - Implements `estimate_gender` via facial anthropometry (jaw width vs cheek width, eyebrow arch, lip contrast).
+  - Robust primary facial localization and anatomical ROI positioning (Forehead, Cheeks, Chin). Dedicated user-driven style selection (Men's, Women's, All Styles) shapes styling palettes.
 - [`backend/vision/skin_detection.py`](file:///c:/MY%20PROJECTS/otterlook/backend/vision/skin_detection.py):
   - Extracts 4 anatomical skin ROIs (Forehead, Left Cheek, Right Cheek, Chin).
   - Filters non-skin candidates using dual YCrCb/HSV masks and IQR luminance outlier trimming.
