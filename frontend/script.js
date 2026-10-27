@@ -403,15 +403,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (faceSkin.length < 10) faceSkin = candidateSkin;
 
-    // 4. PRECISE BOUNDING BOX CALCULATION
+    // 4. PRECISE ANATOMICAL BOUNDING BOX & CHIN ANCHOR
     const xs = faceSkin.map(p => p.x).sort((a, b) => a - b);
     const ys = faceSkin.map(p => p.y).sort((a, b) => a - b);
 
-    const p12X = xs[Math.floor(xs.length * 0.12)];
-    const p88X = xs[Math.floor(xs.length * 0.88)];
+    const p10X = xs[Math.floor(xs.length * 0.10)];
+    const p90X = xs[Math.floor(xs.length * 0.90)];
+    // Lowest robust skin pixels on the primary face correspond anatomically to the chin tip (mentalis)
+    const chinY = ys[Math.floor(ys.length * 0.90)];
 
-    let rawW = Math.max(45, p88X - p12X);
-    let fWidth = Math.max(Math.round(w * 0.20), Math.min(Math.round(w * 0.48), Math.round(rawW * 1.15)));
+    let rawW = Math.max(45, p90X - p10X);
+    let fWidth = Math.max(Math.round(w * 0.20), Math.min(Math.round(w * 0.46), Math.round(rawW * 1.12)));
     
     const cx = xs[Math.floor(xs.length * 0.5)];
     let fLeft = Math.round(cx - fWidth * 0.5);
@@ -419,10 +421,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (fLeft + fWidth > w - 2) fLeft = Math.max(2, w - fWidth - 2);
     fWidth = Math.min(fWidth, w - fLeft - 2);
 
+    // Human craniofacial proportion: Face Height is 1.34x Bizygomatic Width
     let fHeight = Math.round(fWidth * 1.34);
-    const medianY = ys[Math.floor(ys.length * 0.5)];
-    let fTop = Math.round(medianY - fHeight * 0.46);
-    if (fTop < 2) fTop = 2;
+    
+    // Anatomical Chin Anchor: face top aligned upwards from chin landmark
+    let fTop = Math.max(2, chinY - fHeight);
     if (fTop + fHeight > h - 2) {
       fHeight = h - fTop - 2;
     }
@@ -485,12 +488,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 5. ADAPTIVE FOREHEAD LOCALIZATION (AVOID HAIR / BANGS)
     // Midline scan down hair part to locate exposed glabella / forehead
-    let bestFrnY = Math.round(fTop + fHeight * 0.22);
+    let bestFrnY = Math.round(fTop + fHeight * 0.20);
     let bestFrnSkinCount = -1;
-    const frnScanMin = Math.round(fTop + fHeight * 0.12);
-    const frnScanMax = Math.round(fTop + fHeight * 0.38);
+    const frnScanMin = Math.round(fTop + fHeight * 0.10);
+    const frnScanMax = Math.round(fTop + fHeight * 0.32);
 
-    for (let candY = frnScanMin; candY <= frnScanMax; candY += 3) {
+    for (let candY = frnScanMin; candY <= frnScanMax; candY += 2) {
       let candSkinCount = 0;
       let candLumSum = 0;
       let candTotal = 0;
@@ -521,7 +524,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 6. BILATERAL ZYGOMATIC CHEEKS (BOUND TO PRIMARY FACE)
     const nomLX = Math.round(cx - fWidth * 0.23);
     const nomRX = Math.round(cx + fWidth * 0.23);
-    const nomChkY = Math.round(fTop + fHeight * 0.52);
+    const nomChkY = Math.round(fTop + fHeight * 0.53);
 
     const refineCheek = (nomX, nomY) => {
       let bestX = nomX, bestY = nomY, bestScore = -1;
@@ -562,24 +565,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // 7. CHIN / JAW LOCALIZATION
-    let bestChinY = Math.round(fTop + fHeight * 0.82);
-    const chinScanMin = Math.round(fTop + fHeight * 0.74);
-    const chinScanMax = Math.min(h - 4, Math.round(fTop + fHeight * 0.88));
-
-    for (let candY = chinScanMin; candY <= chinScanMax; candY += 2) {
-      let skinCount = 0;
-      for (let dx = -4; dx <= 4; dx += 2) {
-        const px = cx + dx, py = candY;
-        if (px >= 0 && px < w && py >= 0 && py < h) {
-          const idx = (py * w + px) * 4;
-          if (isSkinPixel(imgData[idx], imgData[idx+1], imgData[idx+2])) skinCount++;
-        }
-      }
-      if (skinCount >= 3) {
-        bestChinY = candY;
-      }
-    }
-    const chin = samplePatch(cx, bestChinY, radArea, bR, bG, bB);
+    const chin = samplePatch(cx, chinY, radArea, bR, bG, bB);
 
     // 8. OVERALL DETECTED CORE DERMIS
     const coreX = cx;
