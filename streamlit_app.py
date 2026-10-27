@@ -1800,8 +1800,9 @@ body {{
         fileInput.value = "";
         cameraInput.value = "";
         previewImg.src = "";
+        previewImg.removeAttribute("src");
         uploadPrompt.classList.remove("hidden");
-        previewBox.classList.remove("hidden");
+        previewBox.classList.add("hidden");
         analyzeBtn.disabled = true;
         qualityBar.classList.add("hidden");
         hideError();

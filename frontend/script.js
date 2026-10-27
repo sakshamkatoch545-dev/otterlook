@@ -891,6 +891,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fileInput.value = "";
     if (cameraInput) cameraInput.value = "";
     previewImg.src = "";
+    previewImg.removeAttribute("src");
     uploadPrompt.classList.remove("hidden");
     previewBox.classList.add("hidden");
     analyzeBtn.disabled = true;

@@ -1038,6 +1038,18 @@ body {
   border: 1px solid rgba(212, 175, 55, 0.28);
 }
 
+.preview-box.hidden {
+  display: none !important;
+}
+
+#preview-img:not([src]),
+#preview-img[src=""],
+#preview-img[src="#"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
 .preview-box img,
 .preview-stage img {
   max-width: 100%;
