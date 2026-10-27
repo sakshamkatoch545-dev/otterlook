@@ -556,18 +556,37 @@ class FaceDetector:
             lip_x2 = max(lip_x1 + 6, min(int(cx + rx * 0.35), img_w))
             lip = image_bgr[lip_y1:lip_y2, lip_x1:lip_x2]
 
-            # Cheek vs Chin Luminance Drop
+            # Aspect Ratio / Facial Compactness (w / h)
+            face_aspect = float(w) / max(float(h), 1.0)
+            if face_aspect > 0.78:
+                score_male += min(1.8, (face_aspect - 0.78) * 6.0 + 0.5)
+            elif face_aspect < 0.72:
+                score_female += min(1.8, (0.72 - face_aspect) * 6.0 + 0.5)
+
+            # Cheek vs Chin Luminance Drop & Follicular Micro-Texture
             if chk.size > 0 and chin.size > 0:
                 chk_lum = float(np.mean(0.114 * chk[:,:,0] + 0.587 * chk[:,:,1] + 0.299 * chk[:,:,2]))
                 chin_lum = float(np.mean(0.114 * chin[:,:,0] + 0.587 * chin[:,:,1] + 0.299 * chin[:,:,2]))
                 lum_drop = chk_lum - chin_lum
 
-                if lum_drop > 15.0:
-                    score_male += min(3.2, (lum_drop - 15.0) * 0.22 + 1.0)
-                elif lum_drop < 8.0:
-                    score_female += min(2.8, (8.0 - lum_drop) * 0.28 + 0.9)
+                if lum_drop > 14.0:
+                    score_male += min(2.8, (lum_drop - 14.0) * 0.20 + 0.9)
+                elif lum_drop < 6.0:
+                    score_female += min(2.5, (6.0 - lum_drop) * 0.25 + 0.8)
 
-            # Lip contrast (extract top 30% mucosal redness in mouth region)
+                # High-frequency follicular texture via gradient variance
+                chin_gray = 0.114 * chin[:,:,0] + 0.587 * chin[:,:,1] + 0.299 * chin[:,:,2]
+                chk_gray = 0.114 * chk[:,:,0] + 0.587 * chk[:,:,1] + 0.299 * chk[:,:,2]
+                chin_grad_var = float(np.var(np.diff(chin_gray, axis=0))) if chin_gray.shape[0] > 2 else 0.0
+                chk_grad_var = float(np.var(np.diff(chk_gray, axis=0))) if chk_gray.shape[0] > 2 else 0.0
+                texture_ratio = chin_grad_var / max(chk_grad_var, 1.0)
+
+                if texture_ratio > 1.8:
+                    score_male += min(1.8, (texture_ratio - 1.8) * 0.8 + 0.6)
+                elif texture_ratio < 1.1:
+                    score_female += min(1.5, (1.1 - texture_ratio) * 1.2 + 0.5)
+
+            # Lip contrast & mucosa volume
             if lip.size > 0 and chk.size > 0:
                 lip_pixels = lip.reshape(-1, 3).astype(np.float32)
                 lip_b = lip_pixels[:, 0]
@@ -576,7 +595,7 @@ class FaceDetector:
                 lip_redness = lip_r / np.maximum(1.0, (lip_g + lip_b) / 2.0)
 
                 sorted_idx = np.argsort(lip_redness)[::-1]
-                top_cut = max(4, int(len(lip_redness) * 0.30))
+                top_cut = max(4, int(len(lip_redness) * 0.25))
                 top_redness = float(np.mean(lip_redness[sorted_idx[:top_cut]]))
 
                 chk_b = float(np.mean(chk[:, :, 0]))
@@ -586,14 +605,14 @@ class FaceDetector:
 
                 lip_contrast = top_redness - chk_redness
 
-                if lip_contrast > 0.08:
-                    score_female += min(3.5, (lip_contrast - 0.08) * 16.0 + 1.2)
-                elif lip_contrast < 0.04:
-                    score_male += min(3.0, (0.04 - lip_contrast) * 22.0 + 1.0)
+                if lip_contrast > 0.075:
+                    score_female += min(3.0, (lip_contrast - 0.075) * 18.0 + 1.0)
+                elif lip_contrast < 0.035:
+                    score_male += min(2.5, (0.035 - lip_contrast) * 20.0 + 0.8)
                 else:
-                    t = (lip_contrast - 0.04) / 0.04
-                    score_female += t * 0.8
-                    score_male += (1.0 - t) * 0.8
+                    t = (lip_contrast - 0.035) / 0.04
+                    score_female += t * 0.6
+                    score_male += (1.0 - t) * 0.6
 
             # Lateral hair volume (hair framing the jaw & neck)
             side_y1 = max(0, min(int(cy - ry * 0.2), img_h - 1))
@@ -615,15 +634,17 @@ class FaceDetector:
                     total_side += side_roi.shape[0] * side_roi.shape[1]
 
             hair_ratio = (hair_count / max(1, total_side)) if total_side > 20 else 0.0
-            if hair_ratio > 0.22:
-                score_female += min(2.5, (hair_ratio - 0.22) * 8.0 + 1.0)
-            elif hair_ratio < 0.05 and total_side > 20:
-                score_male += 0.8
+            if hair_ratio > 0.24:
+                score_female += min(2.5, (hair_ratio - 0.24) * 8.0 + 0.8)
+            elif hair_ratio < 0.06 and total_side > 20:
+                score_male += 0.9
         except Exception:
             pass
 
-        exp_m = np.exp(score_male)
-        exp_f = np.exp(score_female)
+        # Temperature-calibrated softmax
+        temp = 1.35
+        exp_m = np.exp(score_male / temp)
+        exp_f = np.exp(score_female / temp)
         p_male = float(exp_m / (exp_m + exp_f))
         p_female = float(1.0 - p_male)
 

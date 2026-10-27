@@ -51,18 +51,18 @@ class SkinExtractor:
             g = patch_bgr[:, :, 1].astype(np.float64)
             r = patch_bgr[:, :, 2].astype(np.float64)
 
-            # Multi-Space Human Skin Rule: YCbCr & RGB & Saturation
+            # Inclusive Human Skin Rule across Fitzpatrick I-VI: YCbCr & RGB & Saturation
             y_plane = 0.299 * r + 0.587 * g + 0.114 * b
             cr_plane = (r - y_plane) * 0.713 + 128.0
             cb_plane = (b - y_plane) * 0.564 + 128.0
-            ycrcb_mask = (cr_plane >= 130) & (cr_plane <= 178) & (cb_plane >= 75) & (cb_plane <= 135) & ((cr_plane - cb_plane) >= 8)
+            ycrcb_mask = (cr_plane >= 122) & (cr_plane <= 194) & (cb_plane >= 64) & (cb_plane <= 148) & ((cr_plane - cb_plane) >= 2)
 
-            rgb_mask = (r > g) & (g > b) & (r > 50) & (g > 30) & (b > 18) & ((r - g) >= 6) & ((r - b) >= 10)
+            rgb_mask = (r > 28) & (g > 18) & (b > 10) & (r >= g * 0.88) & (r >= b * 0.92)
 
             cmax = np.maximum(np.maximum(r, g), b)
             cmin = np.minimum(np.minimum(r, g), b)
             sat = np.where(cmax > 0, (cmax - cmin) / np.maximum(cmax, 1e-6), 0)
-            sat_mask = (sat >= 0.14) & (sat <= 0.72)
+            sat_mask = (sat >= 0.04) & (sat <= 0.85)
 
             combined_mask = ycrcb_mask & rgb_mask & sat_mask
 
@@ -139,19 +139,19 @@ class SkinExtractor:
         g = roi[:, :, 1].astype(np.float64)
         r = roi[:, :, 2].astype(np.float64)
 
-        # Broad YCrCb Skin Rule supporting fair through deep complexions
+        # Broad YCrCb Skin Rule supporting fair through deep complexions (Fitzpatrick I-VI)
         y_plane = 0.299 * r + 0.587 * g + 0.114 * b
         cr_plane = (r - y_plane) * 0.713 + 128.0
         cb_plane = (b - y_plane) * 0.564 + 128.0
-        ycrcb_mask = (cr_plane >= 126) & (cr_plane <= 186) & (cb_plane >= 68) & (cb_plane <= 142) & ((cr_plane - cb_plane) >= 5)
+        ycrcb_mask = (cr_plane >= 122) & (cr_plane <= 194) & (cb_plane >= 64) & (cb_plane <= 148) & ((cr_plane - cb_plane) >= 2)
 
-        # RGB & Saturation Skin Rule
-        rgb_mask = (r > g) & (g > b) & (r > 42) & ((r - g) >= 4) & ((r - b) >= 7)
+        # Inclusive RGB & Saturation Skin Rule
+        rgb_mask = (r > 28) & (g > 18) & (b > 10) & (r >= g * 0.88) & (r >= b * 0.92)
         
         cmax = np.maximum(np.maximum(r, g), b)
         cmin = np.minimum(np.minimum(r, g), b)
         sat = np.where(cmax > 0, (cmax - cmin) / np.maximum(cmax, 1e-6), 0)
-        sat_mask = (sat >= 0.08) & (sat <= 0.78)
+        sat_mask = (sat >= 0.04) & (sat <= 0.85)
 
         combined_mask = ycrcb_mask & rgb_mask & sat_mask
 
@@ -196,19 +196,19 @@ class SkinExtractor:
         # Calculate luminance (Y in sRGB)
         lum = 0.114 * pixels[:, 0].astype(np.float64) + 0.587 * pixels[:, 1].astype(np.float64) + 0.299 * pixels[:, 2].astype(np.float64)
         
-        # Discard dark hair / deep cast shadows (lum < 55) and extreme glares (lum > 250)
-        valid_lum_mask = (lum >= 55.0) & (lum <= 250.0)
+        # Discard deep non-skin voids (lum < 20) and extreme glares (lum > 252)
+        valid_lum_mask = (lum >= 20.0) & (lum <= 252.0)
         valid_pixels = pixels[valid_lum_mask]
         if len(valid_pixels) < 10:
             valid_pixels = pixels
         
         lum_valid = 0.114 * valid_pixels[:, 0].astype(np.float64) + 0.587 * valid_pixels[:, 1].astype(np.float64) + 0.299 * valid_pixels[:, 2].astype(np.float64)
         
-        # Core Dermal Centroid: Keep 25th to 85th percentiles of valid luminance
-        p25 = np.percentile(lum_valid, 25)
+        # Core Dermal Centroid: Keep 15th to 85th percentiles of valid luminance
+        p15 = np.percentile(lum_valid, 15)
         p85 = np.percentile(lum_valid, 85)
         
-        core_mask = (lum_valid >= p25) & (lum_valid <= p85)
+        core_mask = (lum_valid >= p15) & (lum_valid <= p85)
         filtered = valid_pixels[core_mask]
         
         return filtered if len(filtered) > 10 else valid_pixels

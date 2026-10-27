@@ -2358,6 +2358,84 @@ body {
   margin-top: 0.2rem;
 }
 
+/* Facial Area Breakdown Strip in Results */
+.results-areas-strip {
+  background: var(--bg-lowest);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.9rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.results-areas-title {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-gold);
+  margin-bottom: 0.55rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.results-areas-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.45rem;
+}
+
+@media (max-width: 640px) {
+  .results-areas-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.results-area-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.5rem;
+  min-width: 0;
+}
+
+.results-area-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
+}
+
+.results-area-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.results-area-label {
+  font-family: var(--font-sans);
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.results-area-hex {
+  font-family: var(--font-mono);
+  font-size: 0.70rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
 /* CIELAB Optical Spectrogram Table */
 .color-metrics-table {
   width: 100%;

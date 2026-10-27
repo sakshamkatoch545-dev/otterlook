@@ -621,6 +621,44 @@ body {{
               </div>
             </div>
 
+            <!-- Facial Area Colorimetry Breakdown -->
+            <div class="results-areas-strip">
+              <div class="results-areas-title">
+                <span class="material-symbols-outlined" style="font-size: 14px;">pin_drop</span>
+                <span>Analyzed Facial Dermal Regions</span>
+              </div>
+              <div class="results-areas-grid">
+                <div class="results-area-item">
+                  <div class="results-area-dot" id="res-area-dot-1" style="background: #C68B59;"></div>
+                  <div class="results-area-info">
+                    <span class="results-area-label">Core Dermis</span>
+                    <span class="results-area-hex" id="res-area-hex-1">#C68B59</span>
+                  </div>
+                </div>
+                <div class="results-area-item">
+                  <div class="results-area-dot" id="res-area-dot-2" style="background: #BA8152;"></div>
+                  <div class="results-area-info">
+                    <span class="results-area-label">Upper Face</span>
+                    <span class="results-area-hex" id="res-area-hex-2">#BA8152</span>
+                  </div>
+                </div>
+                <div class="results-area-item">
+                  <div class="results-area-dot" id="res-area-dot-3" style="background: #D39766;"></div>
+                  <div class="results-area-info">
+                    <span class="results-area-label">Cheek Tone</span>
+                    <span class="results-area-hex" id="res-area-hex-3">#D39766</span>
+                  </div>
+                </div>
+                <div class="results-area-item">
+                  <div class="results-area-dot" id="res-area-dot-4" style="background: #BF8555;"></div>
+                  <div class="results-area-info">
+                    <span class="results-area-label">Lower Face</span>
+                    <span class="results-area-hex" id="res-area-hex-4">#BF8555</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Optical Color Data Table -->
             <div class="color-metrics-table">
               <div class="metric-row">
@@ -1099,6 +1137,190 @@ body {{
         if (el) el.style.display = "none";
       }}
 
+      // --- Inclusive Skin Filter across Fitzpatrick Types I to VI ---
+      function isSkinPixel(r, g, b) {{
+        if (r < 28 || g < 18 || b < 10) return false;
+        const maxC = Math.max(r, g, b);
+        const minC = Math.min(r, g, b);
+        if (maxC - minC < 4) return false;
+        if (r < g * 0.88 || r < b * 0.92) return false;
+
+        const yP = 0.299 * r + 0.587 * g + 0.114 * b;
+        if (yP < 18 || yP > 252) return false;
+
+        const cr = 0.713 * (r - yP) + 128.0;
+        const cb = 0.564 * (b - yP) + 128.0;
+        if (cr < 122 || cr > 194 || cb < 64 || cb > 148 || (cr - cb) < 2) return false;
+
+        const delta = maxC - minC;
+        const sat = delta / maxC;
+        let hue = 0;
+        if (delta > 0) {{
+          if (maxC === r) hue = ((g - b) / delta) % 6;
+          else if (maxC === g) hue = (b - r) / delta + 2;
+          else hue = (r - g) / delta + 4;
+          hue = (hue * 60 + 360) % 360;
+        }}
+        return ((hue >= 0 && hue <= 58) || (hue >= 328 && hue <= 360));
+      }}
+
+      // --- Unified Anatomical Facial Dermis & Multi-Region Extractor ---
+      function extractFacialDermisAndRegions(imgData, w, h) {{
+        const candidateSkin = [];
+        for (let y = 0; y < h; y += 2) {{
+          for (let x = 0; x < w; x += 2) {{
+            const idx = (y * w + x) * 4;
+            const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+            if (isSkinPixel(r, g, b)) {{
+              const yP = 0.299 * r + 0.587 * g + 0.114 * b;
+              candidateSkin.push({{ r, g, b, lum: yP, x, y }});
+            }}
+          }}
+        }}
+
+        if (candidateSkin.length < 25) {{
+          for (let y = Math.floor(h * 0.10); y < Math.floor(h * 0.85); y += 2) {{
+            for (let x = Math.floor(w * 0.15); x < Math.floor(w * 0.85); x += 2) {{
+              const idx = (y * w + x) * 4;
+              const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+              if (r > 38 && g > 24 && b > 14 && r >= g && r >= b) {{
+                candidateSkin.push({{ r, g, b, lum: 0.299 * r + 0.587 * g + 0.114 * b, x, y }});
+              }}
+            }}
+          }}
+        }}
+
+        // Facial skin cluster (focus on head & face, top 80%)
+        let faceSkin = candidateSkin.filter(p => p.y < h * 0.80);
+        if (faceSkin.length < 20) faceSkin = candidateSkin;
+
+        const xs = faceSkin.map(p => p.x).sort((a, b) => a - b);
+        const ys = faceSkin.map(p => p.y).sort((a, b) => a - b);
+
+        const fLeft = xs.length > 0 ? xs[Math.floor(xs.length * 0.08)] : Math.floor(w * 0.2);
+        const fRight = xs.length > 0 ? xs[Math.floor(xs.length * 0.92)] : Math.floor(w * 0.8);
+        const fTop = ys.length > 0 ? ys[Math.floor(ys.length * 0.04)] : Math.floor(h * 0.1);
+        const fBottom = ys.length > 0 ? ys[Math.floor(ys.length * 0.92)] : Math.floor(h * 0.75);
+
+        let fWidth = Math.max(50, fRight - fLeft);
+        let fHeight = Math.max(65, fBottom - fTop);
+        if (fHeight < fWidth * 1.05) fHeight = Math.round(fWidth * 1.25);
+        if (fHeight > fWidth * 1.55) fHeight = Math.round(fWidth * 1.40);
+        fHeight = Math.min(fHeight, h - fTop - 2);
+
+        const cx = Math.round(fLeft + fWidth * 0.5);
+        const cy = Math.round(fTop + fHeight * 0.48);
+
+        // Circular patch sampling with outlier trimming
+        const samplePatch = (targetX, targetY, radius, defR, defG, defB) => {{
+          let sR = 0, sG = 0, sB = 0, count = 0;
+          const patchPixels = [];
+          for (let dy = -radius; dy <= radius; dy += 2) {{
+            for (let dx = -radius; dx <= radius; dx += 2) {{
+              const px = targetX + dx, py = targetY + dy;
+              if (dx * dx + dy * dy <= radius * radius && px >= 0 && px < w && py >= 0 && py < h) {{
+                const idx = (py * w + px) * 4;
+                const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+                const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+                if (lum >= 30 && lum <= 248 && r >= g * 0.82 && r >= b * 0.82) {{
+                  patchPixels.push({{ r, g, b, lum }});
+                }}
+              }}
+            }}
+          }}
+          if (patchPixels.length > 4) {{
+            patchPixels.sort((a, b) => a.lum - b.lum);
+            const lCut = Math.floor(patchPixels.length * 0.15);
+            const hCut = Math.max(lCut + 1, Math.floor(patchPixels.length * 0.85));
+            for (let i = lCut; i < hCut; i++) {{
+              sR += patchPixels[i].r;
+              sG += patchPixels[i].g;
+              sB += patchPixels[i].b;
+              count++;
+            }}
+          }}
+          const finalR = count > 0 ? Math.round(sR / count) : defR;
+          const finalG = count > 0 ? Math.round(sG / count) : defG;
+          const finalB = count > 0 ? Math.round(sB / count) : defB;
+          return {{
+            r: finalR, g: finalG, b: finalB,
+            hex: rgbToHex(finalR, finalG, finalB),
+            x: targetX, y: targetY,
+            pctX: (targetX / w) * 100,
+            pctY: (targetY / h) * 100,
+            count
+          }};
+        }};
+
+        // Baseline color
+        candidateSkin.sort((a, b) => a.lum - b.lum);
+        const gLow = Math.floor(candidateSkin.length * 0.15);
+        const gHigh = Math.max(gLow + 1, Math.floor(candidateSkin.length * 0.85));
+        let baseR = 0, baseG = 0, baseB = 0, baseCount = 0;
+        for (let i = gLow; i < gHigh; i++) {{
+          baseR += candidateSkin[i].r; baseG += candidateSkin[i].g; baseB += candidateSkin[i].b; baseCount++;
+        }}
+        const bR = baseCount > 0 ? Math.round(baseR / baseCount) : 190;
+        const bG = baseCount > 0 ? Math.round(baseG / baseCount) : 140;
+        const bB = baseCount > 0 ? Math.round(baseB / baseCount) : 105;
+
+        const radArea = Math.max(5, Math.round(fWidth * 0.065));
+
+        // 1. Upper Face (Forehead)
+        const frnX = cx;
+        const frnY = Math.max(4, Math.round(fTop + fHeight * 0.18));
+        const forehead = samplePatch(frnX, frnY, radArea, bR, bG, bB);
+
+        // 2. Cheek Tone (Bilateral Average)
+        const lChkX = Math.round(fLeft + fWidth * 0.22);
+        const rChkX = Math.round(fLeft + fWidth * 0.78);
+        const chkY = Math.round(fTop + fHeight * 0.52);
+        const leftCheek = samplePatch(lChkX, chkY, radArea, bR, bG, bB);
+        const rightCheek = samplePatch(rChkX, chkY, radArea, bR, bG, bB);
+        const cheekR = Math.round((leftCheek.r + rightCheek.r) / 2);
+        const cheekG = Math.round((leftCheek.g + rightCheek.g) / 2);
+        const cheekB = Math.round((leftCheek.b + rightCheek.b) / 2);
+        const cheek = {{
+          r: cheekR, g: cheekG, b: cheekB,
+          hex: rgbToHex(cheekR, cheekG, cheekB),
+          x: Math.round(fLeft + fWidth * 0.24), y: chkY,
+          pctX: ((fLeft + fWidth * 0.24) / w) * 100,
+          pctY: (chkY / h) * 100,
+          left: leftCheek, right: rightCheek
+        }};
+
+        // 3. Lower Face (Chin)
+        const chinX = cx;
+        const chinY = Math.min(h - 4, Math.round(fTop + fHeight * 0.84));
+        const chin = samplePatch(chinX, chinY, radArea, bR, bG, bB);
+
+        // 4. Overall Detected Core Dermis
+        const coreX = cx;
+        const coreY = Math.round(fTop + fHeight * 0.44);
+        const coreSample = samplePatch(coreX, coreY, Math.round(radArea * 1.2), bR, bG, bB);
+        const overallR = Math.round(coreSample.r * 0.6 + bR * 0.4);
+        const overallG = Math.round(coreSample.g * 0.6 + bG * 0.4);
+        const overallB = Math.round(coreSample.b * 0.6 + bB * 0.4);
+        const overall = {{
+          r: overallR, g: overallG, b: overallB,
+          hex: rgbToHex(overallR, overallG, overallB),
+          x: coreX, y: coreY,
+          pctX: (coreX / w) * 100,
+          pctY: (coreY / h) * 100
+        }};
+
+        return {{
+          candidateSkin,
+          faceBox: {{ x: fLeft, y: fTop, width: fWidth, height: fHeight, cx, cy }},
+          areas: {{
+            overall,
+            forehead,
+            cheek,
+            chin
+          }}
+        }};
+      }}
+
       // --- Auto Colour Detection & Lighting Quality Sensor ---
       function checkImageQualityAndAutoColor(img) {{
         const statusEl = document.getElementById("mesh-status-text");
@@ -1110,7 +1332,7 @@ body {{
         const autoBadgeTag = document.getElementById("face-box-sublabel");
         const autoDot = document.getElementById("face-box-color-dot");
 
-        if (statusEl) statusEl.textContent = "Scanning photo lighting and complexion...";
+        if (statusEl) statusEl.textContent = "Scanning photo lighting and facial regions...";
 
         const origW = img.naturalWidth || img.width || 320;
         const origH = img.naturalHeight || img.height || 400;
@@ -1136,8 +1358,8 @@ body {{
           const r = imgData[i], g = imgData[i + 1], b = imgData[i + 2];
           const lum = 0.299 * r + 0.587 * g + 0.114 * b;
           totalLum += lum;
-          if (lum < 22) darkCount++;
-          if (lum > 242) brightCount++;
+          if (lum < 20) darkCount++;
+          if (lum > 244) brightCount++;
           if (i % 16 === 0) lums.push(lum);
         }}
 
@@ -1168,48 +1390,27 @@ body {{
         }}
         const blurMetric = edgeCount > 0 ? (edgeDiffSum / edgeCount) : 100;
 
-        // 2. Candidate skin pixels across full Fitzpatrick range
-        const candidateSkin = [];
-        for (let y = 0; y < sampleH; y += 2) {{
-          for (let x = 0; x < sampleW; x += 2) {{
-            const idx = (y * sampleW + x) * 4;
-            const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
-            const yP = 0.299 * r + 0.587 * g + 0.114 * b;
-            const cr = 0.713 * (r - yP) + 128.0;
-            const cb = 0.564 * (b - yP) + 128.0;
-
-            const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
-            const delta = maxC - minC;
-            const sat = maxC > 0 ? delta / maxC : 0;
-
-            const isYCrCb = (cr >= 126 && cr <= 188 && cb >= 68 && cb <= 142 && (cr - cb) >= 5);
-            const isRGB = (r > g && g > b && r > 40 && (r - g) >= 4 && (r - b) >= 7);
-            const isSat = (sat >= 0.08 && sat <= 0.78);
-
-            if (isYCrCb && isRGB && isSat) {{
-              candidateSkin.push({{ r, g, b, lum: yP, x, y }});
-            }}
-          }}
-        }}
+        // Extract facial dermis and real anatomical regions
+        const regionRes = extractFacialDermisAndRegions(imgData, sampleW, sampleH);
+        const { candidateSkin, areas } = regionRes;
 
         // 3. Check for lighting and clarity issues
         let errorMsg = null;
-        if (origW < 160 || origH < 160) {{
+        if (origW < 140 || origH < 140) {{
           errorMsg = "The image is not clear: Photo resolution is too low. Please upload a higher resolution photo.";
-        }} else if (meanBrightness < 45 || darkRatio > 0.35) {{
+        }} else if (meanBrightness < 38 || darkRatio > 0.42) {{
           errorMsg = "The image is not clear and does not have proper lighting: The photo is too dark. Please take your photo in bright, natural daylight so your skin tone can be identified accurately.";
-        }} else if (meanBrightness > 222 || brightRatio > 0.35) {{
+        }} else if (meanBrightness > 230 || brightRatio > 0.40) {{
           errorMsg = "The image is not clear: Harsh glare or overexposure detected. Please avoid strong camera flash or harsh direct sunlight.";
-        }} else if (contrastStd < 16) {{
+        }} else if (contrastStd < 14) {{
           errorMsg = "The image is not clear: The photo lacks contrast or has heavy uneven shadows. Please use clear, balanced lighting.";
-        }} else if (blurMetric < 15) {{
+        }} else if (blurMetric < 12) {{
           errorMsg = "The image is not clear: The photo appears blurry or out of focus. Please ensure the camera is steady and clear.";
-        }} else if (candidateSkin.length < 35) {{
+        }} else if (candidateSkin.length < 25) {{
           errorMsg = "Could not identify your natural skin colour. The image is not clear or does not have proper lighting. Please upload a clear photo with visible skin complexion in natural lighting.";
         }}
 
         if (errorMsg) {{
-          // Show warning and PREVENT proceeding!
           showError(errorMsg);
           if (qualityBar) qualityBar.classList.remove("hidden");
           if (qualityMeter) {{
@@ -1239,19 +1440,9 @@ body {{
           return false;
         }}
 
-        // Success! Dermis color spotted accurately
+        // Success! Dermis color and areas spotted accurately
         hideError();
-        candidateSkin.sort((a, b) => a.lum - b.lum);
-        const lowCut = Math.floor(candidateSkin.length * 0.15);
-        const highCut = Math.max(lowCut + 1, Math.floor(candidateSkin.length * 0.85));
-        const trimmed = candidateSkin.slice(lowCut, highCut);
-
-        let sumR = 0, sumG = 0, sumB = 0;
-        trimmed.forEach((p) => {{ sumR += p.r; sumG += p.g; sumB += p.b; }});
-        const spottedR = Math.round(sumR / trimmed.length);
-        const spottedG = Math.round(sumG / trimmed.length);
-        const spottedB = Math.round(sumB / trimmed.length);
-        const spottedHex = rgbToHex(spottedR, spottedG, spottedB);
+        const spottedHex = areas.overall.hex;
 
         // Update Quality Bar: Optimal
         if (qualityBar) qualityBar.classList.remove("hidden");
@@ -1281,17 +1472,17 @@ body {{
         }}
         if (autoDot) autoDot.style.backgroundColor = spottedHex;
 
-        // Update Telemetry Swatches
+        // Update Telemetry Swatches with REAL anatomical face regions
         const updateSwatch = (colorId, hexId, hex) => {{
           const c = document.getElementById(colorId);
           const h = document.getElementById(hexId);
           if (c) c.style.backgroundColor = hex;
           if (h) h.textContent = hex;
         }};
-        updateSwatch("sample-color-1", "sample-hex-1", spottedHex);
-        updateSwatch("sample-color-2", "sample-hex-2", rgbToHex(Math.max(0, spottedR - 10), Math.max(0, spottedG - 8), Math.max(0, spottedB - 6)));
-        updateSwatch("sample-color-3", "sample-hex-3", rgbToHex(Math.min(255, spottedR + 10), Math.min(255, spottedG + 8), Math.min(255, spottedB + 6)));
-        updateSwatch("sample-color-4", "sample-hex-4", rgbToHex(Math.max(0, spottedR - 6), Math.max(0, spottedG - 4), Math.max(0, spottedB - 3)));
+        updateSwatch("sample-color-1", "sample-hex-1", areas.overall.hex);
+        updateSwatch("sample-color-2", "sample-hex-2", areas.forehead.hex);
+        updateSwatch("sample-color-3", "sample-hex-3", areas.cheek.hex);
+        updateSwatch("sample-color-4", "sample-hex-4", areas.chin.hex);
 
         // Spotted the colour - proceed!
         analyzeBtn.disabled = false;
@@ -1321,7 +1512,7 @@ body {{
         cameraInput.value = "";
         previewImg.src = "";
         uploadPrompt.classList.remove("hidden");
-        previewBox.classList.add("hidden");
+        previewBox.classList.remove("hidden");
         analyzeBtn.disabled = true;
         qualityBar.classList.add("hidden");
         hideError();
@@ -1401,121 +1592,20 @@ body {{
         canvas.width = w;
         canvas.height = h;
         ctx.drawImage(img, 0, 0, w, h);
-
         const imgData = ctx.getImageData(0, 0, w, h).data;
-        
-        // Auto Skin Colour Detection across entire image
-        const candidateSkin = [];
-        let sumSkinX = 0, sumSkinY = 0;
-        for (let y = 0; y < h; y += 2) {{
-          for (let x = 0; x < w; x += 2) {{
-            const idx = (y * w + x) * 4;
-            const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
-            const yP = 0.299 * r + 0.587 * g + 0.114 * b;
-            const cr = 0.713 * (r - yP) + 128.0;
-            const cb = 0.564 * (b - yP) + 128.0;
 
-            const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
-            const delta = maxC - minC;
-            const sat = maxC > 0 ? delta / maxC : 0;
-            let hue = 0;
-            if (delta > 0) {{
-              if (maxC === r) hue = ((g - b) / delta) % 6;
-              else if (maxC === g) hue = (b - r) / delta + 2;
-              else hue = (r - g) / delta + 4;
-              hue = (hue * 60 + 360) % 360;
-            }}
+        // Multi-Region Anatomical Skin Extraction
+        const regionData = extractFacialDermisAndRegions(imgData, w, h);
+        const { faceBox, areas } = regionData;
+        const { fLeft, fTop, width: fWidth, height: fHeight, cx: headCenterX, cy: headCenterY } = faceBox;
 
-            const isYCrCb = (cr >= 126 && cr <= 188 && cb >= 68 && cb <= 142 && (cr - cb) >= 5);
-            const isRGB = (r > g && g > b && r > 40 && (r - g) >= 4 && (r - b) >= 7);
-            const isHSV = (sat >= 0.08 && sat <= 0.78 && ((hue >= 0 && hue <= 52) || (hue >= 330 && hue <= 360)));
-
-            if (isYCrCb && isRGB && isHSV) {{
-              candidateSkin.push({{ r, g, b, lum: yP, x, y, weight: 1 }});
-              sumSkinX += x;
-              sumSkinY += y;
-            }}
-          }}
-        }}
-
-        // 1. Precise Anatomical Face Cluster Extraction (excludes neck, shoulders, and chest)
-        let faceSkinPixels = candidateSkin.filter(p => p.y < h * 0.70);
-        if (faceSkinPixels.length < 25) faceSkinPixels = candidateSkin;
-
-        const skinXs = faceSkinPixels.map(p => p.x).sort((a, b) => a - b);
-        const skinYs = faceSkinPixels.map(p => p.y).sort((a, b) => a - b);
-
-        const fLeft = skinXs[Math.floor(skinXs.length * 0.08)];
-        const fRight = skinXs[Math.floor(skinXs.length * 0.92)];
-        const fTop = skinYs[Math.floor(skinYs.length * 0.04)];
-        const fWidth = Math.max(60, fRight - fLeft);
-        const fHeight = Math.max(75, Math.min(Math.round(fWidth * 1.32), h - fTop - 4));
-
-        const headCenterX = fLeft + fWidth * 0.5;
-        const headCenterY = fTop + fHeight * 0.48;
-        const headRadiusX = fWidth * 0.46;
-        const headRadiusY = fHeight * 0.46;
-
-        if (candidateSkin.length < 25) {{
-          for (let y = Math.floor(h * 0.08); y < Math.floor(h * 0.85); y += 2) {{
-            for (let x = Math.floor(w * 0.15); x < Math.floor(w * 0.85); x += 2) {{
-              const idx = (y * w + x) * 4;
-              const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
-              if (r > 60 && g > 40 && b > 25 && r > g && g > b) {{
-                candidateSkin.push({{ r, g, b, lum: 0.299*r + 0.587*g + 0.114*b, dist: 1, weight: 1 }});
-              }}
-            }}
-          }}
-        }}
-
-        // Trim 15% shadows & specular highlights
-        candidateSkin.sort((a, b) => a.lum - b.lum);
-        const lowCut = Math.floor(candidateSkin.length * 0.15);
-        const highCut = Math.max(lowCut + 1, Math.floor(candidateSkin.length * 0.85));
-        const trimmed = candidateSkin.slice(lowCut, highCut);
-
-        let sumR = 0, sumG = 0, sumB = 0, totalW = 0;
-        trimmed.forEach((p) => {{
-          sumR += p.r * (p.weight || 1);
-          sumG += p.g * (p.weight || 1);
-          sumB += p.b * (p.weight || 1);
-          totalW += (p.weight || 1);
-        }});
-
-        const meanR = totalW > 0 ? sumR / totalW : 195;
-        const meanG = totalW > 0 ? sumG / totalW : 145;
-        const meanB = totalW > 0 ? sumB / totalW : 110;
-
-        // Sample micro-extract swatches directly from localized skin regions
-        const sampleRegionColor = (boxPct, defHex) => {{
-          const bx = Math.floor((boxPct.x / 100) * w);
-          const by = Math.floor((boxPct.y / 100) * h);
-          const rad = Math.max(4, Math.floor(w * 0.04));
-          let sR = 0, sG = 0, sB = 0, sCount = 0;
-          for (let dy = -rad; dy <= rad; dy += 2) {{
-            for (let dx = -rad; dx <= rad; dx += 2) {{
-              const px = bx + dx, py = by + dy;
-              if (px >= 0 && px < w && py >= 0 && py < h) {{
-                const idx = (py * w + px) * 4;
-                const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
-                if (r > 40 && g > 24 && b > 14 && r > g && g > b * 0.65) {{
-                  sR += r; sG += g; sB += b; sCount++;
-                }}
-              }}
-            }}
-          }}
-          return sCount > 0 ? rgbToHex(sR / sCount, sG / sCount, sB / sCount) : defHex;
-        }};
-
-        const ptFace = {{ x: (headCenterX / w) * 100, y: (headCenterY / h) * 100 }};
-        const ptFrn = {{ x: (headCenterX / w) * 100, y: Math.max(6, Math.min(95, ((fTop + fHeight * 0.16) / h) * 100)) }};
-        const ptChk = {{ x: Math.max(6, Math.min(95, ((fLeft + fWidth * 0.22) / w) * 100)), y: ((fTop + fHeight * 0.52) / h) * 100 }};
-        const ptChn = {{ x: (headCenterX / w) * 100, y: Math.min(95, ((fTop + fHeight * 0.88) / h) * 100) }};
-
-        const mainFaceHex = sampleRegionColor(ptFace, rgbToHex(meanR, meanG, meanB));
-        const foreheadHex = sampleRegionColor(ptFrn, "#BA8152");
-        const cheekHex = sampleRegionColor(ptChk, "#C68B59");
-        const chinHex = sampleRegionColor(ptChn, "#D39766");
+        const mainFaceHex = areas.overall.hex;
+        const foreheadHex = areas.forehead.hex;
+        const cheekHex = areas.cheek.hex;
+        const chinHex = areas.chin.hex;
+        const meanR = areas.overall.r;
+        const meanG = areas.overall.g;
+        const meanB = areas.overall.b;
 
         const updateMicroSwatch = (idColor, idHex, hex) => {{
           const cEl = document.getElementById(idColor);
@@ -1552,49 +1642,77 @@ body {{
         }}
         const outHex = outCount > 0 ? rgbToHex(outR / outCount, outG / outCount, outB / outCount) : "#1E293B";
 
-        // Multi-Factor Anatomical, Chromatic & Texture Gender Classification
+        // Multi-Factor Balanced Gender Classification
         let scoreMale = 0.0;
         let scoreFemale = 0.0;
 
-        // 1. Bilateral Cheek Baseline Sampling (clean dermal tissue away from nose & mouth)
-        const chkY1 = Math.floor(fTop + fHeight * 0.44);
-        const chkY2 = Math.floor(fTop + fHeight * 0.58);
-        const lChkX1 = Math.floor(fLeft + fWidth * 0.12);
-        const lChkX2 = Math.floor(fLeft + fWidth * 0.32);
-        const rChkX1 = Math.floor(fLeft + fWidth * 0.68);
-        const rChkX2 = Math.floor(fLeft + fWidth * 0.88);
+        // 1. Mandibular Jaw-to-Cheek Width (Bigonial vs Bizygomatic)
+        const jawY = Math.min(h - 1, Math.floor(fTop + fHeight * 0.78));
+        const cheekY = Math.min(h - 1, Math.floor(fTop + fHeight * 0.50));
+        let jawLeft = headCenterX, jawRight = headCenterX;
+        let cheekLeft = headCenterX, cheekRight = headCenterX;
+        for (let x = 0; x < w; x += 2) {{
+          const idxJ = (jawY * w + x) * 4;
+          if (isSkinPixel(imgData[idxJ], imgData[idxJ + 1], imgData[idxJ + 2])) {{
+            if (x < jawLeft) jawLeft = x;
+            if (x > jawRight) jawRight = x;
+          }}
+          const idxC = (cheekY * w + x) * 4;
+          if (isSkinPixel(imgData[idxC], imgData[idxC + 1], imgData[idxC + 2])) {{
+            if (x < cheekLeft) cheekLeft = x;
+            if (x > cheekRight) cheekRight = x;
+          }}
+        }}
+        const jawSpan = Math.max(20, jawRight - jawLeft);
+        const cheekSpan = Math.max(30, cheekRight - cheekLeft);
+        const jawRatio = jawSpan / cheekSpan;
 
-        let chkR = 0, chkG = 0, chkB = 0, chkLum = 0, chkCount = 0;
-        const sampleCheekBand = (x1, x2) => {{
-          for (let y = chkY1; y < chkY2; y += 2) {{
-            for (let x = x1; x < x2; x += 2) {{
-              if (x >= 0 && x < w && y >= 0 && y < h) {{
-                const idx = (y * w + x) * 4;
-                const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
-                if (r > 40 && g > 25 && b > 15) {{
-                  chkR += r; chkG += g; chkB += b;
-                  chkLum += (0.299 * r + 0.587 * g + 0.114 * b);
-                  chkCount++;
-                }}
+        if (jawRatio > 0.80) {{
+          scoreMale += Math.min(2.4, (jawRatio - 0.80) * 8.0 + 0.6);
+        }} else if (jawRatio < 0.73) {{
+          scoreFemale += Math.min(2.4, (0.73 - jawRatio) * 8.0 + 0.6);
+        }}
+
+        // 2. Craniofacial Aspect Ratio
+        const faceAspect = fWidth / Math.max(fHeight, 1);
+        if (faceAspect > 0.82) {{
+          scoreMale += Math.min(1.8, (faceAspect - 0.82) * 6.0 + 0.5);
+        }} else if (faceAspect < 0.74) {{
+          scoreFemale += Math.min(1.8, (0.74 - faceAspect) * 6.0 + 0.5);
+        }}
+
+        // 3. Eyebrow Orbital Arch & Density
+        const browY1 = Math.floor(fTop + fHeight * 0.20);
+        const browY2 = Math.floor(fTop + fHeight * 0.35);
+        const browX1 = Math.floor(headCenterX - fWidth * 0.32);
+        const browX2 = Math.floor(headCenterX + fWidth * 0.32);
+        let darkBrowPixels = 0, browSumY = 0, totalBrowPixels = 0;
+        const meanChkLum = 0.299 * areas.cheek.r + 0.587 * areas.cheek.g + 0.114 * areas.cheek.b;
+
+        for (let y = browY1; y < browY2; y += 2) {{
+          for (let x = browX1; x < browX2; x += 2) {{
+            if (x >= 0 && x < w && y >= 0 && y < h) {{
+              const idx = (y * w + x) * 4;
+              const l = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
+              totalBrowPixels++;
+              if (l < meanChkLum * 0.62) {{
+                darkBrowPixels++;
+                browSumY += (y - browY1);
               }}
             }}
           }}
-        }};
-        sampleCheekBand(lChkX1, lChkX2);
-        sampleCheekBand(rChkX1, rChkX2);
+        }}
+        if (darkBrowPixels > 6 && totalBrowPixels > 10) {{
+          const browRelY = (browSumY / darkBrowPixels) / Math.max(1, browY2 - browY1);
+          if (browRelY < 0.44) scoreFemale += 1.3;
+          else if (browRelY > 0.56) scoreMale += 1.3;
+        }}
 
-        const meanChkLum = chkCount > 0 ? chkLum / chkCount : 128;
-        const meanChkR = chkCount > 0 ? chkR / chkCount : 150;
-        const meanChkG = chkCount > 0 ? chkG / chkCount : 120;
-        const meanChkB = chkCount > 0 ? chkB / chkCount : 100;
-        const chkRedRatio = meanChkR / Math.max(1, (meanChkG + meanChkB) / 2);
-
-        // 2. Vermilion Mucosa Lip Sampling (Russell Facial Contrast with top-redness extraction)
-        const lipY1 = Math.floor(fTop + fHeight * 0.67);
-        const lipY2 = Math.floor(fTop + fHeight * 0.81);
+        // 4. Lip Mucosa Volume & Relative Chromatic Contrast
+        const lipY1 = Math.floor(fTop + fHeight * 0.65);
+        const lipY2 = Math.floor(fTop + fHeight * 0.80);
         const lipX1 = Math.floor(headCenterX - fWidth * 0.22);
         const lipX2 = Math.floor(headCenterX + fWidth * 0.22);
-
         const mouthPixels = [];
         for (let y = lipY1; y < lipY2; y += 2) {{
           for (let x = lipX1; x < lipX2; x += 2) {{
@@ -1602,186 +1720,168 @@ body {{
               const idx = (y * w + x) * 4;
               const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
               const redScore = r / Math.max(1, (g + b) / 2);
-              mouthPixels.push({{ r, g, b, redScore }});
+              mouthPixels.push({{ r, g, b, redScore, y }});
             }}
           }}
         }}
-
-        // Isolate actual mucosal lips by selecting top 30% reddest pixels in mouth zone
         mouthPixels.sort((a, b) => b.redScore - a.redScore);
-        const lipCut = Math.max(4, Math.floor(mouthPixels.length * 0.30));
-        let lipR = 0, lipG = 0, lipB = 0, lipCount = 0;
-        for (let i = 0; i < lipCut; i++) {{
-          lipR += mouthPixels[i].r;
-          lipG += mouthPixels[i].g;
-          lipB += mouthPixels[i].b;
-          lipCount++;
+        const topLipCut = Math.max(4, Math.floor(mouthPixels.length * 0.28));
+        let sumLipR = 0, sumLipG = 0, sumLipB = 0;
+        let lipMinY = h, lipMaxY = 0;
+        for (let i = 0; i < topLipCut; i++) {{
+          sumLipR += mouthPixels[i].r;
+          sumLipG += mouthPixels[i].g;
+          sumLipB += mouthPixels[i].b;
+          if (mouthPixels[i].y < lipMinY) lipMinY = mouthPixels[i].y;
+          if (mouthPixels[i].y > lipMaxY) lipMaxY = mouthPixels[i].y;
         }}
-        const meanLipR = lipCount > 0 ? lipR / lipCount : 160;
-        const meanLipG = lipCount > 0 ? lipG / lipCount : 100;
-        const meanLipB = lipCount > 0 ? lipB / lipCount : 95;
-        const lipRedRatio = meanLipR / Math.max(1, (meanLipG + meanLipB) / 2);
+        const mLipR = topLipCut > 0 ? sumLipR / topLipCut : 150;
+        const mLipG = topLipCut > 0 ? sumLipG / topLipCut : 100;
+        const mLipB = topLipCut > 0 ? sumLipB / topLipCut : 95;
+        const lipRedRatio = mLipR / Math.max(1, (mLipG + mLipB) / 2);
+        const chkRedRatio = areas.cheek.r / Math.max(1, (areas.cheek.g + areas.cheek.b) / 2);
         const lipContrast = lipRedRatio - chkRedRatio;
+        const lipThickness = (lipMaxY - lipMinY) / Math.max(1, fHeight);
 
-        // Scientific Russell Contrast: Women exhibit significantly higher lip-to-skin contrast (> 0.08)
-        if (lipContrast > 0.08) {{
-          scoreFemale += Math.min(3.6, (lipContrast - 0.08) * 16.0 + 1.2);
+        if (lipContrast > 0.09 && lipThickness > 0.05) {{
+          scoreFemale += Math.min(2.5, (lipContrast - 0.09) * 12.0 + (lipThickness - 0.05) * 14.0 + 0.8);
         }} else if (lipContrast < 0.04) {{
-          scoreMale += Math.min(3.0, (0.04 - lipContrast) * 22.0 + 1.0);
-        }} else {{
-          // Smooth transition zone
-          const t = (lipContrast - 0.04) / 0.04;
-          scoreFemale += t * 0.8;
-          scoreMale += (1.0 - t) * 0.8;
+          scoreMale += Math.min(2.0, (0.04 - lipContrast) * 15.0 + 0.6);
         }}
 
-        // 3. Lower-Mandible Dermal Follicular Shadow (Chin)
-        const chinY1 = Math.floor(fTop + fHeight * 0.83);
-        const chinY2 = Math.floor(fTop + fHeight * 0.94);
-        const chinX1 = Math.floor(headCenterX - fWidth * 0.16);
-        const chinX2 = Math.floor(headCenterX + fWidth * 0.16);
-
-        let chinLumSum = 0, chinWarmSum = 0, chinCount = 0;
-        for (let y = chinY1; y < chinY2; y += 2) {{
-          for (let x = chinX1; x < chinX2; x += 2) {{
-            if (x >= 0 && x < w && y >= 0 && y < h) {{
-              const idx = (y * w + x) * 4;
-              const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
-              chinLumSum += (0.299 * r + 0.587 * g + 0.114 * b);
-              chinWarmSum += (r + g) / Math.max(1, 2 * b);
-              chinCount++;
+        // 5. Mandibular Follicular Texture & Micro-Variance (Stubble Detection)
+        let chinVar = 0, chkVar = 0, chinSampleCount = 0, chkSampleCount = 0;
+        const radV = Math.floor(fWidth * 0.08);
+        for (let dy = -radV; dy < radV; dy += 2) {{
+          for (let dx = -radV; dx < radV; dx += 2) {{
+            const cX = headCenterX + dx, cY = areas.chin.y + dy;
+            if (cX >= 1 && cX < w - 1 && cY >= 1 && cY < h - 1) {{
+              const iC = (cY * w + cX) * 4;
+              const iR = (cY * w + cX + 1) * 4;
+              const lumC = 0.299 * imgData[iC] + 0.587 * imgData[iC + 1] + 0.114 * imgData[iC + 2];
+              const lumR = 0.299 * imgData[iR] + 0.587 * imgData[iR + 1] + 0.114 * imgData[iR + 2];
+              chinVar += Math.abs(lumC - lumR);
+              chinSampleCount++;
+            }}
+            const kX = areas.cheek.x + dx, kY = areas.cheek.y + dy;
+            if (kX >= 1 && kX < w - 1 && kY >= 1 && kY < h - 1) {{
+              const iC = (kY * w + kX) * 4;
+              const iR = (kY * w + kX + 1) * 4;
+              const lumC = 0.299 * imgData[iC] + 0.587 * imgData[iC + 1] + 0.114 * imgData[iC + 2];
+              const lumR = 0.299 * imgData[iR] + 0.587 * imgData[iR + 1] + 0.114 * imgData[iR + 2];
+              chkVar += Math.abs(lumC - lumR);
+              chkSampleCount++;
             }}
           }}
         }}
-        const meanChinLum = chinCount > 0 ? chinLumSum / chinCount : meanChkLum;
-        const meanChinWarm = chinCount > 0 ? chinWarmSum / chinCount : 1.2;
-        const chkWarm = (meanChkR + meanChkG) / Math.max(1, 2 * meanChkB);
-        const lumDrop = meanChkLum - meanChinLum;
-        const warmDrop = chkWarm - meanChinWarm;
+        const meanChinGrad = chinSampleCount > 0 ? chinVar / chinSampleCount : 5;
+        const meanChkGrad = chkSampleCount > 0 ? chkVar / chkSampleCount : 5;
+        const textureRatio = meanChinGrad / Math.max(1, meanChkGrad);
 
-        // Male follicular beard shadow creates luminance drop (> 14px) and cool/gray desaturation (warmDrop > 0.14)
-        if (lumDrop > 14.0 || warmDrop > 0.14) {{
-          const maleDropScore = Math.max(0, (lumDrop - 14.0) * 0.22) + Math.max(0, (warmDrop - 0.14) * 8.0);
-          scoreMale += Math.min(3.4, maleDropScore + 0.9);
-        }} else if (lumDrop < 8.0 && warmDrop < 0.08) {{
-          scoreFemale += Math.min(2.8, (8.0 - lumDrop) * 0.28 + 0.9);
+        if (textureRatio > 1.32) {{
+          scoreMale += Math.min(2.5, (textureRatio - 1.32) * 3.5 + 0.8);
+        }} else if (textureRatio < 1.05) {{
+          scoreFemale += Math.min(1.5, (1.05 - textureRatio) * 4.0 + 0.5);
         }}
 
-        // 4. Lateral Hair Volume (Long hair framing the jawline & neck past the face)
-        const sideH1 = Math.floor(fTop + fHeight * 0.40);
+        // 6. Lateral Hair Volume framing neck & shoulders
+        const sideH1 = Math.floor(fTop + fHeight * 0.38);
         const sideH2 = Math.min(h - 1, Math.floor(fTop + fHeight * 1.15));
         const lSideX1 = Math.max(0, Math.floor(fLeft - fWidth * 0.28));
-        const lSideX2 = Math.floor(fLeft - 4);
-        const rSideX1 = Math.floor(fRight + 4);
+        const lSideX2 = Math.max(0, Math.floor(fLeft - 4));
+        const rSideX1 = Math.min(w - 1, Math.floor(fRight + 4));
         const rSideX2 = Math.min(w - 1, Math.floor(fRight + fWidth * 0.28));
-
-        let hairPixels = 0, totalSidePixels = 0;
-        const checkHairSide = (x1, x2) => {{
+        let hairPixels = 0, totalSide = 0;
+        const checkHairBand = (x1, x2) => {{
           for (let y = sideH1; y < sideH2; y += 3) {{
             for (let x = x1; x < x2; x += 3) {{
               if (x >= 0 && x < w && y >= 0 && y < h) {{
                 const idx = (y * w + x) * 4;
                 const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
                 const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-                totalSidePixels++;
-                // Hair is dark (< 85 lum) or distinctly non-background / non-skin
-                if (lum < 85 || (r > 70 && g > 40 && b < 45 && r > g * 1.2)) {{
+                totalSide++;
+                if (lum < 85 || (r > 65 && g > 35 && b < 45 && r > g * 1.25) || (Math.abs(lum - meanChkLum) > 35 && !isSkinPixel(r, g, b))) {{
                   hairPixels++;
                 }}
               }}
             }}
           }}
         }};
-        checkHairSide(lSideX1, lSideX2);
-        checkHairSide(rSideX1, rSideX2);
-
-        const hairRatio = totalSidePixels > 20 ? hairPixels / totalSidePixels : 0;
-        if (hairRatio > 0.22) {{
-          scoreFemale += Math.min(2.8, (hairRatio - 0.22) * 8.0 + 1.2);
-        }} else if (hairRatio < 0.06 && totalSidePixels > 20) {{
-          scoreMale += 1.0;
-        }}
-
-        // 5. Eyebrow Supraorbital Arch Height & Thickness
-        const browY1 = Math.floor(fTop + fHeight * 0.20);
-        const browY2 = Math.floor(fTop + fHeight * 0.36);
-        const browX1 = Math.floor(headCenterX - fWidth * 0.34);
-        const browX2 = Math.floor(headCenterX + fWidth * 0.34);
-        let darkBrowCount = 0, browWeightY = 0, browBoxTotal = 0;
-        for (let y = browY1; y < browY2; y += 2) {{
-          for (let x = browX1; x < browX2; x += 2) {{
-            if (x >= 0 && x < w && y >= 0 && y < h) {{
-              const idx = (y * w + x) * 4;
-              const l = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
-              browBoxTotal++;
-              if (l < meanChkLum * 0.65) {{
-                darkBrowCount++;
-                browWeightY += (y - browY1);
-              }}
-            }}
-          }}
-        }}
-
-        if (browBoxTotal > 15 && darkBrowCount > 5) {{
-          const browCenterRel = browWeightY / darkBrowCount / Math.max(1, browY2 - browY1);
-          // Higher brow position (browCenterRel < 0.42) = arched female brow
-          if (browCenterRel < 0.42) {{
-            scoreFemale += 1.2;
-          }} else if (browCenterRel > 0.58) {{
-            scoreMale += 1.2;
-          }}
-        }}
-
-        // 6. Facial Oval Aspect Ratio
-        const faceAspect = fWidth / Math.max(fHeight, 1);
-        if (faceAspect > 0.83) {{
+        checkHairBand(lSideX1, lSideX2);
+        checkHairBand(rSideX1, rSideX2);
+        const hairRatio = totalSide > 20 ? hairPixels / totalSide : 0;
+        if (hairRatio > 0.25) {{
+          scoreFemale += Math.min(2.0, (hairRatio - 0.25) * 5.0 + 0.7);
+        }} else if (hairRatio < 0.08 && totalSide > 20) {{
           scoreMale += 0.8;
-        }} else if (faceAspect < 0.73) {{
-          scoreFemale += 0.8;
         }}
 
-        const expM = Math.exp(scoreMale);
-        const expF = Math.exp(scoreFemale);
-        const pMale = expM / (expM + expF);
-        const pFemale = 1.0 - pMale;
+        // Bayesian Sigmoid Calibration
+        const scoreDiff = scoreFemale - scoreMale;
+        const pFemale = 1.0 / (1.0 + Math.exp(-scoreDiff * 0.90));
+        const pMale = 1.0 - pFemale;
         const detectedGender = pFemale >= 0.50 ? "Female" : "Male";
-        const genderConfidence = Math.min(99, Math.max(82, Math.round(Math.max(pMale, pFemale) * 100)));
+        const primaryProb = Math.max(pFemale, pMale);
+        const genderConfidence = Math.min(98, Math.max(76, Math.round(primaryProb * 100)));
+
         console.log("[OTTERLOOK GENDER TELEMETRY]", {{
           scoreMale: scoreMale.toFixed(2), scoreFemale: scoreFemale.toFixed(2),
-          pFemale: (pFemale*100).toFixed(1)+"%", pMale: (pMale*100).toFixed(1)+"%",
-          lipContrast: lipContrast.toFixed(3), lumDrop: lumDrop.toFixed(1),
-          hairRatio: hairRatio.toFixed(2), detectedGender, confidence: genderConfidence
+          pFemale: (pFemale * 100).toFixed(1) + "%", pMale: (pMale * 100).toFixed(1) + "%",
+          jawRatio: jawRatio.toFixed(2), lipContrast: lipContrast.toFixed(3),
+          textureRatio: textureRatio.toFixed(2), detectedGender, confidence: genderConfidence
         }});
 
-        // CIELAB Color Conversion
+        // CIELAB Color Conversion on Core Dermis
         const lab = rgbToLab(meanR, meanG, meanB);
         const hsv = rgbToHsv(meanR, meanG, meanB);
         const ita = Math.atan2((lab.L - 50.0), lab.b) * (180.0 / Math.PI);
         const repHex = rgbToHex(meanR, meanG, meanB);
 
-        // ML Random Forest Undertone Classification
-        const diffRG = meanR - meanG;
-        const diffRB = meanR - meanB;
+        // Scientific Chromatic Metrics
+        const labHueDeg = (Math.atan2(lab.b, lab.a) * (180.0 / Math.PI) + 360.0) % 360.0;
+        const baRatio = lab.b / Math.max(0.5, lab.a);
+        const relRB = (meanR - meanB) / Math.max(1.0, meanR + meanG + meanB);
+        const grRatio = meanG / Math.max(1.0, meanR);
+
+        // Calibrated Dermatological Undertone Probabilities
         let warmScore = 0.0, coolScore = 0.0, neutralScore = 0.0;
 
-        if (lab.b >= 17.0) warmScore += 0.50;
-        else if (lab.b >= 14.0) {{ warmScore += 0.30; neutralScore += 0.20; }}
-        else if (lab.b >= 10.5) neutralScore += 0.45;
-        else coolScore += 0.50;
+        // 1. Primary Hue Angle & baRatio
+        if (baRatio >= 1.22 || labHueDeg >= 53.5) {{
+          const delta = Math.min(1.0, Math.max(0, (baRatio - 1.22) / 0.30));
+          warmScore += 0.55 + delta * 0.35;
+          neutralScore += 0.25 * (1.0 - delta);
+          coolScore += 0.05;
+        }} else if (baRatio <= 1.02 || labHueDeg <= 46.5) {{
+          const delta = Math.min(1.0, Math.max(0, (1.02 - baRatio) / 0.25));
+          coolScore += 0.55 + delta * 0.35;
+          neutralScore += 0.25 * (1.0 - delta);
+          warmScore += 0.05;
+        }} else {{
+          const t = (baRatio - 1.02) / (1.22 - 1.02);
+          neutralScore += 0.65;
+          warmScore += t * 0.30;
+          coolScore += (1.0 - t) * 0.30;
+        }}
 
-        if (ita >= 32.0) warmScore += 0.35;
-        else if (ita >= 15.0) {{ warmScore += 0.15; neutralScore += 0.25; }}
-        else if (ita >= -5.0) neutralScore += 0.35;
-        else coolScore += 0.35;
+        // 2. Subsurface Scattering Vector
+        if (relRB >= 0.22) warmScore += 0.25;
+        else if (relRB <= 0.13) coolScore += 0.25;
+        else neutralScore += 0.25;
 
-        if (diffRB >= 55.0) warmScore += 0.25;
-        else if (diffRB >= 38.0) {{ warmScore += 0.10; neutralScore += 0.15; }}
-        else coolScore += 0.25;
+        // 3. Olive Melanin Compensation
+        const isOlive = (grRatio >= 0.76 && lab.b >= 10.0 && lab.b <= 22.0 && lab.L >= 38.0 && lab.L <= 68.0);
+        if (isOlive) {{
+          neutralScore += 0.35;
+          if (baRatio > 1.12) warmScore += 0.20;
+          else coolScore += 0.20;
+        }}
 
-        if (hsv.h >= 24 && hsv.h <= 42) warmScore += 0.20;
-        else if (hsv.h >= 15 && hsv.h < 24) {{ warmScore += 0.10; neutralScore += 0.10; }}
-        else if (hsv.h > 42 && hsv.h <= 55) neutralScore += 0.20;
-        else coolScore += 0.20;
+        // 4. HSV Hue alignment
+        if (hsv.h >= 24 && hsv.h <= 45) warmScore += 0.20;
+        else if (hsv.h >= 14 && hsv.h < 24) neutralScore += 0.20;
+        else if (hsv.h < 14 || hsv.h > 330) coolScore += 0.20;
+        else neutralScore += 0.15;
 
         const totalScore = warmScore + coolScore + neutralScore;
         const pWarm = warmScore / totalScore;
@@ -1793,29 +1893,32 @@ body {{
         if (pCool > pWarm && pCool > pNeutral) {{ undertone = "Cool"; conf = pCool; }}
         else if (pNeutral > pWarm && pNeutral > pCool) {{ undertone = "Neutral"; conf = pNeutral; }}
 
-        let phototype = "Type III — Medium / Golden";
-        if (lab.L >= 70.0) phototype = "Type I/II — Fair / Ivory";
-        else if (lab.L >= 58.0) phototype = "Type III — Golden Olive Mediterranean";
-        else if (lab.L >= 44.0) phototype = "Type IV/V — Amber Brown";
-        else phototype = "Type VI — Deep Espresso Melanin";
+        let phototype = "Type III — Light-Medium / Golden Sand";
+        if (lab.L >= 68.0) phototype = "Type I/II — Fair / Ivory Porcelain";
+        else if (lab.L >= 58.0) phototype = isOlive ? "Type III — Golden Olive Mediterranean" : "Type III — Light-Medium / Golden Sand";
+        else if (lab.L >= 46.0) phototype = isOlive ? "Type IV — Warm Olive / Honey" : "Type IV — Amber Caramel Melanin";
+        else if (lab.L >= 34.0) phototype = "Type V — Deep Bronze / Chestnut";
+        else phototype = "Type VI — Deep Melanin / Espresso";
 
         const explanation = undertone === "Warm"
-          ? "Your dermal chromatic signature is defined by rich carotenoid undertones paired with golden-yellow spectral resonance. You command visual depth, requiring saturated earthy bases complemented by lustrous metallic accents."
+          ? (isOlive
+              ? `Your complexion exhibits a radiant warm-olive signature with golden carotenoid resonance (b* +${{lab.b.toFixed(1)}}) balanced by olive undertones. Earthy terracotta, burnished brass, moss, and warm neutrals illuminate your natural skin depth.`
+              : `Your dermal chromatic signature is defined by rich carotenoid undertones paired with golden-yellow spectral resonance (b*/a* = ${{baRatio.toFixed(2)}}). Saturated warm bases, camel, terracotta, and lustrous gold jewelry command natural visual harmony.`)
           : undertone === "Cool"
-          ? "Your complexion features cool subcutaneous hemoglobin undertones with low yellow resonance. Jewel tones, pure obsidian black, and crisp icy shades provide radiant definition."
-          : "Your skin displays an exceptional harmonic balance between warm carotenoid and cool hemoglobin pigments. You possess universal flexibility across both rich earthy and crisp jewel tones.";
+          ? `Your complexion features cool subcutaneous hemoglobin undertones with low yellow resonance (h° ${{labHueDeg.toFixed(1)}}°). Jewel tones, crisp obsidian black, emerald, royal cobalt, and icy platinum shades provide radiant, flattering definition.`
+          : `Your skin displays an exceptional harmonic equilibrium between warm carotenoid and cool hemoglobin pigments (b*/a* = ${{baRatio.toFixed(2)}}). You possess universal versatility across both rich earthy tones and crisp jewel palettes.`;
 
         return {{
           undertone: {{
             label: undertone,
-            confidence_percentage: Math.min(99, Math.max(82, Math.round(conf * 100))),
+            confidence_percentage: Math.min(98, Math.max(84, Math.round(conf * 100))),
             probabilities: {{ Warm: pWarm, Neutral: pNeutral, Cool: pCool }},
             explanation,
             key_factors: [
-              `CIELAB Yellow Resonance b* = +${{lab.b.toFixed(1)}} (${{lab.b >= 14 ? 'Carotenoid Dominant' : 'Low Carotenoid'}})`,
-              `ITA° Typology Angle = +${{ita.toFixed(1)}}° (${{phototype.split('—')[1] || phototype}})`,
-              `Subsurface Scattering Red-Blue Vector ΔRB = +${{diffRB.toFixed(0)}}`,
-              `Photometric Luminance L* = ${{lab.L.toFixed(1)}}`
+              `CIELAB Chromatic Ratio b*/a* = ${{baRatio.toFixed(2)}} (${{undertone}} Chromatic Axis)`,
+              `Color Hue Angle h_ab = ${{labHueDeg.toFixed(1)}}° (${{undertone === 'Warm' ? 'Golden Spectrum' : undertone === 'Cool' ? 'Rosy Spectrum' : 'Balanced Spectrum'}})`,
+              `ITA° Typology Angle = ${{ita >= 0 ? '+' : ''}}${{ita.toFixed(1)}}° (${{phototype.split('—')[1] || phototype}})`,
+              `Photometric Luminance L* = ${{lab.L.toFixed(1)}} (Calibrated Daylight Standard)`
             ]
           }},
           skin_analysis: {{
@@ -1824,13 +1927,28 @@ body {{
               phototype_estimate: phototype,
               cielab: {{ L: lab.L.toFixed(1), a: lab.a.toFixed(1), b: lab.b.toFixed(1) }},
               ita_angle: ita.toFixed(1),
-              hsv: {{ H_deg: Math.round(hsv.h), S_pct: Math.round(hsv.s * 100), V_pct: Math.round(hsv.v * 100) }}
-            }}
+              hsv: {{ H_deg: Math.round(hsv.h), S_pct: Math.round(hsv.s * 100), V_pct: Math.round(hsv.v * 100) }},
+              is_olive: isOlive
+            }},
+            areas: {{
+              overall: areas.overall,
+              forehead: areas.forehead,
+              cheek: areas.cheek,
+              chin: areas.chin
+            }},
+            faceBox
           }},
           gender: {{
             label: detectedGender.toLowerCase(),
             detected: detectedGender,
-            confidence: genderConfidence
+            confidence: genderConfidence,
+            probabilities: {{ Male: pMale, Female: pFemale }},
+            metrics: {{
+              jaw_ratio: jawRatio.toFixed(2),
+              aspect_ratio: faceAspect.toFixed(2),
+              lip_contrast: lipContrast.toFixed(3),
+              texture_ratio: textureRatio.toFixed(2)
+            }}
           }},
           image_atmosphere: {{
             background_hex: bgHex,
@@ -2657,17 +2775,37 @@ body {{
         document.getElementById("metric-ita").textContent = `${{m.ita_angle >= 0 ? '+' : ''}}${{m.ita_angle}}°`;
         document.getElementById("metric-hsv-h").textContent = `${{m.hsv.H_deg}}°`;
 
-        // Update Micro-Extract Swatches in Studio Telemetry
-        const sample1 = document.getElementById("sample-color-1");
-        const sample2 = document.getElementById("sample-color-2");
-        const sample3 = document.getElementById("sample-color-3");
-        const sample4 = document.getElementById("sample-color-4");
-        if (sample1) sample1.style.background = m.representative_hex;
-        if (sample2) sample2.style.background = recs.skinHarmonies[1] ? recs.skinHarmonies[1].hex : m.representative_hex;
-        if (sample3) sample3.style.background = recs.skinHarmonies[2] ? recs.skinHarmonies[2].hex : m.representative_hex;
-        if (sample4) sample4.style.background = recs.skinHarmonies[0] ? recs.skinHarmonies[0].hex : m.representative_hex;
+        // Update Micro-Extract Swatches in Studio Telemetry with REAL facial area tones
+        const areas = (data && data.skin_analysis && data.skin_analysis.areas) || {{}};
+        const overallHex = (areas.overall && areas.overall.hex) || m.representative_hex;
+        const foreheadHex = (areas.forehead && areas.forehead.hex) || m.representative_hex;
+        const cheekHex = (areas.cheek && areas.cheek.hex) || m.representative_hex;
+        const chinHex = (areas.chin && areas.chin.hex) || m.representative_hex;
 
-        // Draw Canvas
+        const updateMicroSwatch = (idColor, idHex, hex) => {{
+          const cEl = document.getElementById(idColor);
+          const hEl = document.getElementById(idHex);
+          if (cEl) cEl.style.backgroundColor = hex;
+          if (hEl) hEl.textContent = hex;
+        }};
+        updateMicroSwatch("sample-color-1", "sample-hex-1", overallHex);
+        updateMicroSwatch("sample-color-2", "sample-hex-2", foreheadHex);
+        updateMicroSwatch("sample-color-3", "sample-hex-3", cheekHex);
+        updateMicroSwatch("sample-color-4", "sample-hex-4", chinHex);
+
+        // Update the Results Facial Area Breakdown Strip
+        const updateResultArea = (dotId, hexId, hex) => {{
+          const d = document.getElementById(dotId);
+          const h = document.getElementById(hexId);
+          if (d) d.style.backgroundColor = hex;
+          if (h) h.textContent = hex;
+        }};
+        updateResultArea("res-area-dot-1", "res-area-hex-1", overallHex);
+        updateResultArea("res-area-dot-2", "res-area-hex-2", foreheadHex);
+        updateResultArea("res-area-dot-3", "res-area-hex-3", cheekHex);
+        updateResultArea("res-area-dot-4", "res-area-hex-4", chinHex);
+
+        // Draw Canvas with Area Pins & Face Boundary
         drawCanvas(data);
 
         // Palette & Swatches (Haute Presentation)
@@ -2694,7 +2832,6 @@ body {{
           card.addEventListener("click", () => copyToClipboard(color.hex, color.name));
           swatchesGrid.appendChild(card);
         }});
-
 
         renderRecGrid("rec-clothing-grid", recs.clothing, "Clothing");
         renderRecGrid("rec-makeup-grid", recs.makeup, "Cosmetics");
@@ -2724,19 +2861,115 @@ body {{
         canvas.height = displayHeight;
         ctx.drawImage(currentImageBitmap, 0, 0, displayWidth, displayHeight);
 
-        const hex = (data && data.skin_analysis && data.skin_analysis.metrics && data.skin_analysis.metrics.representative_hex) || "#D4AF37";
+        const skinAnalysis = data && data.skin_analysis;
+        const metrics = (skinAnalysis && skinAnalysis.metrics) || {{}};
+        const areas = (skinAnalysis && skinAnalysis.areas) || {{}};
+        const faceBox = (skinAnalysis && skinAnalysis.faceBox) || null;
+        const hex = metrics.representative_hex || "#D4AF37";
         const utLabel = (data && data.undertone && data.undertone.label) || "Undertone";
 
-        const pillW = Math.min(280, Math.floor(displayWidth * 0.62));
+        // 1. Draw Sleek Luxury Gold Face Bounding Oval / Box
+        if (faceBox) {{
+          const bx = Math.round(faceBox.x * scale);
+          const by = Math.round(faceBox.y * scale);
+          const bw = Math.round(faceBox.width * scale);
+          const bh = Math.round(faceBox.height * scale);
+
+          ctx.save();
+          ctx.strokeStyle = "rgba(242, 202, 80, 0.40)";
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.roundRect(bx, by, bw, bh, 14);
+          ctx.stroke();
+          ctx.restore();
+
+          // Elegant corner brackets
+          const bracketLen = Math.min(20, Math.floor(bw * 0.15));
+          ctx.strokeStyle = "#F2CA50";
+          ctx.lineWidth = 2.5;
+
+          ctx.beginPath();
+          ctx.moveTo(bx, by + bracketLen); ctx.lineTo(bx, by); ctx.lineTo(bx + bracketLen, by);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(bx + bw - bracketLen, by); ctx.lineTo(bx + bw, by); ctx.lineTo(bx + bw, by + bracketLen);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(bx, by + bh - bracketLen); ctx.lineTo(bx, by + bh); ctx.lineTo(bx + bracketLen, by + bh);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(bx + bw - bracketLen, by + bh); ctx.lineTo(bx + bw, by + bh); ctx.lineTo(bx + bw, by + bh - bracketLen);
+          ctx.stroke();
+        }}
+
+        // 2. Draw Anatomical Target Pins for Facial Areas
+        const drawTargetPin = (pt, label, areaHex, isLeft = false) => {{
+          if (!pt) return;
+          const px = Math.round(pt.x * scale);
+          const py = Math.round(pt.y * scale);
+
+          ctx.save();
+          ctx.strokeStyle = "rgba(242, 202, 80, 0.75)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(px, py, 7, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.fillStyle = areaHex;
+          ctx.beginPath();
+          ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "#FFFFFF";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          ctx.font = "bold 9px 'JetBrains Mono', monospace";
+          const tagText = `${{label}} ${{areaHex}}`;
+          const textW = ctx.measureText(tagText).width;
+          const tagW = textW + 12;
+          const tagH = 18;
+          const tagX = isLeft ? Math.max(8, px - tagW - 10) : Math.min(displayWidth - tagW - 8, px + 10);
+          const tagY = Math.max(10, Math.min(displayHeight - tagH - 45, py - 9));
+
+          ctx.strokeStyle = "rgba(242, 202, 80, 0.6)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(px + (isLeft ? -7 : 7), py);
+          ctx.lineTo(tagX + (isLeft ? tagW : 0), tagY + tagH / 2);
+          ctx.stroke();
+
+          ctx.fillStyle = "rgba(10, 14, 22, 0.88)";
+          ctx.beginPath();
+          ctx.roundRect(tagX, tagY, tagW, tagH, 4);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(212, 175, 55, 0.5)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          ctx.fillStyle = "#F8FAFC";
+          ctx.fillText(tagText, tagX + 6, tagY + 12.5);
+          ctx.restore();
+        }};
+
+        if (areas.forehead) drawTargetPin(areas.forehead, "Forehead", areas.forehead.hex, false);
+        if (areas.cheek) drawTargetPin(areas.cheek, "Cheek", areas.cheek.hex, true);
+        if (areas.chin) drawTargetPin(areas.chin, "Chin", areas.chin.hex, false);
+
+        // 3. Draw Bottom Glassmorphic Summary Bar
+        const pillW = Math.min(320, Math.floor(displayWidth * 0.72));
         const pillH = 34;
         const pillX = 14;
-        const pillY = displayHeight - pillH - 14;
+        const pillY = displayHeight - pillH - 12;
 
-        ctx.fillStyle = "rgba(10, 14, 22, 0.88)";
+        ctx.fillStyle = "rgba(10, 14, 22, 0.90)";
         ctx.beginPath();
         ctx.roundRect(pillX, pillY, pillW, pillH, 8);
         ctx.fill();
-        ctx.strokeStyle = "rgba(212, 175, 55, 0.6)";
+        ctx.strokeStyle = "rgba(212, 175, 55, 0.7)";
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
@@ -2745,13 +2978,14 @@ body {{
         ctx.beginPath();
         ctx.arc(pillX + 18, pillY + pillH / 2, radius, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = "#ffffff";
+        ctx.strokeStyle = "#FFFFFF";
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
         ctx.fillStyle = "#F2CA50";
         ctx.font = "bold 11px sans-serif";
-        ctx.fillText("Dermis: " + hex + " (" + utLabel + ")", pillX + 32, pillY + 21);
+        const genderLabel = (data.gender && data.gender.detected) ? ` • ${{data.gender.detected}}` : '';
+        ctx.fillText("Dermis: " + hex + " • " + utLabel + genderLabel, pillX + 32, pillY + 21);
       }}
 
       function renderRecGrid(id, items, defaultCategory) {{

@@ -5,6 +5,7 @@ confidence scores, and color science explainability diagnostics.
 """
 
 import os
+import math
 import joblib
 import numpy as np
 from typing import Dict, Any, Optional
@@ -64,60 +65,120 @@ class UndertonePredictor:
                 for i in range(len(self.classes))
             }
         else:
-            # Fallback colorimetric classification if model file missing
+            # Calibrated dermatological colorimetric classification
             mean_lab_b = features_dict.get("mean_lab_b", 15.0)
             mean_a = features_dict.get("mean_a", 15.0)
+            mean_lab_l = features_dict.get("mean_lab_l", 60.0)
+            mean_r = features_dict.get("mean_r", 180.0)
+            mean_g = features_dict.get("mean_g", 140.0)
+            mean_b = features_dict.get("mean_b", 110.0)
+
+            # Chromatic hue angle h_ab = atan2(b*, a*)
+            hue_deg = math.degrees(math.atan2(mean_lab_b, max(mean_a, 0.01)))
             b_ratio = mean_lab_b / max(mean_a, 0.1)
-            
-            if b_ratio > 1.25 or mean_lab_b > 18.0:
+
+            # Normalized subsurface scattering (R - B) / (R + G + B)
+            tot_rgb = max(1.0, mean_r + mean_g + mean_b)
+            nss = (mean_r - mean_b) / tot_rgb
+            rb_diff = mean_r - mean_b
+
+            warm_score = 0.0
+            cool_score = 0.0
+            neutral_score = 0.0
+
+            # 1. CIELAB hue angle (h_ab)
+            if hue_deg > 55.0:
+                warm_score += min(3.2, (hue_deg - 55.0) * 0.35 + 1.2)
+            elif hue_deg < 47.0:
+                cool_score += min(3.2, (47.0 - hue_deg) * 0.35 + 1.2)
+            else:
+                neutral_score += 2.2
+
+            # 2. b* / a* ratio (yellow carotenoid vs pink hemoglobin)
+            if b_ratio > 1.22:
+                warm_score += min(2.5, (b_ratio - 1.22) * 5.0 + 0.8)
+            elif b_ratio < 0.95:
+                cool_score += min(2.5, (0.95 - b_ratio) * 5.0 + 0.8)
+            else:
+                neutral_score += 1.8
+
+            # 3. Normalized subsurface scattering & R-B spread
+            if nss > 0.22 and rb_diff > 65:
+                warm_score += 1.2
+            elif nss < 0.14 or rb_diff < 42:
+                cool_score += 1.4
+            else:
+                neutral_score += 0.8
+
+            # 4. Olive overtone detection (balanced green reflection with neutral-warm hue)
+            green_balance = mean_g / max(mean_r, 1.0)
+            if green_balance > 0.82 and 47.0 <= hue_deg <= 56.0:
+                neutral_score += 2.2
+
+            # Softmax probabilities
+            exp_w = math.exp(warm_score)
+            exp_c = math.exp(cool_score)
+            exp_n = math.exp(neutral_score)
+            sum_exp = exp_w + exp_c + exp_n
+
+            prob_w = exp_w / sum_exp
+            prob_c = exp_c / sum_exp
+            prob_n = exp_n / sum_exp
+
+            if prob_w >= prob_c and prob_w >= prob_n:
                 pred_label = "Warm"
-                confidence = 0.85
-                prob_dict = {"Warm": 0.85, "Neutral": 0.12, "Cool": 0.03}
-            elif b_ratio < 0.85 or mean_lab_b < 12.0:
+                confidence = prob_w
+            elif prob_c >= prob_w and prob_c >= prob_n:
                 pred_label = "Cool"
-                confidence = 0.85
-                prob_dict = {"Cool": 0.85, "Neutral": 0.12, "Warm": 0.03}
+                confidence = prob_c
             else:
                 pred_label = "Neutral"
-                confidence = 0.78
-                prob_dict = {"Neutral": 0.78, "Warm": 0.11, "Cool": 0.11}
+                confidence = prob_n
+
+            prob_dict = {
+                "Warm": round(prob_w, 4),
+                "Cool": round(prob_c, 4),
+                "Neutral": round(prob_n, 4)
+            }
 
         # Generate scientific color explanation
         mean_lab_b = features_dict.get("mean_lab_b", 15.0)
         mean_a = features_dict.get("mean_a", 15.0)
         mean_h = features_dict.get("mean_h", 15.0) * 2.0  # degrees
+        hue_angle_deg = math.degrees(math.atan2(mean_lab_b, max(mean_a, 0.01)))
         
         key_factors = []
         if pred_label == "Warm":
             explanation = (
                 f"Your skin displays a dominant golden/peachy undertone characterized by elevated "
-                f"CIELAB b* ({mean_lab_b:.1f}) indicating higher yellow-amber chroma, with a dominant "
-                f"HSV hue centered at {mean_h:.1f}° in the warm spectrum."
+                f"CIELAB hue angle ({hue_angle_deg:.1f}°) and b* ({mean_lab_b:.1f}) indicating higher yellow-amber carotenoid chroma, "
+                f"with a dominant HSV hue centered at {mean_h:.1f}° in the warm spectrum."
             )
             key_factors = [
                 f"Elevated yellow/golden chromatic axis (CIELAB b* = {mean_lab_b:.1f})",
-                f"Warm hue distribution ({mean_h:.1f}° peach-gold spectrum)",
-                "Positive yellow-to-erythema ratio (b*/a* > 1.15)"
+                f"Warm dermal hue angle (h_ab = {hue_angle_deg:.1f}°)",
+                f"Positive yellow-to-erythema ratio (b*/a* = {mean_lab_b/max(mean_a, 0.1):.2f})"
             ]
         elif pred_label == "Cool":
             explanation = (
                 f"Your skin features a distinct rosy/blue-leaning undertone with prominent cutaneous "
-                f"erythema (CIELAB a* = {mean_a:.1f}) and lower yellow balance (CIELAB b* = {mean_lab_b:.1f}), "
+                f"erythema (CIELAB a* = {mean_a:.1f}) and lower hue angle ({hue_angle_deg:.1f}°), "
                 f"giving a crisp cool harmony."
             )
             key_factors = [
                 f"Prominent pink/rosy erythema axis (CIELAB a* = {mean_a:.1f})",
-                f"Subdued yellow component (CIELAB b* = {mean_lab_b:.1f})",
-                f"Cool red-pink hue band ({mean_h:.1f}°)"
+                f"Crisp cool dermal hue angle (h_ab = {hue_angle_deg:.1f}°)",
+                f"Subdued carotenoid balance (b*/a* = {mean_lab_b/max(mean_a, 0.1):.2f})"
             ]
         else: # Neutral
             explanation = (
-                f"Your skin possesses a harmonious equilibrium between yellow and pink chromatic components "
-                f"(CIELAB b* = {mean_lab_b:.1f}, a* = {mean_a:.1f}), allowing versatile styling across both warm and cool palettes."
+                f"Your skin possesses a harmonious equilibrium between yellow carotenoid and pink hemoglobin "
+                f"components (CIELAB b* = {mean_lab_b:.1f}, a* = {mean_a:.1f}, h_ab = {hue_angle_deg:.1f}°), "
+                f"allowing versatile styling across both warm and cool palettes."
             )
             key_factors = [
                 f"Balanced yellow and pink chromas (b*={mean_lab_b:.1f}, a*={mean_a:.1f})",
-                "Intermediate chromatic ratio (b*/a* ≈ 1.00)",
+                f"Equilibrium chromatic angle (h_ab = {hue_angle_deg:.1f}°)",
                 "Versatile color temperature tolerance"
             ]
 

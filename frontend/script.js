@@ -294,6 +294,183 @@ document.addEventListener("DOMContentLoaded", () => {
     if (el) el.style.display = "none";
   }
 
+  // --- Inclusive Skin Filter across Fitzpatrick Types I to VI ---
+  function isSkinPixel(r, g, b) {
+    if (r < 28 || g < 18 || b < 10) return false;
+    const maxC = Math.max(r, g, b);
+    const minC = Math.min(r, g, b);
+    if (maxC - minC < 4) return false;
+    if (r < g * 0.88 || r < b * 0.92) return false;
+
+    const yP = 0.299 * r + 0.587 * g + 0.114 * b;
+    if (yP < 18 || yP > 252) return false;
+
+    const cr = 0.713 * (r - yP) + 128.0;
+    const cb = 0.564 * (b - yP) + 128.0;
+    if (cr < 122 || cr > 194 || cb < 64 || cb > 148 || (cr - cb) < 2) return false;
+
+    const delta = maxC - minC;
+    const sat = delta / maxC;
+    let hue = 0;
+    if (delta > 0) {
+      if (maxC === r) hue = ((g - b) / delta) % 6;
+      else if (maxC === g) hue = (b - r) / delta + 2;
+      else hue = (r - g) / delta + 4;
+      hue = (hue * 60 + 360) % 360;
+    }
+    return ((hue >= 0 && hue <= 58) || (hue >= 328 && hue <= 360));
+  }
+
+  // --- Unified Anatomical Facial Dermis & Multi-Region Extractor ---
+  function extractFacialDermisAndRegions(imgData, w, h) {
+    const candidateSkin = [];
+    for (let y = 0; y < h; y += 2) {
+      for (let x = 0; x < w; x += 2) {
+        const idx = (y * w + x) * 4;
+        const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+        if (isSkinPixel(r, g, b)) {
+          const yP = 0.299 * r + 0.587 * g + 0.114 * b;
+          candidateSkin.push({ r, g, b, lum: yP, x, y });
+        }
+      }
+    }
+
+    if (candidateSkin.length < 25) {
+      for (let y = Math.floor(h * 0.10); y < Math.floor(h * 0.85); y += 2) {
+        for (let x = Math.floor(w * 0.15); x < Math.floor(w * 0.85); x += 2) {
+          const idx = (y * w + x) * 4;
+          const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+          if (r > 38 && g > 24 && b > 14 && r >= g && r >= b) {
+            candidateSkin.push({ r, g, b, lum: 0.299 * r + 0.587 * g + 0.114 * b, x, y });
+          }
+        }
+      }
+    }
+
+    let faceSkin = candidateSkin.filter(p => p.y < h * 0.80);
+    if (faceSkin.length < 20) faceSkin = candidateSkin;
+
+    const xs = faceSkin.map(p => p.x).sort((a, b) => a - b);
+    const ys = faceSkin.map(p => p.y).sort((a, b) => a - b);
+
+    const fLeft = xs.length > 0 ? xs[Math.floor(xs.length * 0.08)] : Math.floor(w * 0.2);
+    const fRight = xs.length > 0 ? xs[Math.floor(xs.length * 0.92)] : Math.floor(w * 0.8);
+    const fTop = ys.length > 0 ? ys[Math.floor(ys.length * 0.04)] : Math.floor(h * 0.1);
+    const fBottom = ys.length > 0 ? ys[Math.floor(ys.length * 0.92)] : Math.floor(h * 0.75);
+
+    let fWidth = Math.max(50, fRight - fLeft);
+    let fHeight = Math.max(65, fBottom - fTop);
+    if (fHeight < fWidth * 1.05) fHeight = Math.round(fWidth * 1.25);
+    if (fHeight > fWidth * 1.55) fHeight = Math.round(fWidth * 1.40);
+    fHeight = Math.min(fHeight, h - fTop - 2);
+
+    const cx = Math.round(fLeft + fWidth * 0.5);
+    const cy = Math.round(fTop + fHeight * 0.48);
+
+    const samplePatch = (targetX, targetY, radius, defR, defG, defB) => {
+      let sR = 0, sG = 0, sB = 0, count = 0;
+      const patchPixels = [];
+      for (let dy = -radius; dy <= radius; dy += 2) {
+        for (let dx = -radius; dx <= radius; dx += 2) {
+          const px = targetX + dx, py = targetY + dy;
+          if (dx * dx + dy * dy <= radius * radius && px >= 0 && px < w && py >= 0 && py < h) {
+            const idx = (py * w + px) * 4;
+            const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
+            const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+            if (lum >= 30 && lum <= 248 && r >= g * 0.82 && r >= b * 0.82) {
+              patchPixels.push({ r, g, b, lum });
+            }
+          }
+        }
+      }
+      if (patchPixels.length > 4) {
+        patchPixels.sort((a, b) => a.lum - b.lum);
+        const lCut = Math.floor(patchPixels.length * 0.15);
+        const hCut = Math.max(lCut + 1, Math.floor(patchPixels.length * 0.85));
+        for (let i = lCut; i < hCut; i++) {
+          sR += patchPixels[i].r;
+          sG += patchPixels[i].g;
+          sB += patchPixels[i].b;
+          count++;
+        }
+      }
+      const finalR = count > 0 ? Math.round(sR / count) : defR;
+      const finalG = count > 0 ? Math.round(sG / count) : defG;
+      const finalB = count > 0 ? Math.round(sB / count) : defB;
+      return {
+        r: finalR, g: finalG, b: finalB,
+        hex: rgbToHex(finalR, finalG, finalB),
+        x: targetX, y: targetY,
+        pctX: (targetX / w) * 100,
+        pctY: (targetY / h) * 100,
+        count
+      };
+    };
+
+    candidateSkin.sort((a, b) => a.lum - b.lum);
+    const gLow = Math.floor(candidateSkin.length * 0.15);
+    const gHigh = Math.max(gLow + 1, Math.floor(candidateSkin.length * 0.85));
+    let baseR = 0, baseG = 0, baseB = 0, baseCount = 0;
+    for (let i = gLow; i < gHigh; i++) {
+      baseR += candidateSkin[i].r; baseG += candidateSkin[i].g; baseB += candidateSkin[i].b; baseCount++;
+    }
+    const bR = baseCount > 0 ? Math.round(baseR / baseCount) : 190;
+    const bG = baseCount > 0 ? Math.round(baseG / baseCount) : 140;
+    const bB = baseCount > 0 ? Math.round(baseB / baseCount) : 105;
+
+    const radArea = Math.max(5, Math.round(fWidth * 0.065));
+
+    const frnX = cx;
+    const frnY = Math.max(4, Math.round(fTop + fHeight * 0.18));
+    const forehead = samplePatch(frnX, frnY, radArea, bR, bG, bB);
+
+    const lChkX = Math.round(fLeft + fWidth * 0.22);
+    const rChkX = Math.round(fLeft + fWidth * 0.78);
+    const chkY = Math.round(fTop + fHeight * 0.52);
+    const leftCheek = samplePatch(lChkX, chkY, radArea, bR, bG, bB);
+    const rightCheek = samplePatch(rChkX, chkY, radArea, bR, bG, bB);
+    const cheekR = Math.round((leftCheek.r + rightCheek.r) / 2);
+    const cheekG = Math.round((leftCheek.g + rightCheek.g) / 2);
+    const cheekB = Math.round((leftCheek.b + rightCheek.b) / 2);
+    const cheek = {
+      r: cheekR, g: cheekG, b: cheekB,
+      hex: rgbToHex(cheekR, cheekG, cheekB),
+      x: Math.round(fLeft + fWidth * 0.24), y: chkY,
+      pctX: ((fLeft + fWidth * 0.24) / w) * 100,
+      pctY: (chkY / h) * 100,
+      left: leftCheek, right: rightCheek
+    };
+
+    const chinX = cx;
+    const chinY = Math.min(h - 4, Math.round(fTop + fHeight * 0.84));
+    const chin = samplePatch(chinX, chinY, radArea, bR, bG, bB);
+
+    const coreX = cx;
+    const coreY = Math.round(fTop + fHeight * 0.44);
+    const coreSample = samplePatch(coreX, coreY, Math.round(radArea * 1.2), bR, bG, bB);
+    const overallR = Math.round(coreSample.r * 0.6 + bR * 0.4);
+    const overallG = Math.round(coreSample.g * 0.6 + bG * 0.4);
+    const overallB = Math.round(coreSample.b * 0.6 + bB * 0.4);
+    const overall = {
+      r: overallR, g: overallG, b: overallB,
+      hex: rgbToHex(overallR, overallG, overallB),
+      x: coreX, y: coreY,
+      pctX: (coreX / w) * 100,
+      pctY: (coreY / h) * 100
+    };
+
+    return {
+      candidateSkin,
+      faceBox: { x: fLeft, y: fTop, width: fWidth, height: fHeight, cx, cy },
+      areas: {
+        overall,
+        forehead,
+        cheek,
+        chin
+      }
+    };
+  }
+
   // --- Auto Colour Detection & Lighting Quality Sensor ---
   function checkImageQualityAndAutoColor(img) {
     const statusEl = document.getElementById("mesh-status-text");
@@ -305,7 +482,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const autoBadgeTag = document.getElementById("face-box-sublabel");
     const autoDot = document.getElementById("face-box-color-dot");
 
-    if (statusEl) statusEl.textContent = "Scanning photo lighting and complexion...";
+    if (statusEl) statusEl.textContent = "Scanning photo lighting and facial regions...";
 
     const origW = img.naturalWidth || img.width || 320;
     const origH = img.naturalHeight || img.height || 400;
@@ -331,8 +508,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const r = imgData[i], g = imgData[i + 1], b = imgData[i + 2];
       const lum = 0.299 * r + 0.587 * g + 0.114 * b;
       totalLum += lum;
-      if (lum < 22) darkCount++;
-      if (lum > 242) brightCount++;
+      if (lum < 20) darkCount++;
+      if (lum > 244) brightCount++;
       if (i % 16 === 0) lums.push(lum);
     }
 
@@ -363,48 +540,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const blurMetric = edgeCount > 0 ? (edgeDiffSum / edgeCount) : 100;
 
-    // 2. Candidate skin pixels across full Fitzpatrick range
-    const candidateSkin = [];
-    for (let y = 0; y < sampleH; y += 2) {
-      for (let x = 0; x < sampleW; x += 2) {
-        const idx = (y * sampleW + x) * 4;
-        const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
-        const yP = 0.299 * r + 0.587 * g + 0.114 * b;
-        const cr = 0.713 * (r - yP) + 128.0;
-        const cb = 0.564 * (b - yP) + 128.0;
-
-        const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
-        const delta = maxC - minC;
-        const sat = maxC > 0 ? delta / maxC : 0;
-
-        const isYCrCb = (cr >= 126 && cr <= 188 && cb >= 68 && cb <= 142 && (cr - cb) >= 5);
-        const isRGB = (r > g && g > b && r > 40 && (r - g) >= 4 && (r - b) >= 7);
-        const isSat = (sat >= 0.08 && sat <= 0.78);
-
-        if (isYCrCb && isRGB && isSat) {
-          candidateSkin.push({ r, g, b, lum: yP, x, y });
-        }
-      }
-    }
+    // Extract facial dermis and real anatomical regions
+    const regionRes = extractFacialDermisAndRegions(imgData, sampleW, sampleH);
+    const { candidateSkin, areas } = regionRes;
+    lastExtractedAreas = areas;
+    lastExtractedFaceBox = regionRes.faceBox;
 
     // 3. Check for lighting and clarity issues
     let errorMsg = null;
-    if (origW < 160 || origH < 160) {
+    if (origW < 140 || origH < 140) {
       errorMsg = "The image is not clear: Photo resolution is too low. Please upload a higher resolution photo.";
-    } else if (meanBrightness < 45 || darkRatio > 0.35) {
+    } else if (meanBrightness < 38 || darkRatio > 0.42) {
       errorMsg = "The image is not clear and does not have proper lighting: The photo is too dark. Please take your photo in bright, natural daylight so your skin tone can be identified accurately.";
-    } else if (meanBrightness > 222 || brightRatio > 0.35) {
+    } else if (meanBrightness > 230 || brightRatio > 0.40) {
       errorMsg = "The image is not clear: Harsh glare or overexposure detected. Please avoid strong camera flash or harsh direct sunlight.";
-    } else if (contrastStd < 16) {
+    } else if (contrastStd < 14) {
       errorMsg = "The image is not clear: The photo lacks contrast or has heavy uneven shadows. Please use clear, balanced lighting.";
-    } else if (blurMetric < 15) {
+    } else if (blurMetric < 12) {
       errorMsg = "The image is not clear: The photo appears blurry or out of focus. Please ensure the camera is steady and clear.";
-    } else if (candidateSkin.length < 35) {
+    } else if (candidateSkin.length < 25) {
       errorMsg = "Could not identify your natural skin colour. The image is not clear or does not have proper lighting. Please upload a clear photo with visible skin complexion in natural lighting.";
     }
 
     if (errorMsg) {
-      // Show warning and PREVENT proceeding!
       showError(errorMsg);
       if (qualityBar) qualityBar.classList.remove("hidden");
       if (qualityMeter) {
@@ -434,19 +592,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return false;
     }
 
-    // Success! Dermis color spotted accurately
+    // Success! Dermis color and areas spotted accurately
     hideError();
-    candidateSkin.sort((a, b) => a.lum - b.lum);
-    const lowCut = Math.floor(candidateSkin.length * 0.15);
-    const highCut = Math.max(lowCut + 1, Math.floor(candidateSkin.length * 0.85));
-    const trimmed = candidateSkin.slice(lowCut, highCut);
-
-    let sumR = 0, sumG = 0, sumB = 0;
-    trimmed.forEach((p) => { sumR += p.r; sumG += p.g; sumB += p.b; });
-    const spottedR = Math.round(sumR / trimmed.length);
-    const spottedG = Math.round(sumG / trimmed.length);
-    const spottedB = Math.round(sumB / trimmed.length);
-    const spottedHex = rgbToHex(spottedR, spottedG, spottedB);
+    const spottedHex = areas.overall.hex;
 
     // Update Quality Bar: Optimal
     if (qualityBar) qualityBar.classList.remove("hidden");
@@ -476,29 +624,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (autoDot) autoDot.style.backgroundColor = spottedHex;
 
-    // Update Telemetry Swatches
+    // Update Telemetry Swatches with REAL anatomical face regions
     const updateSwatch = (colorId, hexId, hex) => {
       const c = document.getElementById(colorId);
       const h = document.getElementById(hexId);
       if (c) c.style.backgroundColor = hex;
       if (h) h.textContent = hex;
     };
-    updateSwatch("sample-color-1", "sample-hex-1", spottedHex);
-    updateSwatch("sample-color-2", "sample-hex-2", rgbToHex(Math.min(255, spottedR + 5), Math.min(255, spottedG + 3), Math.max(0, spottedB - 3)));
-    updateSwatch("sample-color-3", "sample-hex-3", rgbToHex(Math.max(0, spottedR - 4), Math.max(0, spottedG - 3), Math.min(255, spottedB + 2)));
-    updateSwatch("sample-color-4", "sample-hex-4", rgbToHex(Math.max(0, spottedR - 2), Math.max(0, spottedG - 4), Math.max(0, spottedB - 2)));
+    updateSwatch("sample-color-1", "sample-hex-1", areas.overall.hex);
+    updateSwatch("sample-color-2", "sample-hex-2", areas.forehead.hex);
+    updateSwatch("sample-color-3", "sample-hex-3", areas.cheek.hex);
+    updateSwatch("sample-color-4", "sample-hex-4", areas.chin.hex);
 
-    // Update Diagnostic Telemetry Meters
-    const luxEl = document.getElementById("meter-lux-val");
-    if (luxEl) luxEl.textContent = "Optimal Daylight (Clear)";
-    const wbEl = document.getElementById("meter-wb-val");
-    if (wbEl) wbEl.textContent = "Natural Color Balance";
-    const snrEl = document.getElementById("meter-snr-val");
-    if (snrEl) snrEl.textContent = "Clear & In Focus";
-    const resEl = document.getElementById("meter-res-val");
-    if (resEl) resEl.textContent = `${origW} × ${origH}px (Sharp)`;
-
-    // Enable Analyze CTA Button!
+    // Spotted the colour - proceed!
     analyzeBtn.disabled = false;
     return true;
   }
@@ -1114,32 +1252,40 @@ document.addEventListener("DOMContentLoaded", () => {
     const hsvEl = document.getElementById("metric-hsv-h");
     if (hsvEl) hsvEl.textContent = skinMetrics.hsv ? `${skinMetrics.hsv.H_deg}°` : '';
 
-    // Update Micro-Extract Swatches in Studio Telemetry
-    const sample1 = document.getElementById("sample-color-1");
-    const sample2 = document.getElementById("sample-color-2");
-    const sample3 = document.getElementById("sample-color-3");
-    const sample4 = document.getElementById("sample-color-4");
-    const hex1 = document.getElementById("sample-hex-1");
-    const hex2 = document.getElementById("sample-hex-2");
-    const hex3 = document.getElementById("sample-hex-3");
-    const hex4 = document.getElementById("sample-hex-4");
+    // Update Micro-Extract Swatches in Studio Telemetry & Results Area Strip
+    const dermalAreas = (data.skin_analysis && data.skin_analysis.areas) || lastExtractedAreas || {
+      overall: { hex: skinMetrics.representative_hex },
+      forehead: { hex: skinMetrics.representative_hex },
+      cheek: { hex: skinMetrics.representative_hex },
+      chin: { hex: skinMetrics.representative_hex }
+    };
 
-    if (sample1) sample1.style.background = skinMetrics.representative_hex;
-    if (hex1) hex1.textContent = skinMetrics.representative_hex;
+    const updateAreaItem = (colorId, hexId, hex) => {
+      const c = document.getElementById(colorId);
+      const h = document.getElementById(hexId);
+      if (c) c.style.backgroundColor = hex;
+      if (h) h.textContent = hex;
+    };
 
-    const hexVal2 = (data.skin_harmonies && data.skin_harmonies[1]) ? data.skin_harmonies[1].hex : skinMetrics.representative_hex;
-    const hexVal3 = (data.skin_harmonies && data.skin_harmonies[2]) ? data.skin_harmonies[2].hex : skinMetrics.representative_hex;
-    const hexVal4 = (data.skin_harmonies && data.skin_harmonies[0]) ? data.skin_harmonies[0].hex : skinMetrics.representative_hex;
+    const coreHex = (dermalAreas.overall && dermalAreas.overall.hex) || skinMetrics.representative_hex;
+    const foreheadHex = (dermalAreas.forehead && dermalAreas.forehead.hex) || skinMetrics.representative_hex;
+    const cheekHex = (dermalAreas.cheek && dermalAreas.cheek.hex) || skinMetrics.representative_hex;
+    const chinHex = (dermalAreas.chin && dermalAreas.chin.hex) || skinMetrics.representative_hex;
 
-    if (sample2) sample2.style.background = hexVal2;
-    if (hex2) hex2.textContent = hexVal2;
-    if (sample3) sample3.style.background = hexVal3;
-    if (hex3) hex3.textContent = hexVal3;
-    if (sample4) sample4.style.background = hexVal4;
-    if (hex4) hex4.textContent = hexVal4;
+    // Studio telemetry swatches
+    updateAreaItem("sample-color-1", "sample-hex-1", coreHex);
+    updateAreaItem("sample-color-2", "sample-hex-2", foreheadHex);
+    updateAreaItem("sample-color-3", "sample-hex-3", cheekHex);
+    updateAreaItem("sample-color-4", "sample-hex-4", chinHex);
+
+    // Results card facial areas strip
+    updateAreaItem("res-area-dot-1", "res-area-hex-1", coreHex);
+    updateAreaItem("res-area-dot-2", "res-area-hex-2", foreheadHex);
+    updateAreaItem("res-area-dot-3", "res-area-hex-3", cheekHex);
+    updateAreaItem("res-area-dot-4", "res-area-hex-4", chinHex);
 
     // 3. Draw Autonomous Skin Canvas
-    drawFacialLandmarksCanvas(skinMetrics.representative_hex, data.undertone.label);
+    drawFacialLandmarksCanvas(skinMetrics.representative_hex, data.undertone.label, data);
 
     // 4. Personalized Core Palette
     const stylistSummaryEl = document.getElementById("stylist-summary");
@@ -1251,51 +1397,152 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- Canvas Rendering for Autonomous Skin Colorimetry ---
-  function drawFacialLandmarksCanvas(skinHex, undertoneLabel) {
+  // --- Canvas Rendering for Autonomous Skin Colorimetry & Facial Areas ---
+  function drawFacialLandmarksCanvas(skinHex, undertoneLabel, data) {
     const canvas = document.getElementById("face-canvas");
+    if (!canvas || !currentImageBitmap) return;
     const ctx = canvas.getContext("2d");
 
-    if (!currentImageBitmap) return;
+    const displayWidth = 480;
+    const origW = currentImageBitmap.naturalWidth || currentImageBitmap.width || displayWidth;
+    const origH = currentImageBitmap.naturalHeight || currentImageBitmap.height || displayWidth;
+    const scale = displayWidth / origW;
+    const displayHeight = Math.round(origH * scale);
 
-    canvas.width = currentImageBitmap.width;
-    canvas.height = currentImageBitmap.height;
+    canvas.width = displayWidth;
+    canvas.height = displayHeight;
+    ctx.drawImage(currentImageBitmap, 0, 0, displayWidth, displayHeight);
 
-    // Draw base portrait
-    ctx.drawImage(currentImageBitmap, 0, 0, canvas.width, canvas.height);
+    const skinAnalysis = data && data.skin_analysis;
+    const areas = (skinAnalysis && skinAnalysis.areas) || lastExtractedAreas || {};
+    let faceBox = (skinAnalysis && skinAnalysis.faceBox) || lastExtractedFaceBox || null;
 
-    // Draw sleek luxury HUD badge
+    if (!faceBox && data && data.face && data.face.bounding_box) {
+      const [bx, by, bw, bh] = data.face.bounding_box;
+      faceBox = { x: bx, y: by, width: bw, height: bh };
+    }
+
     const hex = skinHex || "#D4AF37";
     const label = undertoneLabel || "Undertone";
+    const detectedGender = (data && data.gender && (data.gender.detected || data.gender.label)) || "Natural";
 
-    const pillW = Math.max(200, Math.floor(canvas.width * 0.45));
-    const pillH = Math.max(34, Math.floor(canvas.height * 0.07));
-    const pillX = Math.floor(canvas.width * 0.03);
-    const pillY = canvas.height - pillH - Math.floor(canvas.height * 0.03);
+    // 1. Draw Luxury Gold Face Bounding Box & Corner Brackets
+    if (faceBox) {
+      const bx = Math.round(faceBox.x * scale);
+      const by = Math.round(faceBox.y * scale);
+      const bw = Math.round(faceBox.width * scale);
+      const bh = Math.round(faceBox.height * scale);
 
-    // Glassmorphic pill
-    ctx.fillStyle = "rgba(11, 15, 23, 0.85)";
+      ctx.save();
+      ctx.strokeStyle = "rgba(242, 202, 80, 0.40)";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bw, bh, 14);
+      ctx.stroke();
+      ctx.restore();
+
+      const bracketLen = Math.min(22, Math.floor(bw * 0.16));
+      ctx.strokeStyle = "#F2CA50";
+      ctx.lineWidth = 2.5;
+
+      ctx.beginPath();
+      ctx.moveTo(bx, by + bracketLen); ctx.lineTo(bx, by); ctx.lineTo(bx + bracketLen, by);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(bx + bw - bracketLen, by); ctx.lineTo(bx + bw, by); ctx.lineTo(bx + bw, by + bracketLen);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(bx, by + bh - bracketLen); ctx.lineTo(bx, by + bh); ctx.lineTo(bx + bracketLen, by + bh);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(bx + bw - bracketLen, by + bh); ctx.lineTo(bx + bw, by + bh); ctx.lineTo(bx + bw, by + bh - bracketLen);
+      ctx.stroke();
+    }
+
+    // 2. Draw Anatomical Target Pins for Facial Areas
+    const drawTargetPin = (pt, areaLabel, areaHex, isLeft = false) => {
+      if (!pt) return;
+      // Handle both raw pixels (from sample canvas) and percent coordinates
+      let px = pt.x !== undefined ? Math.round(pt.x * scale) : (pt.pctX ? Math.round((pt.pctX / 100) * displayWidth) : 0);
+      let py = pt.y !== undefined ? Math.round(pt.y * scale) : (pt.pctY ? Math.round((pt.pctY / 100) * displayHeight) : 0);
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(242, 202, 80, 0.75)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(px, py, 7, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = areaHex;
+      ctx.beginPath();
+      ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.font = "bold 9px 'JetBrains Mono', monospace";
+      const tagText = `${areaLabel} ${areaHex}`;
+      const textW = ctx.measureText(tagText).width;
+      const tagW = textW + 12;
+      const tagH = 18;
+      const tagX = isLeft ? Math.max(8, px - tagW - 10) : Math.min(displayWidth - tagW - 8, px + 10);
+      const tagY = Math.max(10, Math.min(displayHeight - tagH - 45, py - 9));
+
+      ctx.strokeStyle = "rgba(242, 202, 80, 0.6)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px + (isLeft ? -7 : 7), py);
+      ctx.lineTo(tagX + (isLeft ? tagW : 0), tagY + tagH / 2);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(10, 14, 22, 0.88)";
+      ctx.beginPath();
+      ctx.roundRect(tagX, tagY, tagW, tagH, 4);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(212, 175, 55, 0.5)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.fillStyle = "#F8FAFC";
+      ctx.fillText(tagText, tagX + 6, tagY + 12.5);
+      ctx.restore();
+    };
+
+    if (areas.forehead) drawTargetPin(areas.forehead, "Forehead", areas.forehead.hex, false);
+    if (areas.cheek) drawTargetPin(areas.cheek, "Cheek", areas.cheek.hex, true);
+    if (areas.chin) drawTargetPin(areas.chin, "Chin", areas.chin.hex, false);
+
+    // 3. Draw Bottom Glassmorphic Summary Bar
+    const pillW = Math.min(320, Math.floor(displayWidth * 0.72));
+    const pillH = 34;
+    const pillX = 14;
+    const pillY = displayHeight - pillH - 12;
+
+    ctx.fillStyle = "rgba(10, 14, 22, 0.90)";
     ctx.beginPath();
     ctx.roundRect(pillX, pillY, pillW, pillH, 8);
     ctx.fill();
-    ctx.strokeStyle = "rgba(212, 175, 55, 0.5)";
+    ctx.strokeStyle = "rgba(212, 175, 55, 0.6)";
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // Swatch dot
-    const radius = Math.max(6, Math.floor(pillH * 0.28));
+    const dotRadius = 9;
     ctx.fillStyle = hex;
     ctx.beginPath();
-    ctx.arc(pillX + radius + 10, pillY + pillH / 2, radius, 0, Math.PI * 2);
+    ctx.arc(pillX + 16, pillY + pillH / 2, dotRadius, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "#ffffff";
+    ctx.strokeStyle = "#FFFFFF";
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // Text label
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `bold ${Math.max(11, Math.floor(pillH * 0.38))}px sans-serif`;
-    ctx.fillText(`Skin Tone: ${hex} (${label})`, pillX + radius * 2 + 18, pillY + pillH / 2 + 4);
+    ctx.fillStyle = "#F8FAFC";
+    ctx.font = "bold 11px 'Plus Jakarta Sans', sans-serif";
+    ctx.fillText(`Dermis ${hex} · ${label} · ${detectedGender}`, pillX + 32, pillY + pillH / 2 + 4);
   }
 
   // --- Tab Navigation with Smooth Scrolling ---
