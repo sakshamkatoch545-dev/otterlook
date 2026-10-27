@@ -1603,6 +1603,8 @@ body {{
         const fTop = faceBox.y;
         const fWidth = faceBox.width;
         const fHeight = faceBox.height;
+        const fRight = fLeft + fWidth;
+        const fBottom = fTop + fHeight;
         const headCenterX = faceBox.cx;
         const headCenterY = faceBox.cy;
 
