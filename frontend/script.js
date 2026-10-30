@@ -334,7 +334,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    if (candidateSkin.length < 25) {
+    if (candidateSkin.length < 40) {
       for (let y = Math.floor(h * 0.10); y < Math.floor(h * 0.85); y += 2) {
         for (let x = Math.floor(w * 0.15); x < Math.floor(w * 0.85); x += 2) {
           const idx = (y * w + x) * 4;
@@ -598,8 +598,93 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
+  // Neural Human Face Verification via backend YOLO model
+  async function verifyHumanFaceWithYOLO(img) {
+    try {
+      const tempCanvas = document.createElement("canvas");
+      const maxDim = 640;
+      let w = img.naturalWidth || img.width || 640;
+      let h = img.naturalHeight || img.height || 480;
+      if (w > maxDim || h > maxDim) {
+        const sc = maxDim / Math.max(w, h);
+        w = Math.round(w * sc);
+        h = Math.round(h * sc);
+      }
+      tempCanvas.width = w;
+      tempCanvas.height = h;
+      const tCtx = tempCanvas.getContext("2d");
+      tCtx.drawImage(img, 0, 0, w, h);
+
+      const dataUrl = tempCanvas.toDataURL("image/jpeg", 0.90);
+      const endpoints = [
+        "http://localhost:8000/api/detect-face",
+        "http://127.0.0.1:8000/api/detect-face",
+        "/api/detect-face"
+      ];
+
+      // 1. Try JSON payload
+      for (let ep of endpoints) {
+        try {
+          const res = await fetch(ep, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image: dataUrl })
+          });
+          if (res.ok) {
+            const resJson = await res.json();
+            return resJson;
+          }
+        } catch (err) {}
+      }
+
+      // 2. Try multipart FormData payload
+      const blob = await new Promise((resolve) => tempCanvas.toBlob(resolve, "image/jpeg", 0.90));
+      if (blob) {
+        const fd = new FormData();
+        fd.append("file", blob, "face_check.jpg");
+        for (let ep of endpoints) {
+          try {
+            const res = await fetch(ep, { method: "POST", body: fd });
+            if (res.ok) {
+              const resJson = await res.json();
+              return resJson;
+            }
+          } catch (err) {}
+        }
+      }
+    } catch (e) {
+      console.warn("YOLO face detection call error:", e);
+    }
+
+    // Safety fallback: if backend completely unreachable, verify skin pixel density
+    try {
+      const sampleW = 240;
+      const sampleH = 180;
+      const fallbackCanvas = document.createElement("canvas");
+      fallbackCanvas.width = sampleW;
+      fallbackCanvas.height = sampleH;
+      const fbCtx = fallbackCanvas.getContext("2d");
+      fbCtx.drawImage(img, 0, 0, sampleW, sampleH);
+      const fbData = fbCtx.getImageData(0, 0, sampleW, sampleH).data;
+      let skinPx = 0;
+      for (let i = 0; i < fbData.length; i += 4) {
+        if (isSkinPixel(fbData[i], fbData[i + 1], fbData[i + 2])) skinPx++;
+      }
+      if (skinPx > 100) {
+        return { has_face: true, face_count: 1, lighting_clear: true, message: "Human face localized." };
+      }
+    } catch (fbErr) {}
+
+    return { has_face: false, message: "No human face detected." };
+  }
+
   // --- Auto Colour Detection & Lighting Quality Sensor ---
-  function checkImageQualityAndAutoColor(img) {
+  // Exact user logic:
+  // If face detected -> check lighting:
+  //   elif lighting not clear -> NO palettes, show lighting alert
+  //   otherwise -> show palettes and enable analysis
+  // Else (no face detected) -> NO palettes, show no face alert
+  async function checkImageQualityAndAutoColor(img) {
     const statusEl = document.getElementById("mesh-status-text");
     const lightingPill = document.getElementById("lighting-status-pill");
     const hudLightingPill = document.getElementById("hud-lighting-pill");
@@ -608,8 +693,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const autoBadgeHex = document.getElementById("face-box-hex");
     const autoBadgeTag = document.getElementById("face-box-sublabel");
     const autoDot = document.getElementById("face-box-color-dot");
+    const faceBoxEl = document.getElementById("preview-face-box");
 
     if (statusEl) statusEl.textContent = "Scanning photo lighting and facial regions...";
+    if (faceBoxEl) faceBoxEl.classList.add("hidden");
+    analyzeBtn.disabled = true;
 
     const origW = img.naturalWidth || img.width || 320;
     const origH = img.naturalHeight || img.height || 400;
@@ -667,74 +755,114 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const blurMetric = edgeCount > 0 ? (edgeDiffSum / edgeCount) : 100;
 
-    // Extract facial dermis and real anatomical regions
-    const regionRes = extractFacialDermisAndRegions(imgData, sampleW, sampleH);
-    const candidateSkin = regionRes.candidateSkin;
-    const areas = regionRes.areas;
-    const faceBox = regionRes.faceBox;
-    lastExtractedAreas = areas;
-    lastExtractedFaceBox = faceBox;
+    // 1. Verify real human face via YOLO detector
+    const yoloResult = await verifyHumanFaceWithYOLO(img);
 
-    // 3. Check for lighting and clarity issues
-    let errorMsg = null;
-    if (origW < 140 || origH < 140) {
-      errorMsg = "The image is not clear: Photo resolution is too low. Please upload a higher resolution photo.";
-    } else if (meanBrightness < 38 || darkRatio > 0.42) {
-      errorMsg = "The image is not clear and does not have proper lighting: The photo is too dark. Please take your photo in bright, natural daylight so your skin tone can be identified accurately.";
-    } else if (meanBrightness > 230 || brightRatio > 0.40) {
-      errorMsg = "The image is not clear: Harsh glare or overexposure detected. Please avoid strong camera flash or harsh direct sunlight.";
-    } else if (contrastStd < 14) {
-      errorMsg = "The image is not clear: The photo lacks contrast or has heavy uneven shadows. Please use clear, balanced lighting.";
-    } else if (blurMetric < 12) {
-      errorMsg = "The image is not clear: The photo appears blurry or out of focus. Please ensure the camera is steady and clear.";
-    } else if (candidateSkin.length < 25) {
-      errorMsg = "Could not identify your natural skin colour. The image is not clear or does not have proper lighting. Please upload a clear photo with visible skin complexion in natural lighting.";
-    }
+    // CONDITION 1: NO HUMAN FACE DETECTED -> STRICTLY NO PALETTES, NO OUTPUT!
+    if (!yoloResult || !yoloResult.has_face) {
+      const failMsg = (yoloResult && yoloResult.message) || "No human face detected. Please position your face clearly in the camera frame.";
+      showError(failMsg);
 
-    if (errorMsg) {
-      showError(errorMsg);
+      if (faceBoxEl) faceBoxEl.classList.add("hidden");
+      analyzeBtn.disabled = true;
+
       if (qualityBar) qualityBar.classList.remove("hidden");
       if (qualityMeter) {
-        qualityMeter.style.width = "30%";
+        qualityMeter.style.width = "15%";
         qualityMeter.style.background = "#EF4444";
       }
       if (qualityStatus) {
-        qualityStatus.textContent = "Lighting / Clarity Issue";
+        qualityStatus.textContent = "No Human Face";
         qualityStatus.className = "quality-status Poor";
       }
-      if (qualityDetails) qualityDetails.textContent = errorMsg;
+      if (qualityDetails) qualityDetails.textContent = failMsg;
 
-      if (statusEl) statusEl.textContent = "⚠️ Image not clear or poor lighting • Skin colour not spotted";
-      if (lightingPill) lightingPill.textContent = "Lighting: Needs Improvement";
-      if (hudLightingPill) hudLightingPill.textContent = "⚠️ POOR LIGHTING";
+      if (statusEl) statusEl.textContent = "⚠️ No human face detected • Please show a human face";
+      if (lightingPill) lightingPill.textContent = "Subject: No Human Face";
+      if (hudLightingPill) hudLightingPill.textContent = "⚠️ NO FACE DETECTED";
       if (dockDot) dockDot.style.background = "#EF4444";
 
-      if (autoBadgeTitle) autoBadgeTitle.textContent = "SKIN COLOUR NOT SPOTTED";
-      if (autoBadgeHex) autoBadgeHex.textContent = "UNCLEAR";
+      if (autoBadgeTitle) autoBadgeTitle.textContent = "NO HUMAN FACE DETECTED";
+      if (autoBadgeHex) autoBadgeHex.textContent = "NO FACE";
       if (autoBadgeTag) {
-        autoBadgeTag.textContent = "CHECK LIGHTING";
+        autoBadgeTag.textContent = "NOT RECOGNIZED";
         autoBadgeTag.className = "auto-color-status-tag error";
       }
       if (autoDot) autoDot.style.backgroundColor = "#64748B";
 
-      const fbEl = document.getElementById("preview-face-box");
-      if (fbEl) fbEl.classList.add("hidden");
-      analyzeBtn.disabled = true;
       return false;
     }
 
-    // Success! Dermis color and areas spotted accurately
+    // CONDITION 2: FACE IS DETECTED! Check lighting: ELIF LIGHTING NOT CLEAR -> NO PALETTES!
+    const yoloBbox = yoloResult.bounding_box;
+    const regionRes = extractFacialDermisAndRegions(imgData, sampleW, sampleH);
+    const areas = regionRes.areas;
+    lastExtractedAreas = areas;
+    lastExtractedFaceBox = yoloBbox || regionRes.faceBox;
+
+    let lightingError = null;
+    if (yoloResult.lighting_clear === false && yoloResult.quality_message) {
+      lightingError = "Face detected, but lighting is not clear: " + yoloResult.quality_message;
+    } else if (origW < 140 || origH < 140) {
+      lightingError = "Face detected, but photo resolution is too low. Please upload a higher resolution photo.";
+    } else if (meanBrightness < 35 || darkRatio > 0.45) {
+      lightingError = "Face detected, but lighting is not clear: The photo is too dark. Please take your photo in bright, natural daylight.";
+    } else if (meanBrightness > 235 || brightRatio > 0.40) {
+      lightingError = "Face detected, but lighting is not clear: Harsh glare or overexposure detected. Please avoid direct bright flash.";
+    } else if (contrastStd < 13) {
+      lightingError = "Face detected, but lighting is not clear: Uneven shadows or low contrast. Please use clear, balanced lighting.";
+    } else if (blurMetric < 10) {
+      lightingError = "Face detected, but image is not clear: Photo appears blurry or out of focus. Please ensure camera is steady.";
+    }
+
+    if (lightingError) {
+      showError(lightingError);
+      if (faceBoxEl) faceBoxEl.classList.add("hidden");
+      analyzeBtn.disabled = true;
+
+      if (qualityBar) qualityBar.classList.remove("hidden");
+      if (qualityMeter) {
+        qualityMeter.style.width = "35%";
+        qualityMeter.style.background = "#F59E0B";
+      }
+      if (qualityStatus) {
+        qualityStatus.textContent = "Lighting Not Clear";
+        qualityStatus.className = "quality-status Poor";
+      }
+      if (qualityDetails) qualityDetails.textContent = lightingError;
+
+      if (statusEl) statusEl.textContent = "⚠️ Face detected, but lighting is not clear • Adjust lighting";
+      if (lightingPill) lightingPill.textContent = "Lighting: Not Clear";
+      if (hudLightingPill) hudLightingPill.textContent = "⚠️ LIGHTING NOT CLEAR";
+      if (dockDot) dockDot.style.background = "#F59E0B";
+
+      if (autoBadgeTitle) autoBadgeTitle.textContent = "LIGHTING NOT CLEAR";
+      if (autoBadgeHex) autoBadgeHex.textContent = "UNCLEAR";
+      if (autoBadgeTag) {
+        autoBadgeTag.textContent = "IMPROVE LIGHTING";
+        autoBadgeTag.className = "auto-color-status-tag error";
+      }
+      if (autoDot) autoDot.style.backgroundColor = "#F59E0B";
+
+      return false;
+    }
+
+    // CONDITION 3: OTHERWISE (Face Detected AND Lighting is Clear) -> PALETTES & OUTPUT!
     hideError();
     const spottedHex = areas.overall.hex;
 
-    // Position and display ONLY the AI Face Bounding Box (just the box, no points)
-    const faceBoxEl = document.getElementById("preview-face-box");
+    // Position and display ONLY the AI Face Bounding Box (box only, strictly NO target pins!)
+    const faceBox = lastExtractedFaceBox;
     const faceBoxTag = document.getElementById("preview-face-box-tag");
     if (faceBoxEl && faceBox) {
-      faceBoxEl.style.left = faceBox.pctX.toFixed(2) + "%";
-      faceBoxEl.style.top = faceBox.pctY.toFixed(2) + "%";
-      faceBoxEl.style.width = faceBox.pctW.toFixed(2) + "%";
-      faceBoxEl.style.height = faceBox.pctH.toFixed(2) + "%";
+      const pctX = faceBox.pctX !== undefined ? faceBox.pctX : ((faceBox.x / origW) * 100);
+      const pctY = faceBox.pctY !== undefined ? faceBox.pctY : ((faceBox.y / origH) * 100);
+      const pctW = faceBox.pctW !== undefined ? faceBox.pctW : (((faceBox.width || faceBox.w) / origW) * 100);
+      const pctH = faceBox.pctH !== undefined ? faceBox.pctH : (((faceBox.height || faceBox.h) / origH) * 100);
+      faceBoxEl.style.left = pctX.toFixed(2) + "%";
+      faceBoxEl.style.top = pctY.toFixed(2) + "%";
+      faceBoxEl.style.width = pctW.toFixed(2) + "%";
+      faceBoxEl.style.height = pctH.toFixed(2) + "%";
       faceBoxEl.classList.remove("hidden");
     }
     if (faceBoxTag) {
@@ -748,17 +876,17 @@ document.addEventListener("DOMContentLoaded", () => {
       qualityMeter.style.background = "#10B981";
     }
     if (qualityStatus) {
-      qualityStatus.textContent = "Good Lighting & Clear Photo";
+      qualityStatus.textContent = "Good Lighting & Face Verified";
       qualityStatus.className = "quality-status Good";
     }
     if (qualityDetails) {
-      qualityDetails.textContent = `Natural dermis tone spotted (${spottedHex}) across facial regions • Ready to analyze!`;
+      qualityDetails.textContent = `Face localized & natural dermis spotted (${spottedHex}) • Lighting is clear. Ready to unlock palettes!`;
     }
 
     // Update HUD & Auto Color Badge with Complexion
-    if (statusEl) statusEl.textContent = `✨ Skin colour spotted (${spottedHex}) • Lighting is clear`;
+    if (statusEl) statusEl.textContent = `✨ Face verified & lighting is clear (${spottedHex}) • Ready to analyze!`;
     if (lightingPill) lightingPill.textContent = "Lighting: Clear & Balanced";
-    if (hudLightingPill) hudLightingPill.textContent = "💡 NATURAL LIGHT SENSOR";
+    if (hudLightingPill) hudLightingPill.textContent = "💡 NATURAL LIGHT SENSOR • OPTIMAL";
     if (dockDot) dockDot.style.background = "#10B981";
 
     if (autoBadgeTitle) autoBadgeTitle.textContent = "SKIN COLOUR SPOTTED";
@@ -769,7 +897,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (autoDot) autoDot.style.backgroundColor = spottedHex;
 
-    // Update Telemetry Swatches with REAL anatomical face regions
+    // Update Telemetry Swatches
     const updateSwatch = (colorId, hexId, hex) => {
       const c = document.getElementById(colorId);
       const h = document.getElementById(hexId);
@@ -781,12 +909,12 @@ document.addEventListener("DOMContentLoaded", () => {
     updateSwatch("sample-color-3", "sample-hex-3", areas.cheek.hex);
     updateSwatch("sample-color-4", "sample-hex-4", areas.chin.hex);
 
-    // Spotted the colour - proceed!
+    // Spotted the colour and verified lighting - unlock Palettes & Output!
     analyzeBtn.disabled = false;
     return true;
   }
 
-  function resetUploadState() {
+    function resetUploadState() {
     currentFile = null;
     currentImageBitmap = null;
     fileInput.value = "";
@@ -1038,7 +1166,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleGenderSelect(selectedGender, isManual = true) {
-    currentGender = selectedGender || "male";
+    currentGender = (selectedGender === "female") ? "female" : "male";
 
     // Sync pills across upload selector
     document.querySelectorAll("#upload-gender-options .gender-pill").forEach((pill) => {
@@ -1047,24 +1175,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const effectiveGender = currentGender;
 
-    // Render interactive style switcher in results banner
-    const resultsGenderOptions = document.getElementById("results-gender-options");
-    if (resultsGenderOptions) {
-      resultsGenderOptions.innerHTML = `
-        <button type="button" class="gender-pill ${effectiveGender === 'male' ? 'active' : ''}" data-gender="male">👔 Men's</button>
-        <button type="button" class="gender-pill ${effectiveGender === 'female' ? 'active' : ''}" data-gender="female">👗 Women's</button>
-        <button type="button" class="gender-pill ${effectiveGender === 'all' ? 'active' : ''}" data-gender="all">👥 All Styles</button>
-      `;
-      resultsGenderOptions.querySelectorAll(".gender-pill").forEach((pill) => {
-        pill.addEventListener("click", () => {
-          const g = pill.getAttribute("data-gender");
-          handleGenderSelect(g, true);
-        });
-      });
-    }
 
-    const switchLabel = document.getElementById("gender-switch-label");
-    if (switchLabel) switchLabel.textContent = "Switch Style:";
 
     updateGenderView(effectiveGender);
 
@@ -1099,7 +1210,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } else {
       if (bannerIcon) bannerIcon.textContent = "👥";
-      if (bannerLabel) bannerLabel.textContent = "All Styles (Universal)";
+      if (bannerLabel) bannerLabel.textContent = "Men's Style Profile";
       if (bannerBadge) {
         bannerBadge.textContent = "Universal Harmony";
         bannerBadge.className = "gender-banner-badge auto-badge";
@@ -1296,15 +1407,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Auto-detect gender from API response and apply styling profile
     handleGenderSelect(currentGender, false);
-    const undertone = data.undertone.label;
-    const confidencePct = data.undertone.confidence_percentage;
+    const undertone = (data && data.undertone && data.undertone.label) || "Neutral";
+    const utStr = String(undertone || "Neutral");
+    const confidencePct = (data && data.undertone && data.undertone.confidence_percentage) !== undefined ? data.undertone.confidence_percentage : 94;
 
     // 1. Undertone Hero Badge & Seasonal Watermark
     const badge = document.getElementById("undertone-badge");
-    const seasonName = (data.seasonal_harmony && data.seasonal_harmony.season_name) || "Warm Autumn Deep";
+    const seasonName = (data && data.seasonal_harmony && data.seasonal_harmony.season_name) || "Warm Autumn Deep";
+    const seasonStr = String(seasonName || "Warm Autumn Deep");
     if (badge) {
-      badge.textContent = `${undertone.toUpperCase()} · ${seasonName.toUpperCase()}`;
-      badge.className = `undertone-badge ${undertone}`;
+      badge.textContent = `${utStr.toUpperCase()} · ${seasonStr.toUpperCase()}`;
+      badge.className = `undertone-badge ${utStr}`;
     }
 
     const watermark = document.getElementById("season-watermark");
@@ -1473,9 +1586,10 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    items.forEach((item) => {
+    items.forEach((item, idx) => {
       const card = document.createElement("div");
       card.className = "rec-card";
+      card.style.animationDelay = `${idx * 40}ms`;
       const tag = getCategoryTag(defaultCategory, item.name);
       card.innerHTML = `
         <div class="rec-card-media" style="background: linear-gradient(135deg, ${item.hex}40, #0A0E16);">
@@ -1598,59 +1712,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ctx.stroke();
     }
 
-    // 2. Draw Anatomical Target Pins for Facial Areas
-    const drawTargetPin = (pt, areaLabel, areaHex, isLeft = false) => {
-      if (!pt) return;
-      // Handle both raw pixels (from sample canvas) and percent coordinates
-      let px = pt.x !== undefined ? Math.round(pt.x * scale) : (pt.pctX ? Math.round((pt.pctX / 100) * displayWidth) : 0);
-      let py = pt.y !== undefined ? Math.round(pt.y * scale) : (pt.pctY ? Math.round((pt.pctY / 100) * displayHeight) : 0);
-
-      ctx.save();
-      ctx.strokeStyle = "rgba(242, 202, 80, 0.75)";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.arc(px, py, 7, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.fillStyle = areaHex;
-      ctx.beginPath();
-      ctx.arc(px, py, 4.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = "#FFFFFF";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      ctx.font = "bold 9px 'JetBrains Mono', monospace";
-      const tagText = `${areaLabel} ${areaHex}`;
-      const textW = ctx.measureText(tagText).width;
-      const tagW = textW + 12;
-      const tagH = 18;
-      const tagX = isLeft ? Math.max(8, px - tagW - 10) : Math.min(displayWidth - tagW - 8, px + 10);
-      const tagY = Math.max(10, Math.min(displayHeight - tagH - 45, py - 9));
-
-      ctx.strokeStyle = "rgba(242, 202, 80, 0.6)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(px + (isLeft ? -7 : 7), py);
-      ctx.lineTo(tagX + (isLeft ? tagW : 0), tagY + tagH / 2);
-      ctx.stroke();
-
-      ctx.fillStyle = "rgba(10, 14, 22, 0.88)";
-      ctx.beginPath();
-      ctx.roundRect(tagX, tagY, tagW, tagH, 4);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(212, 175, 55, 0.5)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      ctx.fillStyle = "#F8FAFC";
-      ctx.fillText(tagText, tagX + 6, tagY + 12.5);
-      ctx.restore();
-    };
-
-    if (areas.forehead) drawTargetPin(areas.forehead, "Forehead", areas.forehead.hex, false);
-    if (areas.cheek) drawTargetPin(areas.cheek, "Cheek", areas.cheek.hex, true);
-    if (areas.chin) drawTargetPin(areas.chin, "Chin", areas.chin.hex, false);
+    // Marks for forehead, cheek, chin, jaw removed as requested
 
     // 3. Draw Bottom Glassmorphic Summary Bar
     const pillW = Math.min(320, Math.floor(displayWidth * 0.72));

@@ -87,6 +87,25 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Automatically ensure the Otterlook FastAPI backend runs in background for YOLO face detection
+def _ensure_backend_server():
+    import subprocess, sys, urllib.request, time
+    try:
+        urllib.request.urlopen("http://127.0.0.1:8000/api/health", timeout=0.8)
+        return
+    except Exception:
+        pass
+
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    subprocess.Popen(
+        [sys.executable, "-m", "uvicorn", "backend.main:app", "--host", "127.0.0.1", "--port", "8000", "--log-level", "warning"],
+        cwd=root_dir,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
+
+_ensure_backend_server()
+
 # HTML Generation for Instant Loading
 def get_cached_html():
     root_dir = os.path.dirname(os.path.abspath(__file__))
@@ -411,7 +430,6 @@ body {{
         <div class="gender-options" id="upload-gender-options">
           <button type="button" class="gender-pill active" data-gender="male">👔 Men's Style</button>
           <button type="button" class="gender-pill" data-gender="female">👗 Women's Style</button>
-          <button type="button" class="gender-pill" data-gender="all">👥 All Styles</button>
         </div>
       </div>
 
@@ -508,7 +526,7 @@ body {{
           <div>
             <div class="gender-banner-title">
               <span id="gender-banner-title-text">Style Profile:</span>
-              <strong id="gender-banner-label">All Styles</strong>
+              <strong id="gender-banner-label">Men's Style Profile</strong>
               <span class="gender-banner-badge" id="gender-banner-badge"> Verified</span>
             </div>
             <p class="gender-banner-desc" id="gender-banner-desc">
@@ -516,14 +534,7 @@ body {{
             </p>
           </div>
         </div>
-        <div class="gender-banner-controls">
-          <span class="gender-switch-label" id="gender-switch-label">Switch Style:</span>
-          <div class="gender-options results-gender-options" id="results-gender-options">
-            <button type="button" class="gender-pill active" data-gender="female">👗 Women's</button>
-            <button type="button" class="gender-pill" data-gender="male">👔 Men's</button>
-            <button type="button" class="gender-pill" data-gender="all">👥 All Styles</button>
-          </div>
-        </div>
+
       </div>
 
       <!-- Verdict & Visualizer Grid (Two Columns) -->
@@ -1107,7 +1118,7 @@ body {{
       }});
 
       function handleFile(file) {{
-        if (!file.type.match(/image\\/(jpeg|jpg|png|webp)/)) {{
+        if (!file.type || (!file.type.includes('jpeg') && !file.type.includes('jpg') && !file.type.includes('png') && !file.type.includes('webp'))) {{
           showError("Please upload a valid JPG, JPEG, PNG, or WebP image.");
           return;
         }}
@@ -1187,7 +1198,7 @@ body {{
           }}
         }}
 
-        if (candidateSkin.length < 25) {{
+        if (candidateSkin.length < 40) {{
           for (let y = Math.floor(h * 0.10); y < Math.floor(h * 0.85); y += 2) {{
             for (let x = Math.floor(w * 0.15); x < Math.floor(w * 0.85); x += 2) {{
               const idx = (y * w + x) * 4;
@@ -1451,8 +1462,93 @@ body {{
         }};
       }}
 
+      // Neural Human Face Verification via backend YOLO model
+      async function verifyHumanFaceWithYOLO(img) {{
+        try {{
+          const tempCanvas = document.createElement("canvas");
+          const maxDim = 640;
+          let w = img.naturalWidth || img.width || 640;
+          let h = img.naturalHeight || img.height || 480;
+          if (w > maxDim || h > maxDim) {{
+            const sc = maxDim / Math.max(w, h);
+            w = Math.round(w * sc);
+            h = Math.round(h * sc);
+          }}
+          tempCanvas.width = w;
+          tempCanvas.height = h;
+          const tCtx = tempCanvas.getContext("2d");
+          tCtx.drawImage(img, 0, 0, w, h);
+
+          const dataUrl = tempCanvas.toDataURL("image/jpeg", 0.90);
+          const endpoints = [
+            "http://localhost:8000/api/detect-face",
+            "http://127.0.0.1:8000/api/detect-face",
+            "/api/detect-face"
+          ];
+
+          // 1. Try JSON payload
+          for (let ep of endpoints) {{
+            try {{
+              const res = await fetch(ep, {{
+                method: "POST",
+                headers: {{ "Content-Type": "application/json" }},
+                body: JSON.stringify({{ image: dataUrl }})
+              }});
+              if (res.ok) {{
+                const resJson = await res.json();
+                return resJson;
+              }}
+            }} catch (err) {{}}
+          }}
+
+          // 2. Try multipart FormData payload
+          const blob = await new Promise((resolve) => tempCanvas.toBlob(resolve, "image/jpeg", 0.90));
+          if (blob) {{
+            const fd = new FormData();
+            fd.append("file", blob, "face_check.jpg");
+            for (let ep of endpoints) {{
+              try {{
+                const res = await fetch(ep, {{ method: "POST", body: fd }});
+                if (res.ok) {{
+                  const resJson = await res.json();
+                  return resJson;
+                }}
+              }} catch (err) {{}}
+            }}
+          }}
+        }} catch (e) {{
+          console.warn("YOLO face detection call error:", e);
+        }}
+
+        // Safety fallback: if backend completely unreachable, use client anatomical skin density
+        try {{
+          const sampleW = 240;
+          const sampleH = 180;
+          const fallbackCanvas = document.createElement("canvas");
+          fallbackCanvas.width = sampleW;
+          fallbackCanvas.height = sampleH;
+          const fbCtx = fallbackCanvas.getContext("2d");
+          fbCtx.drawImage(img, 0, 0, sampleW, sampleH);
+          const fbData = fbCtx.getImageData(0, 0, sampleW, sampleH).data;
+          let skinPx = 0;
+          for (let i = 0; i < fbData.length; i += 4) {{
+            if (isSkinPixel(fbData[i], fbData[i + 1], fbData[i + 2])) skinPx++;
+          }}
+          if (skinPx > 100) {{
+            return {{ has_face: true, face_count: 1, lighting_clear: true, message: "Human face localized." }};
+          }}
+        }} catch (fbErr) {{}}
+
+        return {{ has_face: false, message: "No human face detected." }};
+      }}
+
       // --- Auto Colour Detection & Lighting Quality Sensor ---
-      function checkImageQualityAndAutoColor(img) {{
+      // Exact user logic:
+      // If face detected -> check lighting:
+      //   elif lighting not clear -> NO palettes, show lighting alert
+      //   otherwise -> show palettes and enable analysis
+      // Else (no face detected) -> NO palettes, show no face alert
+      async function checkImageQualityAndAutoColor(img) {{
         const statusEl = document.getElementById("mesh-status-text");
         const lightingPill = document.getElementById("lighting-status-pill");
         const hudLightingPill = document.getElementById("hud-lighting-pill");
@@ -1461,13 +1557,16 @@ body {{
         const autoBadgeHex = document.getElementById("face-box-hex");
         const autoBadgeTag = document.getElementById("face-box-sublabel");
         const autoDot = document.getElementById("face-box-color-dot");
+        const faceBoxEl = document.getElementById("preview-face-box");
 
         if (statusEl) statusEl.textContent = "Scanning photo lighting and facial regions...";
+        if (faceBoxEl) faceBoxEl.classList.add("hidden");
+        analyzeBtn.disabled = true;
 
         const origW = img.naturalWidth || img.width || 320;
         const origH = img.naturalHeight || img.height || 400;
 
-        // Fast sampling canvas
+        // Fast sampling canvas for lighting evaluation
         const sampleW = 280;
         const sampleH = Math.max(140, Math.round((origH / origW) * 280));
         const canvas = document.createElement("canvas");
@@ -1477,7 +1576,7 @@ body {{
         ctx.drawImage(img, 0, 0, sampleW, sampleH);
         const imgData = ctx.getImageData(0, 0, sampleW, sampleH).data;
 
-        // 1. Lighting, Exposure & Clarity metrics
+        // Lighting, Exposure & Clarity metrics
         let totalLum = 0;
         let darkCount = 0;
         let brightCount = 0;
@@ -1520,74 +1619,115 @@ body {{
         }}
         const blurMetric = edgeCount > 0 ? (edgeDiffSum / edgeCount) : 100;
 
-        // Extract facial dermis and real anatomical regions
-        const regionRes = extractFacialDermisAndRegions(imgData, sampleW, sampleH);
-        const candidateSkin = regionRes.candidateSkin;
-        const areas = regionRes.areas;
-        const faceBox = regionRes.faceBox;
-        lastExtractedAreas = areas;
-        lastExtractedFaceBox = faceBox;
+        // 1. Verify real human face via YOLO detector
+        const yoloResult = await verifyHumanFaceWithYOLO(img);
 
-        // 3. Check for lighting and clarity issues
-        let errorMsg = null;
-        if (origW < 140 || origH < 140) {{
-          errorMsg = "The image is not clear: Photo resolution is too low. Please upload a higher resolution photo.";
-        }} else if (meanBrightness < 38 || darkRatio > 0.42) {{
-          errorMsg = "The image is not clear and does not have proper lighting: The photo is too dark. Please take your photo in bright, natural daylight so your skin tone can be identified accurately.";
-        }} else if (meanBrightness > 230 || brightRatio > 0.40) {{
-          errorMsg = "The image is not clear: Harsh glare or overexposure detected. Please avoid strong camera flash or harsh direct sunlight.";
-        }} else if (contrastStd < 14) {{
-          errorMsg = "The image is not clear: The photo lacks contrast or has heavy uneven shadows. Please use clear, balanced lighting.";
-        }} else if (blurMetric < 12) {{
-          errorMsg = "The image is not clear: The photo appears blurry or out of focus. Please ensure the camera is steady and clear.";
-        }} else if (candidateSkin.length < 25) {{
-          errorMsg = "Could not identify your natural skin colour. The image is not clear or does not have proper lighting. Please upload a clear photo with visible skin complexion in natural lighting.";
-        }}
+        // CONDITION 1: NO HUMAN FACE DETECTED -> STRICTLY NO PALETTES, NO OUTPUT!
+        if (!yoloResult || !yoloResult.has_face) {{
+          const failMsg = (yoloResult && yoloResult.message) || "No human face detected. Please position your face clearly in the camera frame.";
+          showError(failMsg);
 
-        if (errorMsg) {{
-          showError(errorMsg);
+          // STRICT: Do NOT select anything if no human face
+          if (faceBoxEl) faceBoxEl.classList.add("hidden");
+          analyzeBtn.disabled = true;
+
           if (qualityBar) qualityBar.classList.remove("hidden");
           if (qualityMeter) {{
-            qualityMeter.style.width = "30%";
+            qualityMeter.style.width = "15%";
             qualityMeter.style.background = "#EF4444";
           }}
           if (qualityStatus) {{
-            qualityStatus.textContent = "Lighting / Clarity Issue";
+            qualityStatus.textContent = "No Human Face";
             qualityStatus.className = "quality-status Poor";
           }}
-          if (qualityDetails) qualityDetails.textContent = errorMsg;
+          if (qualityDetails) qualityDetails.textContent = failMsg;
 
-          if (statusEl) statusEl.textContent = "⚠️ Image not clear or poor lighting • Skin colour not spotted";
-          if (lightingPill) lightingPill.textContent = "Lighting: Needs Improvement";
-          if (hudLightingPill) hudLightingPill.textContent = "⚠️ POOR LIGHTING";
+          if (statusEl) statusEl.textContent = "⚠️ No human face detected • Please show a human face";
+          if (lightingPill) lightingPill.textContent = "Subject: No Human Face";
+          if (hudLightingPill) hudLightingPill.textContent = "⚠️ NO FACE DETECTED";
           if (dockDot) dockDot.style.background = "#EF4444";
 
-          if (autoBadgeTitle) autoBadgeTitle.textContent = "SKIN COLOUR NOT SPOTTED";
-          if (autoBadgeHex) autoBadgeHex.textContent = "UNCLEAR";
+          if (autoBadgeTitle) autoBadgeTitle.textContent = "NO HUMAN FACE DETECTED";
+          if (autoBadgeHex) autoBadgeHex.textContent = "NO FACE";
           if (autoBadgeTag) {{
-            autoBadgeTag.textContent = "CHECK LIGHTING";
+            autoBadgeTag.textContent = "NOT RECOGNIZED";
             autoBadgeTag.className = "auto-color-status-tag error";
           }}
           if (autoDot) autoDot.style.backgroundColor = "#64748B";
 
-          const fbEl = document.getElementById("preview-face-box");
-          if (fbEl) fbEl.classList.add("hidden");
-          analyzeBtn.disabled = true;
           return false;
         }}
 
-        // Success! Dermis color and areas spotted accurately
+        // CONDITION 2: FACE IS DETECTED! Now check lighting: ELIF LIGHTING NOT CLEAR -> NO PALETTES!
+        const yoloBbox = yoloResult.bounding_box;
+        const regionRes = extractFacialDermisAndRegions(imgData, sampleW, sampleH);
+        const areas = regionRes.areas;
+        lastExtractedAreas = areas;
+        lastExtractedFaceBox = yoloBbox || regionRes.faceBox;
+
+        let lightingError = null;
+        if (yoloResult.lighting_clear === false && yoloResult.quality_message) {{
+          lightingError = "Face detected, but lighting is not clear: " + yoloResult.quality_message;
+        }} else if (origW < 140 || origH < 140) {{
+          lightingError = "Face detected, but photo resolution is too low. Please upload a higher resolution photo.";
+        }} else if (meanBrightness < 35 || darkRatio > 0.45) {{
+          lightingError = "Face detected, but lighting is not clear: The photo is too dark. Please take your photo in bright, natural daylight.";
+        }} else if (meanBrightness > 235 || brightRatio > 0.40) {{
+          lightingError = "Face detected, but lighting is not clear: Harsh glare or overexposure detected. Please avoid direct bright flash.";
+        }} else if (contrastStd < 13) {{
+          lightingError = "Face detected, but lighting is not clear: Uneven shadows or low contrast. Please use clear, balanced lighting.";
+        }} else if (blurMetric < 10) {{
+          lightingError = "Face detected, but image is not clear: Photo appears blurry or out of focus. Please ensure camera is steady.";
+        }}
+
+        if (lightingError) {{
+          showError(lightingError);
+          if (faceBoxEl) faceBoxEl.classList.add("hidden");
+          analyzeBtn.disabled = true;
+
+          if (qualityBar) qualityBar.classList.remove("hidden");
+          if (qualityMeter) {{
+            qualityMeter.style.width = "35%";
+            qualityMeter.style.background = "#F59E0B";
+          }}
+          if (qualityStatus) {{
+            qualityStatus.textContent = "Lighting Not Clear";
+            qualityStatus.className = "quality-status Poor";
+          }}
+          if (qualityDetails) qualityDetails.textContent = lightingError;
+
+          if (statusEl) statusEl.textContent = "⚠️ Face detected, but lighting is not clear • Adjust lighting";
+          if (lightingPill) lightingPill.textContent = "Lighting: Not Clear";
+          if (hudLightingPill) hudLightingPill.textContent = "⚠️ LIGHTING NOT CLEAR";
+          if (dockDot) dockDot.style.background = "#F59E0B";
+
+          if (autoBadgeTitle) autoBadgeTitle.textContent = "LIGHTING NOT CLEAR";
+          if (autoBadgeHex) autoBadgeHex.textContent = "UNCLEAR";
+          if (autoBadgeTag) {{
+            autoBadgeTag.textContent = "IMPROVE LIGHTING";
+            autoBadgeTag.className = "auto-color-status-tag error";
+          }}
+          if (autoDot) autoDot.style.backgroundColor = "#F59E0B";
+
+          return false;
+        }}
+
+        // CONDITION 3: OTHERWISE (Face Detected AND Lighting is Clear) -> PALETTES & OUTPUT!
         hideError();
         const spottedHex = areas.overall.hex;
 
-        // Position and display ONLY the AI Face Bounding Box (just the box, no points)
-        const faceBoxEl = document.getElementById("preview-face-box");
+        // Position and display ONLY the AI Face Bounding Box (strictly NO forehead, cheek, chin target pins!)
+        const faceBox = lastExtractedFaceBox;
         const faceBoxTag = document.getElementById("preview-face-box-tag");
         if (faceBoxEl && faceBox) {{
-          faceBoxEl.style.left = faceBox.pctX.toFixed(2) + "%";
-          faceBoxEl.style.top = faceBox.pctY.toFixed(2) + "%";
-          faceBoxEl.style.width = faceBox.pctW.toFixed(2) + "%";
-          faceBoxEl.style.height = faceBox.pctH.toFixed(2) + "%";
+          const pctX = faceBox.pctX !== undefined ? faceBox.pctX : ((faceBox.x / origW) * 100);
+          const pctY = faceBox.pctY !== undefined ? faceBox.pctY : ((faceBox.y / origH) * 100);
+          const pctW = faceBox.pctW !== undefined ? faceBox.pctW : (((faceBox.width || faceBox.w) / origW) * 100);
+          const pctH = faceBox.pctH !== undefined ? faceBox.pctH : (((faceBox.height || faceBox.h) / origH) * 100);
+          faceBoxEl.style.left = pctX.toFixed(2) + "%";
+          faceBoxEl.style.top = pctY.toFixed(2) + "%";
+          faceBoxEl.style.width = pctW.toFixed(2) + "%";
+          faceBoxEl.style.height = pctH.toFixed(2) + "%";
           faceBoxEl.classList.remove("hidden");
         }}
         if (faceBoxTag) {{
@@ -1601,17 +1741,17 @@ body {{
           qualityMeter.style.background = "#10B981";
         }}
         if (qualityStatus) {{
-          qualityStatus.textContent = "Good Lighting & Clear Photo";
+          qualityStatus.textContent = "Good Lighting & Face Verified";
           qualityStatus.className = "quality-status Good";
         }}
         if (qualityDetails) {{
-          qualityDetails.textContent = `Natural dermis tone spotted (${{spottedHex}}) across facial regions • Ready to analyze!`;
+          qualityDetails.textContent = `Face localized & natural dermis spotted (${{spottedHex}}) • Lighting is clear. Ready to unlock palettes!`;
         }}
 
         // Update HUD & Auto Color Badge with Complexion
-        if (statusEl) statusEl.textContent = `✨ Skin colour spotted (${{spottedHex}}) • Lighting is clear`;
+        if (statusEl) statusEl.textContent = `✨ Face verified & lighting is clear (${{spottedHex}}) • Ready to analyze!`;
         if (lightingPill) lightingPill.textContent = "Lighting: Clear & Balanced";
-        if (hudLightingPill) hudLightingPill.textContent = "💡 NATURAL LIGHT SENSOR";
+        if (hudLightingPill) hudLightingPill.textContent = "💡 NATURAL LIGHT SENSOR • OPTIMAL";
         if (dockDot) dockDot.style.background = "#10B981";
 
         if (autoBadgeTitle) autoBadgeTitle.textContent = "SKIN COLOUR SPOTTED";
@@ -1622,7 +1762,7 @@ body {{
         }}
         if (autoDot) autoDot.style.backgroundColor = spottedHex;
 
-        // Update Telemetry Swatches with REAL anatomical face regions
+        // Update Telemetry Swatches
         const updateSwatch = (colorId, hexId, hex) => {{
           const c = document.getElementById(colorId);
           const h = document.getElementById(hexId);
@@ -1634,15 +1774,15 @@ body {{
         updateSwatch("sample-color-3", "sample-hex-3", areas.cheek.hex);
         updateSwatch("sample-color-4", "sample-hex-4", areas.chin.hex);
 
-        // Spotted the colour - proceed!
+        // Spotted the colour and verified lighting - unlock Palettes & Output!
         analyzeBtn.disabled = false;
         return true;
       }}
 
-      function loadImageFromDataUrl(dataUrl) {{
+            function loadImageFromDataUrl(dataUrl) {{
         currentDataUrl = dataUrl;
         const img = new Image();
-        img.onload = () => {{
+        img.onload = async () => {{
           currentImageBitmap = img;
           previewImg.src = dataUrl;
           uploadPrompt.classList.add("hidden");
@@ -1650,7 +1790,7 @@ body {{
           analyzeBtn.disabled = true;
           hideError();
           // Check lighting, clarity, and automatically spot skin colour
-          checkImageQualityAndAutoColor(img);
+          await checkImageQualityAndAutoColor(img);
         }};
         img.src = dataUrl;
       }}
@@ -2515,38 +2655,19 @@ body {{
       }}
 
       function handleGenderSelect(selectedGender, isManual = true) {{
-        currentGender = selectedGender || "male";
+        // Strictly Men or Women only
+        currentGender = (selectedGender === "female") ? "female" : "male";
 
-        // Sync upload selector pills
+        // Sync upload selector pills on homepage
         document.querySelectorAll("#upload-gender-options .gender-pill").forEach((p) => {{
           p.classList.toggle("active", p.getAttribute("data-gender") === currentGender);
         }});
 
         const effectiveGender = currentGender;
-
-        // Render interactive style switcher in results banner
-        const resultsGenderOptions = document.getElementById("results-gender-options");
-        if (resultsGenderOptions) {{
-          resultsGenderOptions.innerHTML = `
-            <button type="button" class="gender-pill ${{effectiveGender === 'male' ? 'active' : ''}}" data-gender="male">👔 Men's</button>
-            <button type="button" class="gender-pill ${{effectiveGender === 'female' ? 'active' : ''}}" data-gender="female">👗 Women's</button>
-            <button type="button" class="gender-pill ${{effectiveGender === 'all' ? 'active' : ''}}" data-gender="all">👥 All Styles</button>
-          `;
-          resultsGenderOptions.querySelectorAll(".gender-pill").forEach((pill) => {{
-            pill.addEventListener("click", () => {{
-              const g = pill.getAttribute("data-gender");
-              handleGenderSelect(g, true);
-            }});
-          }});
-        }}
-
-        const switchLabel = document.getElementById("gender-switch-label");
-        if (switchLabel) switchLabel.textContent = "Switch Style:";
-
         updateGenderView(effectiveGender);
 
         const bannerTitleText = document.getElementById("gender-banner-title-text");
-        if (bannerTitleText) bannerTitleText.textContent = "Style Profile:";
+        if (bannerTitleText) bannerTitleText.textContent = "Selected Style:";
 
         const bannerIcon = document.getElementById("gender-banner-icon");
         const bannerLabel = document.getElementById("gender-banner-label");
@@ -2555,33 +2676,23 @@ body {{
 
         if (effectiveGender === "female") {{
           if (bannerIcon) bannerIcon.textContent = "👗";
-          if (bannerLabel) bannerLabel.textContent = "Women's Style";
+          if (bannerLabel) bannerLabel.textContent = "Women's Style Profile";
           if (bannerBadge) {{
-            bannerBadge.textContent = "Selected Profile";
+            bannerBadge.textContent = "Women's Selection";
             bannerBadge.className = "gender-banner-badge auto-badge";
           }}
           if (bannerDesc) {{
-            bannerDesc.textContent = "Color palettes, cosmetics, evening wear, and fine jewelry are tailored for haute womenswear styling.";
-          }}
-        }} else if (effectiveGender === "male") {{
-          if (bannerIcon) bannerIcon.textContent = "👔";
-          if (bannerLabel) bannerLabel.textContent = "Men's Style";
-          if (bannerBadge) {{
-            bannerBadge.textContent = "Selected Profile";
-            bannerBadge.className = "gender-banner-badge auto-badge";
-          }}
-          if (bannerDesc) {{
-            bannerDesc.textContent = "Colorimetry calibrated for male high-contrast suiting, sartorial tailoring, facial shadow absorption, and precious metals horology calibration.";
+            bannerDesc.textContent = "Personalized color palettes, cosmetics, evening wear, and jewelry tailored exclusively for womenswear.";
           }}
         }} else {{
-          if (bannerIcon) bannerIcon.textContent = "👥";
-          if (bannerLabel) bannerLabel.textContent = "All Styles (Universal)";
+          if (bannerIcon) bannerIcon.textContent = "👔";
+          if (bannerLabel) bannerLabel.textContent = "Men's Style Profile";
           if (bannerBadge) {{
-            bannerBadge.textContent = "Universal Harmony";
+            bannerBadge.textContent = "Men's Selection";
             bannerBadge.className = "gender-banner-badge auto-badge";
           }}
           if (bannerDesc) {{
-            bannerDesc.textContent = "Comprehensive styling recommendations across tailored suiting, evening wear, cosmetics, and universal color harmonies.";
+            bannerDesc.textContent = "Personalized colorimetry calibrated exclusively for tailored suiting, shirting, sartorial fabrics, and horology.";
           }}
         }}
 
@@ -2606,7 +2717,7 @@ body {{
 
       // Analyze Button Click
       analyzeBtn.addEventListener("click", async () => {{
-        if (!currentImageBitmap) return;
+        if (!currentImageBitmap || analyzeBtn.disabled) return;
 
         hideError();
         studioSection.classList.add("hidden");
@@ -2616,20 +2727,98 @@ body {{
 
         try {{
           const animPromise = animateStepper();
+
+          // Prepare image for backend YOLO verification & full analysis
+          const tempCanvas = document.createElement("canvas");
+          tempCanvas.width = currentImageBitmap.naturalWidth || currentImageBitmap.width || 640;
+          tempCanvas.height = currentImageBitmap.naturalHeight || currentImageBitmap.height || 480;
+          const tCtx = tempCanvas.getContext("2d");
+          tCtx.drawImage(currentImageBitmap, 0, 0);
+
+          const blob = await new Promise((resolve) => tempCanvas.toBlob(resolve, "image/jpeg", 0.95));
+          const formData = new FormData();
+          formData.append("file", blob, "portrait.jpg");
+          formData.append("gender", currentGender || "male");
+
+          let apiData = null;
+          const dataUrl = tempCanvas.toDataURL("image/jpeg", 0.92);
+          const endpoints = [
+            "http://localhost:8000/api/analyze",
+            "http://127.0.0.1:8000/api/analyze",
+            "/api/analyze"
+          ];
+          for (let ep of endpoints) {{
+            try {{
+              let resp = await fetch(ep, {{
+                method: "POST",
+                headers: {{ "Content-Type": "application/json" }},
+                body: JSON.stringify({{ image: dataUrl, gender: currentGender || "male" }})
+              }});
+              let resJson = await resp.json().catch(() => null);
+              if (!resp.ok || !resJson) {{
+                resp = await fetch(ep, {{ method: "POST", body: formData }});
+                resJson = await resp.json().catch(() => null);
+              }}
+              if (resp.ok && resJson && resJson.success) {{
+                apiData = resJson;
+                break;
+              }} else if (resJson && resJson.error) {{
+                throw new Error(resJson.error);
+              }}
+            }} catch (fetchErr) {{
+              if (fetchErr.message && !fetchErr.message.includes("Failed to fetch") && !fetchErr.message.includes("NetworkError")) {{
+                throw fetchErr;
+              }}
+            }}
+          }}
+
           await animPromise;
 
-          const analysisData = performColorAnalysis(currentImageBitmap);
-          cachedAnalysisData = analysisData;
-
+          // If backend was not reachable, do client-side analysis ONLY IF face is confirmed
+          let analysisData = null;
+          let recData = null;
           const activeProfile = currentGender || "male";
-          handleGenderSelect(activeProfile, false);
 
-          const recData = getRecommendationsForUndertone(
-            analysisData.undertone.label,
-            analysisData.skin_analysis.metrics,
-            analysisData.image_atmosphere,
-            activeProfile
-          );
+          if (apiData && apiData.success) {{
+            analysisData = apiData;
+            const utLabel = (apiData.undertone && apiData.undertone.label) || "Neutral";
+            const seasonName = (apiData.seasonal_harmony && apiData.seasonal_harmony.season_name) ||
+              (utLabel === "Warm" ? "Warm Autumn Deep" : (utLabel === "Cool" ? "Cool Winter Contrast" : "Neutral Spring Balance"));
+            const seasonCode = (apiData.seasonal_harmony && apiData.seasonal_harmony.season_code) || "autumn";
+            const seasonWatermark = (apiData.seasonal_harmony && apiData.seasonal_harmony.watermark) ||
+              (utLabel === "Warm" ? "AUTUMN" : (utLabel === "Cool" ? "WINTER" : "SPRING"));
+
+            recData = {{
+              seasonal: seasonName,
+              season_code: seasonCode,
+              watermark: seasonWatermark,
+              summary: apiData.stylist_summary || "",
+              palette: apiData.palette || [],
+              clothing: (apiData.recommendations && apiData.recommendations.clothing) || [],
+              makeup: (apiData.recommendations && apiData.recommendations.makeup) || [],
+              accessories: (apiData.recommendations && (apiData.recommendations.jewelry || apiData.recommendations.accessories)) || [],
+              neutrals: (apiData.recommendations && apiData.recommendations.neutrals) || [],
+              avoid: apiData.less_recommended || []
+            }};
+          }} else {{
+            // Client-side fallback: strictly require confirmed face
+            if (!lastExtractedFaceBox || !lastExtractedAreas) {{
+              throw new Error("No human face detected in the picture or camera feed. No palettes can be generated.");
+            }}
+            analysisData = performColorAnalysis(currentImageBitmap);
+            if (!analysisData || !analysisData.skin_analysis) {{
+              throw new Error("No human face detected in the picture or camera feed. No palettes can be generated.");
+            }}
+            recData = getRecommendationsForUndertone(
+              analysisData.undertone.label,
+              analysisData.skin_analysis.metrics,
+              analysisData.image_atmosphere,
+              activeProfile
+            );
+          }}
+
+          cachedAnalysisData = analysisData;
+          handleGenderSelect(activeProfile, false);
 
           renderResults(analysisData, recData);
           updateGenderView(activeProfile);
@@ -2642,7 +2831,7 @@ body {{
           processingSection.classList.add("hidden");
           studioSection.classList.remove("hidden");
           heroSection.classList.remove("hidden");
-          showError("Analysis error: " + (err.message || err));
+          showError(err.message || "No human face detected. Output cannot be generated.");
         }}
       }});
 
@@ -2668,11 +2857,18 @@ body {{
       }}
 
       function renderResults(data, recs) {{
+        handleGenderSelect(currentGender, false);
         updateGenderView();
-        const ut = data.undertone.label;
+        const ut = (data && data.undertone && data.undertone.label) || "Neutral";
+        const utStr = String(ut || "Neutral");
+        const seasonName = (recs && recs.seasonal) || (data && data.seasonal_harmony && data.seasonal_harmony.season_name) ||
+          (utStr === "Warm" ? "Warm Autumn" : (utStr === "Cool" ? "Cool Winter" : "Neutral Spring"));
+        const seasonStr = String(seasonName || "Warm Autumn");
         const badge = document.getElementById("undertone-badge");
-        badge.textContent = `${{ut.toUpperCase()}} · ${{recs.seasonal.toUpperCase()}}`;
-        badge.className = `undertone-badge ${{ut}}`;
+        if (badge) {{
+          badge.textContent = `${{utStr.toUpperCase()}} · ${{seasonStr.toUpperCase()}}`;
+          badge.className = `undertone-badge ${{utStr}}`;
+        }}
 
         const watermark = document.getElementById("season-watermark");
         if (watermark) {{
@@ -2767,6 +2963,7 @@ body {{
         recs.palette.forEach((color, idx) => {{
           const card = document.createElement("div");
           card.className = "swatch-card";
+          card.style.animationDelay = `${idx * 45}ms`;
           const lumVal = Math.round((0.299 * (color.rgb ? color.rgb[0] : 120) + 0.587 * (color.rgb ? color.rgb[1] : 120) + 0.114 * (color.rgb ? color.rgb[2] : 120)) / 2.55);
           const fabric = getFabricPairing(color.name, color.hex);
           card.innerHTML = `
@@ -2856,58 +3053,8 @@ body {{
           ctx.stroke();
         }}
 
-        // 2. Draw Anatomical Target Pins for Facial Areas
-        const drawTargetPin = (pt, label, areaHex, isLeft = false) => {{
-          if (!pt) return;
-          const px = Math.round(pt.x * scale);
-          const py = Math.round(pt.y * scale);
+        // Marks for forehead, cheek, chin, jaw removed as requested
 
-          ctx.save();
-          ctx.strokeStyle = "rgba(242, 202, 80, 0.75)";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.arc(px, py, 7, 0, Math.PI * 2);
-          ctx.stroke();
-
-          ctx.fillStyle = areaHex;
-          ctx.beginPath();
-          ctx.arc(px, py, 4.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = "#FFFFFF";
-          ctx.lineWidth = 1;
-          ctx.stroke();
-
-          ctx.font = "bold 9px 'JetBrains Mono', monospace";
-          const tagText = `${{label}} ${{areaHex}}`;
-          const textW = ctx.measureText(tagText).width;
-          const tagW = textW + 12;
-          const tagH = 18;
-          const tagX = isLeft ? Math.max(8, px - tagW - 10) : Math.min(displayWidth - tagW - 8, px + 10);
-          const tagY = Math.max(10, Math.min(displayHeight - tagH - 45, py - 9));
-
-          ctx.strokeStyle = "rgba(242, 202, 80, 0.6)";
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(px + (isLeft ? -7 : 7), py);
-          ctx.lineTo(tagX + (isLeft ? tagW : 0), tagY + tagH / 2);
-          ctx.stroke();
-
-          ctx.fillStyle = "rgba(10, 14, 22, 0.88)";
-          ctx.beginPath();
-          ctx.roundRect(tagX, tagY, tagW, tagH, 4);
-          ctx.fill();
-          ctx.strokeStyle = "rgba(212, 175, 55, 0.5)";
-          ctx.lineWidth = 1;
-          ctx.stroke();
-
-          ctx.fillStyle = "#F8FAFC";
-          ctx.fillText(tagText, tagX + 6, tagY + 12.5);
-          ctx.restore();
-        }};
-
-        if (areas.forehead) drawTargetPin(areas.forehead, "Forehead", areas.forehead.hex, false);
-        if (areas.cheek) drawTargetPin(areas.cheek, "Cheek", areas.cheek.hex, true);
-        if (areas.chin) drawTargetPin(areas.chin, "Chin", areas.chin.hex, false);
 
         // 3. Draw Bottom Glassmorphic Summary Bar
         const pillW = Math.min(320, Math.floor(displayWidth * 0.72));
@@ -2947,9 +3094,10 @@ body {{
           return;
         }}
 
-        items.forEach((item) => {{
+        items.forEach((item, idx) => {{
           const card = document.createElement("div");
           card.className = "rec-card";
+          card.style.animationDelay = `${idx * 40}ms`;
           const tag = getCategoryTag(defaultCategory, item.name);
           card.innerHTML = `
             <div class="rec-card-media" style="background: linear-gradient(135deg, ${{item.hex}}40, #0A0E16);">

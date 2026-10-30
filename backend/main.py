@@ -6,6 +6,8 @@ Author: AI Personal Colour Analysis System
 import os
 import sys
 import io
+import json
+import base64
 import logging
 import cv2
 import numpy as np
@@ -22,7 +24,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
@@ -51,13 +53,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Enable CORS for frontend flexibility
+# Enable CORS for frontend flexibility across Streamlit (localhost:8501) and standalone (localhost:8000)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Initialize core pipeline singletons
@@ -84,45 +87,168 @@ async def health_check():
         "classes": undertone_predictor.classes
     }
 
+@app.post("/api/detect-face")
+async def detect_face(
+    request: Request,
+    file: Optional[UploadFile] = File(None)
+):
+    """
+    Dedicated endpoint to check if an uploaded image or camera snapshot contains a valid human face
+    AND inspects lighting clarity.
+    Accepts both multipart upload (file) and JSON with base64 data URL ({image: ...}).
+    """
+    try:
+        image_bgr = None
+        if file is not None:
+            contents = await file.read()
+            if contents:
+                nparr = np.frombuffer(contents, np.uint8)
+                image_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if image_bgr is None or image_bgr.size == 0:
+            body = await request.body()
+            if body:
+                try:
+                    data = json.loads(body.decode("utf-8"))
+                    img_str = data.get("image") or data.get("file")
+                    if img_str:
+                        if "," in img_str:
+                            img_str = img_str.split(",", 1)[1]
+                        img_bytes = base64.b64decode(img_str)
+                        nparr = np.frombuffer(img_bytes, np.uint8)
+                        image_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                except Exception:
+                    pass
+
+        if image_bgr is None or image_bgr.size == 0:
+            return JSONResponse(
+                status_code=400,
+                content={"has_face": False, "face_count": 0, "lighting_clear": False, "message": "Invalid or unreadable image."}
+            )
+        
+        # 1. Face detection FIRST (YOLO)
+        face_res = face_detector.detect_faces(image_bgr)
+        if not face_res.get("success") or face_res.get("face_count", 0) == 0:
+            return {
+                "has_face": False,
+                "face_count": 0,
+                "lighting_clear": False,
+                "bounding_box": None,
+                "message": "No human face detected. Please ensure your face is clearly visible."
+            }
+        
+        img_h, img_w = image_bgr.shape[:2]
+        bbox = face_res.get("bounding_box")
+        pct_bbox = None
+        if bbox:
+            pct_bbox = {
+                "x": bbox[0],
+                "y": bbox[1],
+                "w": bbox[2],
+                "h": bbox[3],
+                "pctX": (bbox[0] / img_w) * 100,
+                "pctY": (bbox[1] / img_h) * 100,
+                "pctW": (bbox[2] / img_w) * 100,
+                "pctH": (bbox[3] / img_h) * 100
+            }
+
+        # 2. Lighting & Clarity check SECOND
+        quality_res = analyze_image_quality(image_bgr)
+        lighting_is_clear = bool(quality_res.get("is_valid", True))
+
+        msg = "Face localized and lighting is clear." if lighting_is_clear else f"Face detected, but lighting is not clear: {quality_res.get('message')}"
+
+        return {
+            "has_face": True,
+            "face_count": face_res.get("face_count", 1),
+            "lighting_clear": lighting_is_clear,
+            "quality_status": quality_res.get("status", "Good"),
+            "quality_message": quality_res.get("message", "Optimal lighting."),
+            "bounding_box": pct_bbox,
+            "confidence": face_res.get("confidence", 0.9),
+            "detector_type": face_res.get("detector_type", "yolo_face"),
+            "message": msg
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"has_face": False, "face_count": 0, "lighting_clear": False, "error": str(e)}
+        )
+
 @app.post("/api/analyze")
 async def analyze_portrait(
-    file: UploadFile = File(...),
-    gender: str = Form("all")
+    request: Request,
+    file: Optional[UploadFile] = File(None),
+    gender: Optional[str] = Form("all")
 ):
     """
     Complete analysis pipeline:
-    1. Validate image format & dimensions
-    2. Quality assessment (blur, brightness, contrast)
-    3. Face detection & landmark localization
-    4. Multi-region skin sampling (forehead, cheeks, jaw)
-    5. Outlier rejection & statistical color feature extraction (RGB, HSV, CIELAB, ITA)
-    6. ML undertone classification (Random Forest / SVM)
-    7. Personalized palette & style recommendations generation
+    1. Face detection FIRST (YOLO) - If no face -> Strictly NO output or palettes!
+    2. Quality & lighting assessment SECOND - If lighting not clear -> Strictly NO output or palettes!
+    3. Multi-region skin sampling (forehead, cheeks, jaw)
+    4. Outlier rejection & statistical color feature extraction (RGB, HSV, CIELAB, ITA)
+    5. ML undertone classification (Random Forest / SVM)
+    6. Personalized palette & style recommendations generation
     """
-    if file.content_type not in ALLOWED_MIME_TYPES and not file.filename.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
-        raise HTTPException(
-            status_code=400,
-            detail="Unsupported file format. Please upload a JPG, JPEG, or PNG image."
-        )
+    image_bgr = None
+    user_gender = gender or "all"
 
     try:
-        contents = await file.read()
-        if len(contents) > MAX_FILE_SIZE:
-            raise HTTPException(status_code=400, detail="File size exceeds the 15MB limit.")
-            
-        # Decode image in-memory using OpenCV
-        nparr = np.frombuffer(contents, np.uint8)
-        image_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
+        if file is not None and file.filename:
+            if file.content_type not in ALLOWED_MIME_TYPES and not file.filename.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Unsupported file format. Please upload a JPG, JPEG, or PNG image."
+                )
+            contents = await file.read()
+            if len(contents) > MAX_FILE_SIZE:
+                raise HTTPException(status_code=400, detail="File size exceeds the 15MB limit.")
+            nparr = np.frombuffer(contents, np.uint8)
+            image_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
         if image_bgr is None or image_bgr.size == 0:
-            raise HTTPException(status_code=400, detail="Unable to decode image. The file may be corrupted.")
+            body = await request.body()
+            if body:
+                try:
+                    data = json.loads(body.decode("utf-8"))
+                    img_str = data.get("image") or data.get("file")
+                    if img_str:
+                        if "," in img_str:
+                            img_str = img_str.split(",", 1)[1]
+                        img_bytes = base64.b64decode(img_str)
+                        if len(img_bytes) > MAX_FILE_SIZE:
+                            raise HTTPException(status_code=400, detail="File size exceeds the 15MB limit.")
+                        nparr = np.frombuffer(img_bytes, np.uint8)
+                        image_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                    if data.get("gender"):
+                        user_gender = data.get("gender")
+                except HTTPException:
+                    raise
+                except Exception:
+                    pass
+
+        if image_bgr is None or image_bgr.size == 0:
+            raise HTTPException(status_code=400, detail="Unable to decode image. Please provide a valid JPG or PNG image.")
             
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Image upload failed: {str(e)}")
 
-    # Step 1: Image Quality Assessment
+    # Step 1: YOLO Face Detection FIRST (Strict: No face -> No output/palettes!)
+    face_result = face_detector.detect_faces(image_bgr)
+    if not face_result.get('success') or face_result.get('face_count', 0) == 0:
+        return JSONResponse(
+            status_code=422,
+            content={
+                'success': False,
+                'stage': 'face_detection',
+                'face_count': face_result.get('face_count', 0),
+                'error': face_result.get('message') or 'No human face detected in the picture or camera feed. Please position your face clearly in the frame.'
+            }
+        )
+
+    # Step 2: Quality & Lighting Check SECOND (Strict: Lighting not clear -> No output/palettes!)
     quality_result = analyze_image_quality(image_bgr)
     if not quality_result["is_valid"]:
         return JSONResponse(
@@ -131,42 +257,26 @@ async def analyze_portrait(
                 "success": False,
                 "stage": "quality_check",
                 "quality": quality_result,
-                "error": quality_result["message"]
+                "error": f"Face detected, but lighting is not clear: {quality_result['message']}. Please use clear, balanced lighting."
             }
         )
 
-    # Step 2: Auto Colour & Complexion Detection
-    face_result = face_detector.detect_faces(image_bgr)
-    skin_result = None
-
-    if face_result.get("success") and face_result.get("regions"):
-        skin_result = skin_extractor.extract_skin_pixels(image_bgr, face_result["regions"])
-
-    if skin_result is None or skin_result.get("total_pixels", 0) < 30:
-        bbox = face_result.get("bounding_box") if face_result.get("success") else None
+    # Step 3: Skin Extraction
+    skin_result = skin_extractor.extract_skin_pixels(image_bgr, face_result['regions'])
+    if skin_result is None or skin_result.get('total_pixels', 0) < 30:
+        bbox = face_result.get('bounding_box')
         skin_result = skin_extractor.extract_skin_pixels_autonomous(image_bgr, bbox)
 
-    # If skin colour cannot be spotted:
-    if skin_result.get("total_pixels", 0) < 30:
+    if skin_result is None or skin_result.get('total_pixels', 0) < 30:
         return JSONResponse(
             status_code=422,
             content={
-                "success": False,
-                "stage": "auto_colour_detection",
-                "quality": quality_result,
-                "error": "Could not identify natural skin colour. The image is not clear or does not have proper lighting. Please upload a clear photo with natural lighting."
+                'success': False,
+                'stage': 'auto_colour_detection',
+                'quality': quality_result,
+                'error': 'Could not identify natural skin colour. The image is not clear or does not have proper lighting. Please upload a clear photo with natural lighting.'
             }
         )
-
-    # Normalize face_result for backwards compatibility
-    if not face_result.get("success"):
-        img_h, img_w = image_bgr.shape[:2]
-        face_result = {
-            "success": True,
-            "face_count": 1,
-            "bounding_box": [int(img_w * 0.2), int(img_h * 0.15), int(img_w * 0.6), int(img_h * 0.6)],
-            "regions": skin_result.get("region_samples", {})
-        }
 
     # Step 4: Statistical Color Feature Extraction (RGB, HSV, CIELAB, ITA)
     try:
@@ -185,15 +295,15 @@ async def analyze_portrait(
     ml_prediction = undertone_predictor.predict(color_features["ml_features"])
     predicted_undertone = ml_prediction["label"]
 
-    user_gender = (gender or "all").lower().strip()
-    if user_gender not in ("male", "female", "all"):
-        user_gender = "all"
+    sel_gender = (user_gender or "all").lower().strip()
+    if sel_gender not in ("male", "female", "all"):
+        sel_gender = "all"
 
     # Step 6: Personalized Palette & Styling Recommendation Engine (Tailored to Selected Gender)
     recommendations_result = palette_generator.generate_recommendations(
         undertone=predicted_undertone,
         skin_metrics=color_features["display_metrics"],
-        gender=user_gender
+        gender=sel_gender
     )
 
     # Persist analysis to Supabase (non-blocking, graceful fallback)
@@ -206,7 +316,7 @@ async def analyze_portrait(
             quality_score=quality_result["score"]
         )
     except Exception as e:
-        logger.error("Supabase save_analysis failed (non-fatal): %s", e)
+        logger.error("Supabase save_analysis failed: %s", e)
 
     # Return comprehensive structured response
     return {
@@ -225,7 +335,7 @@ async def analyze_portrait(
             "auto_color_spotted": bool(skin_result.get("spotted", True)),
             "representative_hex": skin_result.get("representative_hex")
         },
-        "gender": user_gender,
+        "gender": sel_gender,
         "skin_analysis": {
             "total_sampled_pixels": skin_result["total_pixels"],
             "region_samples": skin_result["region_samples"],

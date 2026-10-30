@@ -72,3 +72,23 @@ def test_api_feedback_validation(client):
     data = response.json()
     assert "success" in data
 
+
+
+def test_api_analyze_no_face_gives_no_output(client):
+    import io, cv2, numpy as np
+    # Image with no face
+    no_face_img = np.zeros((300, 300, 3), dtype=np.uint8)
+    no_face_img[:, :] = (34, 139, 34)
+    _, encoded = cv2.imencode('.jpg', no_face_img)
+
+    response = client.post(
+        '/api/analyze',
+        files={'file': ('no_face.jpg', io.BytesIO(encoded.tobytes()), 'image/jpeg')}
+    )
+    # Must not give output if no face is shown!
+    assert response.status_code == 422
+    data = response.json()
+    assert data['success'] is False
+    assert data.get('stage') in ('face_detection', 'quality_check')
+    assert 'undertone' not in data
+    assert 'palette' not in data
