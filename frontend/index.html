@@ -59,93 +59,91 @@
 
   <!-- Main Container -->
   <main class="main-content">
-    <!-- Hero Section -->
-    <section class="hero-section">
-      <div class="hero-tag">
-        <span class="material-symbols-outlined" style="font-size: 14px;">palette</span>
-        Smart Personal Color Analysis
+    <!-- Liquid Glass Spatial Hero -->
+    <section class="hero-section liquid-hero">
+      <div class="hero-tag liquid-hud-chip">
+        <span class="material-symbols-outlined" style="font-size: 15px; color: #2997FF;">auto_awesome</span>
+        <span>Liquid Colorimetry & Haute Studio</span>
       </div>
-      <h2 class="hero-headline">Find the Colors that <em>Naturally Flatter You</em></h2>
+      <h2 class="hero-headline">Discover Your <em>True Color Harmony</em></h2>
       <p class="hero-description">
-        Upload a clear photo taken in natural daylight. Our smart scanner spots your skin tone, checks your lighting, and reveals your personal color season and best outfit shades.
+        Experience computational personal color analysis in liquid glass. Our neural sensor localizes your primary facial dermis, validates daylight illumination, and curates bespoke wardrobes and cosmetics.
       </p>
 
       <div class="hero-badges">
-        <div class="badge-item">
-          <span class="material-symbols-outlined" style="font-size: 14px;">colorize</span>
-          Auto-Colour Detection
+        <div class="badge-item liquid-hud-chip">
+          <span class="material-symbols-outlined" style="font-size: 15px; color: #34C759;">verified</span>
+          Daylight Sensor (D65)
         </div>
-        <div class="badge-item">
-          <span class="material-symbols-outlined" style="font-size: 14px;">wb_sunny</span>
-          Natural Lighting Check
+        <div class="badge-item liquid-hud-chip">
+          <span class="material-symbols-outlined" style="font-size: 15px; color: #2997FF;">biometrics</span>
+          Primary Dermis Extraction
         </div>
-        <div class="badge-item">
-          <span class="material-symbols-outlined" style="font-size: 14px;">checkroom</span>
-          Personalized Style Guide
+        <div class="badge-item liquid-hud-chip">
+          <span class="material-symbols-outlined" style="font-size: 15px; color: #FF9F0A;">diamond</span>
+          Tailored Seasonal Edit
         </div>
       </div>
     </section>
 
-    <!-- Studio Photo Upload & Analysis Area -->
+    <!-- Liquid Glass Biometric Studio Chamber -->
     <section class="studio-section">
-      <div class="scanner-bento-grid">
-        <!-- Left: Upload Viewport Box with Auto-Colour Scanner -->
-        <div class="reticle-viewport">
-          <!-- 4-Corner Reticles -->
-          <div class="reticle-corner reticle-tl"></div>
-          <div class="reticle-corner reticle-tr"></div>
-          <div class="reticle-corner reticle-bl"></div>
-          <div class="reticle-corner reticle-br"></div>
-
-          <!-- Drag & Drop Zone -->
-          <div class="upload-container" id="drop-zone">
+      <div class="liquid-lens-container">
+        <div class="liquid-workspace-grid">
+          
+          <!-- Left: Liquid Glass Biometric Portal Box -->
+          <div class="liquid-portal-box" id="drop-zone">
             <input type="file" id="file-input" accept="image/jpeg,image/png,image/jpg,image/webp" hidden>
             <input type="file" id="camera-input" accept="image/*" capture="user" hidden>
-            
-            <div class="upload-content" id="upload-prompt">
-              <div class="upload-icon">
-                <span class="material-symbols-outlined" style="font-size: 32px;">add_a_photo</span>
+
+            <!-- Top Liquid Mode Control Bar -->
+            <div class="liquid-mode-switcher">
+              <button type="button" class="liquid-mode-btn" id="camera-btn">
+                <span class="material-symbols-outlined" style="font-size: 17px; color: #2997FF;">photo_camera</span>
+                <span>Live Camera</span>
+              </button>
+              <button type="button" class="liquid-mode-btn" id="browse-btn">
+                <span class="material-symbols-outlined" style="font-size: 17px; color: #F5F5F7;">folder_open</span>
+                <span>Upload Portrait</span>
+              </button>
+            </div>
+
+            <!-- Upload Prompt Screen -->
+            <div class="liquid-drop-zone" id="upload-prompt">
+              <div class="liquid-target-ring">
+                <span class="material-symbols-outlined" style="font-size: 36px; color: #2997FF;">face</span>
               </div>
-              <h3>Upload Your Photo</h3>
-              <p>Drag & drop your portrait here, or snap a quick live selfie</p>
-              
-              <div class="upload-actions">
-                <button type="button" class="btn btn-camera" id="camera-btn">
-                  <span class="material-symbols-outlined" style="font-size: 16px;">photo_camera</span>
-                  Take Live Selfie
-                </button>
-                <button type="button" class="btn btn-outline" id="browse-btn">
-                  <span class="material-symbols-outlined" style="font-size: 16px;">folder_open</span>
-                  Browse Files
-                </button>
-              </div>
+              <h3 style="font-size: 1.25rem; font-weight: 600; color: #FFFFFF; margin-bottom: 0.35rem;">Enter The Liquid Studio</h3>
+              <p style="font-size: 0.88rem; color: var(--text-secondary); text-align: center; max-width: 320px; line-height: 1.45; margin-bottom: 1.25rem;">
+                Drop your portrait here or snap a live selfie in natural daylight.
+              </p>
 
               <!-- Quick Demo Studio Portraits -->
-              <div class="sample-chips-row">
-                <span class="sample-chips-label">Demo Photos:</span>
+              <div class="sample-chips-row" style="margin-bottom: 1rem;">
+                <span class="sample-chips-label" style="color: var(--text-muted); font-size: 0.78rem;">Demo Profiles:</span>
                 <button type="button" class="sample-chip-btn" id="chip-sample-warm" data-sample="/static/assets/samples/sample_warm.jpg">Warm Autumn</button>
                 <button type="button" class="sample-chip-btn" id="chip-sample-cool" data-sample="/static/assets/samples/sample_cool.jpg">Cool Summer</button>
                 <button type="button" class="sample-chip-btn" id="chip-sample-neutral" data-sample="/static/assets/samples/sample_neutral.jpg">Neutral Spring</button>
               </div>
-              
-              <span class="file-hint">JPG, PNG, or WebP (max 15MB) • Natural daylight facing a window works best</span>
+
+              <span class="file-hint" style="color: var(--text-dim); font-size: 0.75rem;">Supports JPG, PNG, WebP • D65 spectral white balance recommended</span>
             </div>
 
-            <!-- Live Preview Box with Auto Colour Detection Overlay -->
-            <div class="preview-box hidden" id="preview-box">
-              <div class="preview-stage" id="preview-stage">
-                <img id="preview-img" src="" alt="Analyzed Photo">
-                <button class="remove-btn" id="remove-img-btn" title="Remove image">×</button>
-                
-                <!-- Auto Colour & Lighting Detection Overlay (Replaces Face Detection Box) -->
+            <!-- Live Preview Stage with Liquid Glass Biometric Overlays -->
+            <div class="preview-box hidden" id="preview-box" style="flex: 1; position: relative; width: 100%; height: 100%;">
+              <div class="preview-stage" id="preview-stage" style="width: 100%; height: 100%; min-height: 420px; position: relative;">
+                <img id="preview-img" src="" alt="Analyzed Photo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 24px;">
+                <button class="remove-btn" id="remove-img-btn" title="Remove photo">×</button>
+
+                <!-- Biometric Spatial HUD -->
                 <div class="biometric-overlay" id="biometric-overlay">
-                  <div class="viewport-hud">
-                    <span class="hud-pill" id="hud-mode-pill">🎨 AUTO COLOUR DETECTION ACTIVE</span>
-                    <span class="hud-pill hud-pill-secondary" id="hud-lighting-pill">💡 NATURAL LIGHT SENSOR</span>
+                  <div class="viewport-hud" style="padding: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <span class="liquid-hud-chip" id="hud-mode-pill">🎨 AUTO COLOUR ACTIVE</span>
+                    <span class="liquid-hud-chip" id="hud-lighting-pill">💡 NATURAL LIGHT SENSOR</span>
                   </div>
-                  
-                  <!-- Smart Auto-Detected Complexion Badge -->
-                  <div class="auto-color-badge-container" id="auto-color-badge-container">
+
+                  <!-- Auto-Detected Complexion Floating Badge -->
+                  <div class="auto-color-badge-container" id="auto-color-badge-container" style="position: absolute; top: 1rem; right: 1rem;">
                     <div class="auto-color-badge" id="auto-color-badge">
                       <span class="auto-color-swatch-circle" id="face-box-color-dot" style="background: #C68B59;"></span>
                       <div class="auto-color-badge-info">
@@ -156,7 +154,7 @@
                     </div>
                   </div>
 
-                  <!-- Real-Time AI Face Bounding Box (Box only - no points) -->
+                  <!-- Face Bounding Box Overlay -->
                   <div class="face-regions-overlay" id="face-regions-overlay">
                     <div class="preview-face-box hidden" id="preview-face-box">
                       <div class="corner-bracket corner-tl"></div>
@@ -167,141 +165,145 @@
                     </div>
                   </div>
 
-
-                  <!-- Reference anchor for backward compatibility -->
                   <div id="box-face" style="display: none;"></div>
 
                   <!-- Laser Scan Line FX -->
                   <div class="scanline-fx" id="scanline-fx"></div>
 
                   <!-- Viewport Bottom Dock -->
-                  <div class="viewport-dock">
-                    <div class="dock-status">
+                  <div class="viewport-dock" style="position: absolute; bottom: 0; left: 0; right: 0; padding: 0.85rem 1.25rem; background: rgba(5, 7, 12, 0.8); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center;">
+                    <div class="dock-status" style="display: flex; align-items: center; gap: 0.5rem;">
                       <span class="dock-dot" id="dock-dot"></span>
-                      <span id="mesh-status-text">Scanning photo lighting and complexion...</span>
+                      <span id="mesh-status-text" style="font-size: 0.8rem; color: #F5F5F7;">Scanning photo lighting and complexion...</span>
                     </div>
-                    <span class="hud-pill" id="lighting-status-pill">Checking Lighting...</span>
+                    <span class="liquid-hud-chip" id="lighting-status-pill">Checking Lighting...</span>
                   </div>
                 </div>
               </div>
             </div>
+
+            <!-- Photo Quality Meter & Error Alerts -->
+            <div class="quality-bar hidden" id="quality-bar" style="margin: 0.75rem 1rem;">
+              <div class="quality-header">
+                <span class="quality-title">Lighting & Image Metric:</span>
+                <span class="quality-status" id="quality-status">Checking Photo...</span>
+              </div>
+              <div class="quality-meter-track">
+                <div class="quality-meter-fill" id="quality-meter" style="width: 0%"></div>
+              </div>
+              <div class="quality-details" id="quality-details"></div>
+            </div>
+
+            <div class="error-banner hidden" id="error-banner" style="margin: 0.75rem 1rem;">
+              <span class="material-symbols-outlined" style="font-size: 20px;">error</span>
+              <div class="error-text" id="error-text"></div>
+            </div>
           </div>
 
-          <!-- Photo Quality & Lighting Bar -->
-          <div class="quality-bar hidden" id="quality-bar">
-            <div class="quality-header">
-              <span class="quality-title">Photo Quality & Lighting Check:</span>
-              <span class="quality-status" id="quality-status">Checking Photo...</span>
-            </div>
-            <div class="quality-meter-track">
-              <div class="quality-meter-fill" id="quality-meter" style="width: 0%"></div>
-            </div>
-            <div class="quality-details" id="quality-details"></div>
-          </div>
+          <!-- Right: Liquid Telemetry & Dermis Swatches -->
+          <div class="liquid-telemetry-container">
+            <!-- Sensor Diagnostics Card -->
+            <div class="liquid-sensor-card">
+              <div class="liquid-sensor-header">
+                <span class="liquid-sensor-title">Liquid Sensor Optics</span>
+                <span class="liquid-sensor-badge">99.4% Precision</span>
+              </div>
+              <h3 style="font-size: 1.1rem; font-weight: 600; color: #FFFFFF; margin-bottom: 1rem;">Daylight & Illumination Matrix</h3>
 
-          <!-- Error Banner -->
-          <div class="error-banner hidden" id="error-banner">
-            <span class="material-symbols-outlined" style="font-size: 20px;">error</span>
-            <div class="error-text" id="error-text"></div>
+              <div class="diagnostic-meters" style="display: flex; flex-direction: column; gap: 0.85rem;">
+                <div class="meter-row">
+                  <div class="meter-labels" style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <span class="meter-name" style="color: var(--text-secondary);">Lighting Balance</span>
+                    <span class="meter-val" id="meter-lux-val" style="color: #2997FF; font-weight: 600;">Optimal Daylight</span>
+                  </div>
+                  <div class="liquid-track">
+                    <div class="liquid-fill" id="meter-lux-fill" style="width: 95%;"></div>
+                  </div>
+                </div>
+
+                <div class="meter-row">
+                  <div class="meter-labels" style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <span class="meter-name" style="color: var(--text-secondary);">Spectral White Balance</span>
+                    <span class="meter-val" id="meter-wb-val" style="color: #2997FF; font-weight: 600;">Balanced (D65)</span>
+                  </div>
+                  <div class="liquid-track">
+                    <div class="liquid-fill" id="meter-wb-fill" style="width: 96%;"></div>
+                  </div>
+                </div>
+
+                <div class="meter-row">
+                  <div class="meter-labels" style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <span class="meter-name" style="color: var(--text-secondary);">Facial Focus & Sharpness</span>
+                    <span class="meter-val" id="meter-snr-val" style="color: #34C759; font-weight: 600;">Studio Crisp</span>
+                  </div>
+                  <div class="liquid-track">
+                    <div class="liquid-fill" id="meter-snr-fill" style="width: 95%; background: linear-gradient(90deg, #34C759, #30D158) !important;"></div>
+                  </div>
+                </div>
+
+                <div class="meter-row">
+                  <div class="meter-labels" style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <span class="meter-name" style="color: var(--text-secondary);">Acquisition Resolution</span>
+                    <span class="meter-val" id="meter-res-val" style="color: #2997FF; font-weight: 600;">Ultra Definition</span>
+                  </div>
+                  <div class="liquid-track">
+                    <div class="liquid-fill" id="meter-res-fill" style="width: 100%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Auto-Detected Dermis Micro-Swatches Plinth -->
+            <div class="liquid-swatches-pod">
+              <div class="liquid-swatches-title">Live Dermal Sampling</div>
+              <div class="liquid-swatches-flex">
+                <div class="liquid-swatch-item">
+                  <div class="liquid-swatch-orb" id="sample-color-1" style="background: #C68B59;"></div>
+                  <span class="liquid-swatch-label">Primary</span>
+                  <span class="liquid-swatch-hex" id="sample-hex-1">#C68B59</span>
+                </div>
+                <div class="liquid-swatch-item">
+                  <div class="liquid-swatch-orb" id="sample-color-2" style="background: #BA8152;"></div>
+                  <span class="liquid-swatch-label">Forehead</span>
+                  <span class="liquid-swatch-hex" id="sample-hex-2">#BA8152</span>
+                </div>
+                <div class="liquid-swatch-item">
+                  <div class="liquid-swatch-orb" id="sample-color-3" style="background: #D39766;"></div>
+                  <span class="liquid-swatch-label">Cheek</span>
+                  <span class="liquid-swatch-hex" id="sample-hex-3">#D39766</span>
+                </div>
+                <div class="liquid-swatch-item">
+                  <div class="liquid-swatch-orb" id="sample-color-4" style="background: #BF8555;"></div>
+                  <span class="liquid-swatch-label">Chin</span>
+                  <span class="liquid-swatch-hex" id="sample-hex-4">#BF8555</span>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        <!-- Right: Real-time Photo Quality & Lighting Check Card -->
-        <div class="telemetry-card">
-          <div>
-            <div class="telemetry-header">
-              <span class="telemetry-title">Photo Check</span>
-              <span class="telemetry-grade">High Accuracy</span>
-            </div>
-            <h3 class="telemetry-headline">Lighting & Clarity Analysis</h3>
-
-            <div class="diagnostic-meters">
-              <div class="meter-row">
-                <div class="meter-labels">
-                  <span class="meter-name">Lighting Quality</span>
-                  <span class="meter-val" id="meter-lux-val">Optimal Daylight</span>
-                </div>
-                <div class="meter-track">
-                  <div class="meter-fill" id="meter-lux-fill" style="width: 95%;"></div>
-                </div>
-              </div>
-
-              <div class="meter-row">
-                <div class="meter-labels">
-                  <span class="meter-name">Natural Color Balance</span>
-                  <span class="meter-val" id="meter-wb-val">Balanced</span>
-                </div>
-                <div class="meter-track">
-                  <div class="meter-fill" id="meter-wb-fill" style="width: 96%;"></div>
-                </div>
-              </div>
-
-              <div class="meter-row">
-                <div class="meter-labels">
-                  <span class="meter-name">Image Clarity & Focus</span>
-                  <span class="meter-val text-emerald-400" id="meter-snr-val">Clear & Sharp</span>
-                </div>
-                <div class="meter-track">
-                  <div class="meter-fill meter-fill-green" id="meter-snr-fill" style="width: 95%;"></div>
-                </div>
-              </div>
-
-              <div class="meter-row">
-                <div class="meter-labels">
-                  <span class="meter-name">Photo Resolution</span>
-                  <span class="meter-val" id="meter-res-val">High Definition</span>
-                </div>
-                <div class="meter-track">
-                  <div class="meter-fill" id="meter-res-fill" style="width: 100%;"></div>
-                </div>
-              </div>
-            </div>
+        <!-- Floating Liquid Control Deck -->
+        <div class="liquid-control-deck">
+          <!-- Curated Style Profile Capsule -->
+          <div class="liquid-style-capsule" id="upload-gender-options">
+            <button type="button" class="gender-pill active" data-gender="male" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.6rem 1.4rem; border-radius: 980px;">
+              <span>👔</span>
+              <span>Men's Style</span>
+            </button>
+            <button type="button" class="gender-pill" data-gender="female" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.6rem 1.4rem; border-radius: 980px;">
+              <span>👗</span>
+              <span>Women's Style</span>
+            </button>
           </div>
 
-          <!-- Auto-Detected Complexion Swatches Strip -->
-          <div class="micro-samples-strip">
-            <div class="micro-samples-title">Auto-Detected Complexion Swatches</div>
-            <div class="micro-samples-grid">
-              <div class="micro-sample-card">
-                <div class="micro-sample-color" id="sample-color-1" style="background: #C68B59;"></div>
-                <div class="micro-sample-name">Detected Skin Tone</div>
-                <div class="micro-sample-hex" id="sample-hex-1">#C68B59</div>
-              </div>
-              <div class="micro-sample-card">
-                <div class="micro-sample-color" id="sample-color-2" style="background: #BA8152;"></div>
-                <div class="micro-sample-name">Upper Face</div>
-                <div class="micro-sample-hex" id="sample-hex-2">#BA8152</div>
-              </div>
-              <div class="micro-sample-card">
-                <div class="micro-sample-color" id="sample-color-3" style="background: #D39766;"></div>
-                <div class="micro-sample-name">Cheek Tone</div>
-                <div class="micro-sample-hex" id="sample-hex-3">#D39766</div>
-              </div>
-              <div class="micro-sample-card">
-                <div class="micro-sample-color" id="sample-color-4" style="background: #BF8555;"></div>
-                <div class="micro-sample-name">Lower Face</div>
-                <div class="micro-sample-hex" id="sample-hex-4">#BF8555</div>
-              </div>
-            </div>
-          </div>
+          <!-- Liquid Primary Action Button -->
+          <button id="analyze-btn" class="btn-liquid-glow" disabled>
+            <span class="material-symbols-outlined" style="font-size: 22px;">auto_awesome</span>
+            <span>Analyze Undertone & View Palette</span>
+          </button>
         </div>
-      </div>
 
-      <!-- Styling Profile Selector -->
-      <div class="gender-selector-wrapper">
-        <span class="gender-selector-label">Style Recommendations For:</span>
-        <div class="gender-options" id="upload-gender-options">
-          <button type="button" class="gender-pill active" data-gender="male">👔 Men's Style</button>
-          <button type="button" class="gender-pill" data-gender="female">👗 Women's Style</button>
-        </div>
-      </div>
-
-      <!-- Primary Analyze CTA -->
-      <div class="cta-container">
-        <button id="analyze-btn" class="btn btn-primary btn-glow" disabled>
-          <span class="material-symbols-outlined" style="font-size: 20px;">play_arrow</span>
-          <span>Analyze Undertone & View Palette</span>
-        </button>
       </div>
     </section>
 
