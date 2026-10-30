@@ -2963,7 +2963,7 @@ body {{
         recs.palette.forEach((color, idx) => {{
           const card = document.createElement("div");
           card.className = "swatch-card";
-          card.style.animationDelay = `${idx * 45}ms`;
+          card.style.animationDelay = `${{idx * 45}}ms`;
           const lumVal = Math.round((0.299 * (color.rgb ? color.rgb[0] : 120) + 0.587 * (color.rgb ? color.rgb[1] : 120) + 0.114 * (color.rgb ? color.rgb[2] : 120)) / 2.55);
           const fabric = getFabricPairing(color.name, color.hex);
           card.innerHTML = `
@@ -3097,7 +3097,7 @@ body {{
         items.forEach((item, idx) => {{
           const card = document.createElement("div");
           card.className = "rec-card";
-          card.style.animationDelay = `${idx * 40}ms`;
+          card.style.animationDelay = `${{idx * 40}}ms`;
           const tag = getCategoryTag(defaultCategory, item.name);
           card.innerHTML = `
             <div class="rec-card-media" style="background: linear-gradient(135deg, ${{item.hex}}40, #0A0E16);">
