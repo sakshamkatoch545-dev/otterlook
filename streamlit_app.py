@@ -84,12 +84,15 @@ st.markdown("""
     border: none !important;
     display: block !important;
   }
+  .telemetry-card {
+    display: none !important;
+  }
 </style>
 """, unsafe_allow_html=True)
 
 # Automatically ensure the Otterlook FastAPI backend runs in background for YOLO face detection
 def _ensure_backend_server():
-    import subprocess, sys, urllib.request, time
+    import subprocess, sys, urllib.request
     try:
         urllib.request.urlopen("http://127.0.0.1:8000/api/health", timeout=0.8)
         return
@@ -128,7 +131,7 @@ def get_cached_html():
   <meta name="theme-color" content="#0F131C" id="theme-color-meta">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Roboto+Flex:wght@300;400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <!-- Ultra-Fast High-Precision Neural Geometry & Feature Engine -->
   <style>
 {css_content}
@@ -153,14 +156,11 @@ body {{
   </style>
 </head>
 <body class="bg-atelier-grid">
-  <!-- Fluid Ambient Light Orbs -->
+  <!-- Ambient Luxury Light Orbs -->
   <div class="ambient-orbs">
     <div class="orb-gold"></div>
     <div class="orb-ochre"></div>
     <div class="orb-rose"></div>
-    <div class="orb-liquid-cyan"></div>
-    <div class="orb-liquid-violet"></div>
-    <div class="orb-liquid-amber"></div>
   </div>
 
   <!-- Header Navigation -->
@@ -186,6 +186,10 @@ body {{
       </div>
 
       <div class="header-actions">
+        <button id="nav-home-btn" class="btn btn-outline nav-home-btn hidden" title="Back to Home Page">
+          <span class="material-symbols-outlined" style="font-size: 16px;">home</span>
+          <span>Home Page</span>
+        </button>
         <button id="viva-modal-btn" class="btn btn-outline" title="About Otterlook AI">
           <span class="material-symbols-outlined" style="font-size: 16px;">help_outline</span>
           <span>How It Works</span>
@@ -200,91 +204,93 @@ body {{
 
   <!-- Main Container -->
   <main class="main-content">
-    <!-- Liquid Glass Spatial Hero -->
-    <section class="hero-section liquid-hero">
-      <div class="hero-tag liquid-hud-chip">
-        <span class="material-symbols-outlined" style="font-size: 15px; color: #2997FF;">auto_awesome</span>
-        <span>Liquid Colorimetry & Haute Studio</span>
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-tag">
+        <span class="material-symbols-outlined" style="font-size: 14px;">palette</span>
+        Smart Personal Color Analysis
       </div>
-      <h2 class="hero-headline">Discover Your <em>True Color Harmony</em></h2>
+      <h2 class="hero-headline">Find the Colors that <em>Naturally Flatter You</em></h2>
       <p class="hero-description">
-        Experience computational personal color analysis in liquid glass. Our neural sensor localizes your primary facial dermis, validates daylight illumination, and curates bespoke wardrobes and cosmetics.
+        Upload a clear photo taken in natural daylight. Our smart scanner spots your skin tone, checks your lighting, and reveals your personal color season and best outfit shades.
       </p>
 
       <div class="hero-badges">
-        <div class="badge-item liquid-hud-chip">
-          <span class="material-symbols-outlined" style="font-size: 15px; color: #34C759;">verified</span>
-          Daylight Sensor (D65)
+        <div class="badge-item">
+          <span class="material-symbols-outlined" style="font-size: 14px;">colorize</span>
+          Auto-Colour Detection
         </div>
-        <div class="badge-item liquid-hud-chip">
-          <span class="material-symbols-outlined" style="font-size: 15px; color: #2997FF;">biometrics</span>
-          Primary Dermis Extraction
+        <div class="badge-item">
+          <span class="material-symbols-outlined" style="font-size: 14px;">wb_sunny</span>
+          Natural Lighting Check
         </div>
-        <div class="badge-item liquid-hud-chip">
-          <span class="material-symbols-outlined" style="font-size: 15px; color: #FF9F0A;">diamond</span>
-          Tailored Seasonal Edit
+        <div class="badge-item">
+          <span class="material-symbols-outlined" style="font-size: 14px;">checkroom</span>
+          Personalized Style Guide
         </div>
       </div>
     </section>
 
-    <!-- Liquid Glass Biometric Studio Chamber -->
+    <!-- Studio Photo Upload & Analysis Area -->
     <section class="studio-section">
-      <div class="liquid-lens-container">
-        <div class="liquid-workspace-grid">
-          
-          <!-- Left: Liquid Glass Biometric Portal Box -->
-          <div class="liquid-portal-box" id="drop-zone">
+      <div class="scanner-bento-grid">
+        <!-- Left: Upload Viewport Box with Auto-Colour Scanner -->
+        <div class="reticle-viewport">
+          <!-- 4-Corner Reticles -->
+          <div class="reticle-corner reticle-tl"></div>
+          <div class="reticle-corner reticle-tr"></div>
+          <div class="reticle-corner reticle-bl"></div>
+          <div class="reticle-corner reticle-br"></div>
+
+          <!-- Drag & Drop Zone -->
+          <div class="upload-container" id="drop-zone">
             <input type="file" id="file-input" accept="image/jpeg,image/png,image/jpg,image/webp" hidden>
             <input type="file" id="camera-input" accept="image/*" capture="user" hidden>
-
-            <!-- Top Liquid Mode Control Bar -->
-            <div class="liquid-mode-switcher">
-              <button type="button" class="liquid-mode-btn" id="camera-btn">
-                <span class="material-symbols-outlined" style="font-size: 17px; color: #2997FF;">photo_camera</span>
-                <span>Live Camera</span>
-              </button>
-              <button type="button" class="liquid-mode-btn" id="browse-btn">
-                <span class="material-symbols-outlined" style="font-size: 17px; color: #F5F5F7;">folder_open</span>
-                <span>Upload Portrait</span>
-              </button>
-            </div>
-
-            <!-- Upload Prompt Screen -->
-            <div class="liquid-drop-zone" id="upload-prompt">
-              <div class="liquid-target-ring">
-                <span class="material-symbols-outlined" style="font-size: 36px; color: #2997FF;">face</span>
+            
+            <div class="upload-content" id="upload-prompt">
+              <div class="upload-icon">
+                <span class="material-symbols-outlined" style="font-size: 32px;">add_a_photo</span>
               </div>
-              <h3 style="font-size: 1.25rem; font-weight: 600; color: #FFFFFF; margin-bottom: 0.35rem;">Enter The Liquid Studio</h3>
-              <p style="font-size: 0.88rem; color: var(--text-secondary); text-align: center; max-width: 320px; line-height: 1.45; margin-bottom: 1.25rem;">
-                Drop your portrait here or snap a live selfie in natural daylight.
-              </p>
+              <h3>Upload Your Photo</h3>
+              <p>Drag & drop your portrait here, or snap a quick live selfie</p>
+              
+              <div class="upload-actions">
+                <button type="button" class="btn btn-camera" id="camera-btn">
+                  <span class="material-symbols-outlined" style="font-size: 16px;">photo_camera</span>
+                  Take Live Selfie
+                </button>
+                <button type="button" class="btn btn-outline" id="browse-btn">
+                  <span class="material-symbols-outlined" style="font-size: 16px;">folder_open</span>
+                  Browse Files
+                </button>
+              </div>
 
               <!-- Quick Demo Studio Portraits -->
-              <div class="sample-chips-row" style="margin-bottom: 1rem;">
-                <span class="sample-chips-label" style="color: var(--text-muted); font-size: 0.78rem;">Demo Profiles:</span>
+              <div class="sample-chips-row">
+                <span class="sample-chips-label">Demo Photos:</span>
                 <button type="button" class="sample-chip-btn" id="chip-sample-warm" data-sample="/static/assets/samples/sample_warm.jpg">Warm Autumn</button>
                 <button type="button" class="sample-chip-btn" id="chip-sample-cool" data-sample="/static/assets/samples/sample_cool.jpg">Cool Summer</button>
                 <button type="button" class="sample-chip-btn" id="chip-sample-neutral" data-sample="/static/assets/samples/sample_neutral.jpg">Neutral Spring</button>
               </div>
-
-              <span class="file-hint" style="color: var(--text-dim); font-size: 0.75rem;">Supports JPG, PNG, WebP • D65 spectral white balance recommended</span>
+              
+              <span class="file-hint">JPG, PNG, or WebP (max 15MB) • Natural daylight facing a window works best</span>
             </div>
 
-            <!-- Live Preview Stage with Liquid Glass Biometric Overlays -->
-            <div class="preview-box hidden" id="preview-box" style="flex: 1; position: relative; width: 100%; height: 100%;">
-              <div class="preview-stage" id="preview-stage" style="width: 100%; height: 100%; min-height: 420px; position: relative;">
-                <img id="preview-img" src="" alt="Analyzed Photo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 24px;">
-                <button class="remove-btn" id="remove-img-btn" title="Remove photo">×</button>
-
-                <!-- Biometric Spatial HUD -->
+            <!-- Live Preview Box with Auto Colour Detection Overlay -->
+            <div class="preview-box hidden" id="preview-box">
+              <div class="preview-stage" id="preview-stage">
+                <img id="preview-img" src="" alt="Analyzed Photo">
+                <button class="remove-btn" id="remove-img-btn" title="Remove image">&times;</button>
+                
+                <!-- Auto Colour & Lighting Detection Overlay (Replaces Face Detection Box) -->
                 <div class="biometric-overlay" id="biometric-overlay">
-                  <div class="viewport-hud" style="padding: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <span class="liquid-hud-chip" id="hud-mode-pill">🎨 AUTO COLOUR ACTIVE</span>
-                    <span class="liquid-hud-chip" id="hud-lighting-pill">💡 NATURAL LIGHT SENSOR</span>
+                  <div class="viewport-hud">
+                    <span class="hud-pill" id="hud-mode-pill">AUTO COLOUR DETECTION ACTIVE</span>
+                    <span class="hud-pill hud-pill-secondary" id="hud-lighting-pill">NATURAL LIGHT SENSOR</span>
                   </div>
-
-                  <!-- Auto-Detected Complexion Floating Badge -->
-                  <div class="auto-color-badge-container" id="auto-color-badge-container" style="position: absolute; top: 1rem; right: 1rem;">
+                  
+                  <!-- Smart Auto-Detected Complexion Badge -->
+                  <div class="auto-color-badge-container" id="auto-color-badge-container">
                     <div class="auto-color-badge" id="auto-color-badge">
                       <span class="auto-color-swatch-circle" id="face-box-color-dot" style="background: #C68B59;"></span>
                       <div class="auto-color-badge-info">
@@ -295,7 +301,7 @@ body {{
                     </div>
                   </div>
 
-                  <!-- Face Bounding Box Overlay -->
+                  <!-- Real-Time AI Face Bounding Box (Box only - no points) -->
                   <div class="face-regions-overlay" id="face-regions-overlay">
                     <div class="preview-face-box hidden" id="preview-face-box">
                       <div class="corner-bracket corner-tl"></div>
@@ -306,145 +312,61 @@ body {{
                     </div>
                   </div>
 
+                  <!-- Reference anchor for backward compatibility -->
                   <div id="box-face" style="display: none;"></div>
 
                   <!-- Laser Scan Line FX -->
                   <div class="scanline-fx" id="scanline-fx"></div>
 
                   <!-- Viewport Bottom Dock -->
-                  <div class="viewport-dock" style="position: absolute; bottom: 0; left: 0; right: 0; padding: 0.85rem 1.25rem; background: rgba(5, 7, 12, 0.8); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center;">
-                    <div class="dock-status" style="display: flex; align-items: center; gap: 0.5rem;">
+                  <div class="viewport-dock">
+                    <div class="dock-status">
                       <span class="dock-dot" id="dock-dot"></span>
-                      <span id="mesh-status-text" style="font-size: 0.8rem; color: #F5F5F7;">Scanning photo lighting and complexion...</span>
+                      <span id="mesh-status-text">Scanning photo lighting and complexion...</span>
                     </div>
-                    <span class="liquid-hud-chip" id="lighting-status-pill">Checking Lighting...</span>
+                    <span class="hud-pill" id="lighting-status-pill">Checking Lighting...</span>
                   </div>
                 </div>
               </div>
-            </div>
-
-            <!-- Photo Quality Meter & Error Alerts -->
-            <div class="quality-bar hidden" id="quality-bar" style="margin: 0.75rem 1rem;">
-              <div class="quality-header">
-                <span class="quality-title">Lighting & Image Metric:</span>
-                <span class="quality-status" id="quality-status">Checking Photo...</span>
-              </div>
-              <div class="quality-meter-track">
-                <div class="quality-meter-fill" id="quality-meter" style="width: 0%"></div>
-              </div>
-              <div class="quality-details" id="quality-details"></div>
-            </div>
-
-            <div class="error-banner hidden" id="error-banner" style="margin: 0.75rem 1rem;">
-              <span class="material-symbols-outlined" style="font-size: 20px;">error</span>
-              <div class="error-text" id="error-text"></div>
             </div>
           </div>
 
-          <!-- Right: Liquid Telemetry & Dermis Swatches -->
-          <div class="liquid-telemetry-container">
-            <!-- Sensor Diagnostics Card -->
-            <div class="liquid-sensor-card">
-              <div class="liquid-sensor-header">
-                <span class="liquid-sensor-title">Liquid Sensor Optics</span>
-                <span class="liquid-sensor-badge">99.4% Precision</span>
-              </div>
-              <h3 style="font-size: 1.1rem; font-weight: 600; color: #FFFFFF; margin-bottom: 1rem;">Daylight & Illumination Matrix</h3>
-
-              <div class="diagnostic-meters" style="display: flex; flex-direction: column; gap: 0.85rem;">
-                <div class="meter-row">
-                  <div class="meter-labels" style="display: flex; justify-content: space-between; font-size: 0.8rem;">
-                    <span class="meter-name" style="color: var(--text-secondary);">Lighting Balance</span>
-                    <span class="meter-val" id="meter-lux-val" style="color: #2997FF; font-weight: 600;">Optimal Daylight</span>
-                  </div>
-                  <div class="liquid-track">
-                    <div class="liquid-fill" id="meter-lux-fill" style="width: 95%;"></div>
-                  </div>
-                </div>
-
-                <div class="meter-row">
-                  <div class="meter-labels" style="display: flex; justify-content: space-between; font-size: 0.8rem;">
-                    <span class="meter-name" style="color: var(--text-secondary);">Spectral White Balance</span>
-                    <span class="meter-val" id="meter-wb-val" style="color: #2997FF; font-weight: 600;">Balanced (D65)</span>
-                  </div>
-                  <div class="liquid-track">
-                    <div class="liquid-fill" id="meter-wb-fill" style="width: 96%;"></div>
-                  </div>
-                </div>
-
-                <div class="meter-row">
-                  <div class="meter-labels" style="display: flex; justify-content: space-between; font-size: 0.8rem;">
-                    <span class="meter-name" style="color: var(--text-secondary);">Facial Focus & Sharpness</span>
-                    <span class="meter-val" id="meter-snr-val" style="color: #34C759; font-weight: 600;">Studio Crisp</span>
-                  </div>
-                  <div class="liquid-track">
-                    <div class="liquid-fill" id="meter-snr-fill" style="width: 95%; background: linear-gradient(90deg, #34C759, #30D158) !important;"></div>
-                  </div>
-                </div>
-
-                <div class="meter-row">
-                  <div class="meter-labels" style="display: flex; justify-content: space-between; font-size: 0.8rem;">
-                    <span class="meter-name" style="color: var(--text-secondary);">Acquisition Resolution</span>
-                    <span class="meter-val" id="meter-res-val" style="color: #2997FF; font-weight: 600;">Ultra Definition</span>
-                  </div>
-                  <div class="liquid-track">
-                    <div class="liquid-fill" id="meter-res-fill" style="width: 100%;"></div>
-                  </div>
-                </div>
-              </div>
+          <!-- Photo Quality & Lighting Bar -->
+          <div class="quality-bar hidden" id="quality-bar">
+            <div class="quality-header">
+              <span class="quality-title">Photo Quality & Lighting Check:</span>
+              <span class="quality-status" id="quality-status">Checking Photo...</span>
             </div>
-
-            <!-- Auto-Detected Dermis Micro-Swatches Plinth -->
-            <div class="liquid-swatches-pod">
-              <div class="liquid-swatches-title">Live Dermal Sampling</div>
-              <div class="liquid-swatches-flex">
-                <div class="liquid-swatch-item">
-                  <div class="liquid-swatch-orb" id="sample-color-1" style="background: #C68B59;"></div>
-                  <span class="liquid-swatch-label">Primary</span>
-                  <span class="liquid-swatch-hex" id="sample-hex-1">#C68B59</span>
-                </div>
-                <div class="liquid-swatch-item">
-                  <div class="liquid-swatch-orb" id="sample-color-2" style="background: #BA8152;"></div>
-                  <span class="liquid-swatch-label">Forehead</span>
-                  <span class="liquid-swatch-hex" id="sample-hex-2">#BA8152</span>
-                </div>
-                <div class="liquid-swatch-item">
-                  <div class="liquid-swatch-orb" id="sample-color-3" style="background: #D39766;"></div>
-                  <span class="liquid-swatch-label">Cheek</span>
-                  <span class="liquid-swatch-hex" id="sample-hex-3">#D39766</span>
-                </div>
-                <div class="liquid-swatch-item">
-                  <div class="liquid-swatch-orb" id="sample-color-4" style="background: #BF8555;"></div>
-                  <span class="liquid-swatch-label">Chin</span>
-                  <span class="liquid-swatch-hex" id="sample-hex-4">#BF8555</span>
-                </div>
-              </div>
+            <div class="quality-meter-track">
+              <div class="quality-meter-fill" id="quality-meter" style="width: 0%"></div>
             </div>
+            <div class="quality-details" id="quality-details"></div>
+          </div>
 
+          <!-- Error Banner -->
+          <div class="error-banner hidden" id="error-banner">
+            <span class="material-symbols-outlined" style="font-size: 20px;">error</span>
+            <div class="error-text" id="error-text"></div>
           </div>
         </div>
+      </div>
 
-        <!-- Floating Liquid Control Deck -->
-        <div class="liquid-control-deck">
-          <!-- Curated Style Profile Capsule -->
-          <div class="liquid-style-capsule" id="upload-gender-options">
-            <button type="button" class="gender-pill active" data-gender="male" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.6rem 1.4rem; border-radius: 980px;">
-              <span>👔</span>
-              <span>Men's Style</span>
-            </button>
-            <button type="button" class="gender-pill" data-gender="female" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.6rem 1.4rem; border-radius: 980px;">
-              <span>👗</span>
-              <span>Women's Style</span>
-            </button>
-          </div>
-
-          <!-- Liquid Primary Action Button -->
-          <button id="analyze-btn" class="btn-liquid-glow" disabled>
-            <span class="material-symbols-outlined" style="font-size: 22px;">auto_awesome</span>
-            <span>Analyze Undertone & View Palette</span>
-          </button>
+      <!-- Styling Profile Selector -->
+      <div class="gender-selector-wrapper">
+        <span class="gender-selector-label">Style Recommendations For:</span>
+        <div class="gender-options" id="upload-gender-options">
+          <button type="button" class="gender-pill active" data-gender="male">Men's Style</button>
+          <button type="button" class="gender-pill" data-gender="female">Women's Style</button>
+          <button type="button" class="gender-pill" data-gender="all">All Styles</button>
         </div>
+      </div>
 
+      <!-- Primary Analyze CTA -->
+      <div class="cta-container">
+        <button id="analyze-btn" class="btn btn-primary btn-glow" disabled>
+          <span class="material-symbols-outlined" style="font-size: 20px;">play_arrow</span>
+          <span>Analyze Undertone & View Palette</span>
+        </button>
       </div>
     </section>
 
@@ -525,6 +447,14 @@ body {{
 
     <!-- Results Showcase Section -->
     <section class="results-section hidden" id="results-section">
+      <!-- Results Navigation Top Bar (Visible when output shows) -->
+      <div class="results-top-bar">
+        <button type="button" class="btn btn-outline" id="results-home-btn">
+          <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span>
+          <span>Back to Home Page</span>
+        </button>
+      </div>
+
       <!-- Auto-Detected Style Profile Banner -->
       <div class="gender-verdict-banner" id="gender-verdict-banner">
         <div class="gender-banner-left">
@@ -532,7 +462,7 @@ body {{
           <div>
             <div class="gender-banner-title">
               <span id="gender-banner-title-text">Style Profile:</span>
-              <strong id="gender-banner-label">Men's Style Profile</strong>
+              <strong id="gender-banner-label">All Styles</strong>
               <span class="gender-banner-badge" id="gender-banner-badge"> Verified</span>
             </div>
             <p class="gender-banner-desc" id="gender-banner-desc">
@@ -540,7 +470,7 @@ body {{
             </p>
           </div>
         </div>
-
+        
       </div>
 
       <!-- Verdict & Visualizer Grid (Two Columns) -->
@@ -783,11 +713,11 @@ body {{
       <!-- Recommendation Categories Tabs -->
       <div class="recommendations-container" id="curations">
         <div class="tab-nav">
-          <button class="tab-btn active" data-tab="clothing">👔 Clothes & Outfits</button>
-          <button class="tab-btn" data-tab="makeup" id="tab-btn-makeup">💄 Makeup & Lips</button>
-          <button class="tab-btn" data-tab="accessories">💍 Jewelry & Metals</button>
-          <button class="tab-btn" data-tab="neutrals">🎨 Everyday Neutrals</button>
-          <button class="tab-btn tab-btn-avoid" data-tab="avoid">⛔ Colors to Avoid</button>
+          <button class="tab-btn active" data-tab="clothing">Clothes & Outfits</button>
+          <button class="tab-btn" data-tab="makeup" id="tab-btn-makeup">Makeup & Lips</button>
+          <button class="tab-btn" data-tab="accessories">Jewelry & Metals</button>
+          <button class="tab-btn" data-tab="neutrals">Everyday Neutrals</button>
+          <button class="tab-btn tab-btn-avoid" data-tab="avoid">Colors to Avoid</button>
         </div>
 
         <div class="tab-content active" id="tab-clothing">
@@ -833,6 +763,10 @@ body {{
             </p>
           </div>
           <div class="another-analysis-actions">
+            <button type="button" class="btn btn-outline" id="another-home-btn">
+              <span class="material-symbols-outlined" style="font-size: 18px;">home</span>
+              <span>Back to Home Page</span>
+            </button>
             <button type="button" class="btn btn-outline" id="another-camera-btn">
               <span class="material-symbols-outlined" style="font-size: 18px;">photo_camera</span>
               <span>Take Live Selfie</span>
@@ -957,6 +891,7 @@ body {{
       let currentDataUrl = null;
       let currentGender = "male";
       let cachedAnalysisData = null;
+      let isFaceVerified = false;
 
       // Theme Controller
       function applyTheme(theme) {{
@@ -1124,7 +1059,7 @@ body {{
       }});
 
       function handleFile(file) {{
-        if (!file.type || (!file.type.includes('jpeg') && !file.type.includes('jpg') && !file.type.includes('png') && !file.type.includes('webp'))) {{
+        if (!file.type.match(/image\\/(jpeg|jpg|png|webp)/)) {{
           showError("Please upload a valid JPG, JPEG, PNG, or WebP image.");
           return;
         }}
@@ -1204,7 +1139,7 @@ body {{
           }}
         }}
 
-        if (candidateSkin.length < 40) {{
+        if (candidateSkin.length < 25) {{
           for (let y = Math.floor(h * 0.10); y < Math.floor(h * 0.85); y += 2) {{
             for (let x = Math.floor(w * 0.15); x < Math.floor(w * 0.85); x += 2) {{
               const idx = (y * w + x) * 4;
@@ -1468,7 +1403,7 @@ body {{
         }};
       }}
 
-      // Neural Human Face Verification via backend YOLO model
+      // --- YOLO Human Face Verification Sensor ---
       async function verifyHumanFaceWithYOLO(img) {{
         try {{
           const tempCanvas = document.createElement("canvas");
@@ -1492,7 +1427,6 @@ body {{
             "/api/detect-face"
           ];
 
-          // 1. Try JSON payload
           for (let ep of endpoints) {{
             try {{
               const res = await fetch(ep, {{
@@ -1507,53 +1441,26 @@ body {{
             }} catch (err) {{}}
           }}
 
-          // 2. Try multipart FormData payload
           const blob = await new Promise((resolve) => tempCanvas.toBlob(resolve, "image/jpeg", 0.90));
           if (blob) {{
-            const fd = new FormData();
-            fd.append("file", blob, "face_check.jpg");
             for (let ep of endpoints) {{
               try {{
+                const fd = new FormData();
+                fd.append("file", blob, "photo.jpg");
                 const res = await fetch(ep, {{ method: "POST", body: fd }});
                 if (res.ok) {{
-                  const resJson = await res.json();
-                  return resJson;
+                  return await res.json();
                 }}
               }} catch (err) {{}}
             }}
           }}
         }} catch (e) {{
-          console.warn("YOLO face detection call error:", e);
+          console.warn("YOLO verification request failed:", e);
         }}
-
-        // Safety fallback: if backend completely unreachable, use client anatomical skin density
-        try {{
-          const sampleW = 240;
-          const sampleH = 180;
-          const fallbackCanvas = document.createElement("canvas");
-          fallbackCanvas.width = sampleW;
-          fallbackCanvas.height = sampleH;
-          const fbCtx = fallbackCanvas.getContext("2d");
-          fbCtx.drawImage(img, 0, 0, sampleW, sampleH);
-          const fbData = fbCtx.getImageData(0, 0, sampleW, sampleH).data;
-          let skinPx = 0;
-          for (let i = 0; i < fbData.length; i += 4) {{
-            if (isSkinPixel(fbData[i], fbData[i + 1], fbData[i + 2])) skinPx++;
-          }}
-          if (skinPx > 100) {{
-            return {{ has_face: true, face_count: 1, lighting_clear: true, message: "Human face localized." }};
-          }}
-        }} catch (fbErr) {{}}
-
-        return {{ has_face: false, message: "No human face detected." }};
+        return null;
       }}
 
       // --- Auto Colour Detection & Lighting Quality Sensor ---
-      // Exact user logic:
-      // If face detected -> check lighting:
-      //   elif lighting not clear -> NO palettes, show lighting alert
-      //   otherwise -> show palettes and enable analysis
-      // Else (no face detected) -> NO palettes, show no face alert
       async function checkImageQualityAndAutoColor(img) {{
         const statusEl = document.getElementById("mesh-status-text");
         const lightingPill = document.getElementById("lighting-status-pill");
@@ -1563,16 +1470,13 @@ body {{
         const autoBadgeHex = document.getElementById("face-box-hex");
         const autoBadgeTag = document.getElementById("face-box-sublabel");
         const autoDot = document.getElementById("face-box-color-dot");
-        const faceBoxEl = document.getElementById("preview-face-box");
 
         if (statusEl) statusEl.textContent = "Scanning photo lighting and facial regions...";
-        if (faceBoxEl) faceBoxEl.classList.add("hidden");
-        analyzeBtn.disabled = true;
 
         const origW = img.naturalWidth || img.width || 320;
         const origH = img.naturalHeight || img.height || 400;
 
-        // Fast sampling canvas for lighting evaluation
+        // Fast sampling canvas
         const sampleW = 280;
         const sampleH = Math.max(140, Math.round((origH / origW) * 280));
         const canvas = document.createElement("canvas");
@@ -1582,7 +1486,7 @@ body {{
         ctx.drawImage(img, 0, 0, sampleW, sampleH);
         const imgData = ctx.getImageData(0, 0, sampleW, sampleH).data;
 
-        // Lighting, Exposure & Clarity metrics
+        // 1. Lighting, Exposure & Clarity metrics
         let totalLum = 0;
         let darkCount = 0;
         let brightCount = 0;
@@ -1625,21 +1529,23 @@ body {{
         }}
         const blurMetric = edgeCount > 0 ? (edgeDiffSum / edgeCount) : 100;
 
-        // 1. Verify real human face via YOLO detector
+        // Verify human face using YOLO first
         const yoloResult = await verifyHumanFaceWithYOLO(img);
 
         // CONDITION 1: NO HUMAN FACE DETECTED -> STRICTLY NO PALETTES, NO OUTPUT!
         if (!yoloResult || !yoloResult.has_face) {{
+          isFaceVerified = false;
           const failMsg = (yoloResult && yoloResult.message) || "No human face detected. Please position your face clearly in the camera frame.";
           showError(failMsg);
 
-          // STRICT: Do NOT select anything if no human face
+          const faceBoxEl = document.getElementById("preview-face-box");
           if (faceBoxEl) faceBoxEl.classList.add("hidden");
           analyzeBtn.disabled = true;
+          if (resultsSection) resultsSection.classList.add("hidden");
 
           if (qualityBar) qualityBar.classList.remove("hidden");
           if (qualityMeter) {{
-            qualityMeter.style.width = "15%";
+            qualityMeter.style.width = "10%";
             qualityMeter.style.background = "#EF4444";
           }}
           if (qualityStatus) {{
@@ -1661,79 +1567,103 @@ body {{
           }}
           if (autoDot) autoDot.style.backgroundColor = "#64748B";
 
+          // Strictly clear telemetry swatches - NO OUTPUT
+          const clearSwatch = (colorId, hexId) => {{
+            const c = document.getElementById(colorId);
+            const h = document.getElementById(hexId);
+            if (c) c.style.backgroundColor = "#1C2028";
+            if (h) h.textContent = "—";
+          }};
+          clearSwatch("sample-color-1", "sample-hex-1");
+          clearSwatch("sample-color-2", "sample-hex-2");
+          clearSwatch("sample-color-3", "sample-hex-3");
+          clearSwatch("sample-color-4", "sample-hex-4");
+
           return false;
         }}
 
-        // CONDITION 2: FACE IS DETECTED! Now check lighting: ELIF LIGHTING NOT CLEAR -> NO PALETTES!
-        const yoloBbox = yoloResult.bounding_box;
-        const regionRes = extractFacialDermisAndRegions(imgData, sampleW, sampleH);
-        const areas = regionRes.areas;
-        lastExtractedAreas = areas;
-        lastExtractedFaceBox = yoloBbox || regionRes.faceBox;
+        // Face is verified!
+        isFaceVerified = true;
 
-        let lightingError = null;
-        if (yoloResult.lighting_clear === false && yoloResult.quality_message) {{
-          lightingError = "Face detected, but lighting is not clear: " + yoloResult.quality_message;
-        }} else if (origW < 140 || origH < 140) {{
-          lightingError = "Face detected, but photo resolution is too low. Please upload a higher resolution photo.";
-        }} else if (meanBrightness < 35 || darkRatio > 0.45) {{
-          lightingError = "Face detected, but lighting is not clear: The photo is too dark. Please take your photo in bright, natural daylight.";
-        }} else if (meanBrightness > 235 || brightRatio > 0.40) {{
-          lightingError = "Face detected, but lighting is not clear: Harsh glare or overexposure detected. Please avoid direct bright flash.";
-        }} else if (contrastStd < 13) {{
-          lightingError = "Face detected, but lighting is not clear: Uneven shadows or low contrast. Please use clear, balanced lighting.";
-        }} else if (blurMetric < 10) {{
-          lightingError = "Face detected, but image is not clear: Photo appears blurry or out of focus. Please ensure camera is steady.";
+        // Extract facial dermis and real anatomical regions
+        const regionRes = extractFacialDermisAndRegions(imgData, sampleW, sampleH);
+        const candidateSkin = regionRes.candidateSkin;
+        const areas = regionRes.areas;
+        let faceBox = regionRes.faceBox;
+        if (yoloResult && yoloResult.bounding_box && Array.isArray(yoloResult.bounding_box) && yoloResult.bounding_box.length === 4) {{
+          const [bx1, by1, bx2, by2] = yoloResult.bounding_box;
+          faceBox = {{
+            pctX: (bx1 / origW) * 100,
+            pctY: (by1 / origH) * 100,
+            pctW: ((bx2 - bx1) / origW) * 100,
+            pctH: ((by2 - by1) / origH) * 100
+          }};
+        }}
+        lastExtractedAreas = areas;
+        lastExtractedFaceBox = faceBox;
+
+        // 3. Check for lighting and clarity issues
+        let errorMsg = null;
+        if (origW < 140 || origH < 140) {{
+          errorMsg = "The image is not clear: Photo resolution is too low. Please upload a higher resolution photo.";
+        }} else if (meanBrightness < 38 || darkRatio > 0.42) {{
+          errorMsg = "The image is not clear and does not have proper lighting: The photo is too dark. Please take your photo in bright, natural daylight so your skin tone can be identified accurately.";
+        }} else if (meanBrightness > 230 || brightRatio > 0.40) {{
+          errorMsg = "The image is not clear: Harsh glare or overexposure detected. Please avoid strong camera flash or harsh direct sunlight.";
+        }} else if (contrastStd < 14) {{
+          errorMsg = "The image is not clear: The photo lacks contrast or has heavy uneven shadows. Please use clear, balanced lighting.";
+        }} else if (blurMetric < 12) {{
+          errorMsg = "The image is not clear: The photo appears blurry or out of focus. Please ensure the camera is steady and clear.";
+        }} else if (candidateSkin.length < 25) {{
+          errorMsg = "Could not identify your natural skin colour. The image is not clear or does not have proper lighting. Please upload a clear photo with visible skin complexion in natural lighting.";
         }}
 
-        if (lightingError) {{
-          showError(lightingError);
-          if (faceBoxEl) faceBoxEl.classList.add("hidden");
-          analyzeBtn.disabled = true;
-
+        if (errorMsg) {{
+          isFaceVerified = false;
+          if (resultsSection) resultsSection.classList.add("hidden");
+          showError(errorMsg);
           if (qualityBar) qualityBar.classList.remove("hidden");
           if (qualityMeter) {{
-            qualityMeter.style.width = "35%";
-            qualityMeter.style.background = "#F59E0B";
+            qualityMeter.style.width = "30%";
+            qualityMeter.style.background = "#EF4444";
           }}
           if (qualityStatus) {{
-            qualityStatus.textContent = "Lighting Not Clear";
+            qualityStatus.textContent = "Lighting / Clarity Issue";
             qualityStatus.className = "quality-status Poor";
           }}
-          if (qualityDetails) qualityDetails.textContent = lightingError;
+          if (qualityDetails) qualityDetails.textContent = errorMsg;
 
-          if (statusEl) statusEl.textContent = "⚠️ Face detected, but lighting is not clear • Adjust lighting";
-          if (lightingPill) lightingPill.textContent = "Lighting: Not Clear";
-          if (hudLightingPill) hudLightingPill.textContent = "⚠️ LIGHTING NOT CLEAR";
-          if (dockDot) dockDot.style.background = "#F59E0B";
+          if (statusEl) statusEl.textContent = "⚠️ Image not clear or poor lighting • Skin colour not spotted";
+          if (lightingPill) lightingPill.textContent = "Lighting: Needs Improvement";
+          if (hudLightingPill) hudLightingPill.textContent = "⚠️ POOR LIGHTING";
+          if (dockDot) dockDot.style.background = "#EF4444";
 
-          if (autoBadgeTitle) autoBadgeTitle.textContent = "LIGHTING NOT CLEAR";
+          if (autoBadgeTitle) autoBadgeTitle.textContent = "SKIN COLOUR NOT SPOTTED";
           if (autoBadgeHex) autoBadgeHex.textContent = "UNCLEAR";
           if (autoBadgeTag) {{
-            autoBadgeTag.textContent = "IMPROVE LIGHTING";
+            autoBadgeTag.textContent = "CHECK LIGHTING";
             autoBadgeTag.className = "auto-color-status-tag error";
           }}
-          if (autoDot) autoDot.style.backgroundColor = "#F59E0B";
+          if (autoDot) autoDot.style.backgroundColor = "#64748B";
 
+          const fbEl = document.getElementById("preview-face-box");
+          if (fbEl) fbEl.classList.add("hidden");
+          analyzeBtn.disabled = true;
           return false;
         }}
 
-        // CONDITION 3: OTHERWISE (Face Detected AND Lighting is Clear) -> PALETTES & OUTPUT!
+        // Success! Dermis color and areas spotted accurately
         hideError();
         const spottedHex = areas.overall.hex;
 
-        // Position and display ONLY the AI Face Bounding Box (strictly NO forehead, cheek, chin target pins!)
-        const faceBox = lastExtractedFaceBox;
+        // Position and display ONLY the AI Face Bounding Box (just the box, no points)
+        const faceBoxEl = document.getElementById("preview-face-box");
         const faceBoxTag = document.getElementById("preview-face-box-tag");
         if (faceBoxEl && faceBox) {{
-          const pctX = faceBox.pctX !== undefined ? faceBox.pctX : ((faceBox.x / origW) * 100);
-          const pctY = faceBox.pctY !== undefined ? faceBox.pctY : ((faceBox.y / origH) * 100);
-          const pctW = faceBox.pctW !== undefined ? faceBox.pctW : (((faceBox.width || faceBox.w) / origW) * 100);
-          const pctH = faceBox.pctH !== undefined ? faceBox.pctH : (((faceBox.height || faceBox.h) / origH) * 100);
-          faceBoxEl.style.left = pctX.toFixed(2) + "%";
-          faceBoxEl.style.top = pctY.toFixed(2) + "%";
-          faceBoxEl.style.width = pctW.toFixed(2) + "%";
-          faceBoxEl.style.height = pctH.toFixed(2) + "%";
+          faceBoxEl.style.left = faceBox.pctX.toFixed(2) + "%";
+          faceBoxEl.style.top = faceBox.pctY.toFixed(2) + "%";
+          faceBoxEl.style.width = faceBox.pctW.toFixed(2) + "%";
+          faceBoxEl.style.height = faceBox.pctH.toFixed(2) + "%";
           faceBoxEl.classList.remove("hidden");
         }}
         if (faceBoxTag) {{
@@ -1747,17 +1677,17 @@ body {{
           qualityMeter.style.background = "#10B981";
         }}
         if (qualityStatus) {{
-          qualityStatus.textContent = "Good Lighting & Face Verified";
+          qualityStatus.textContent = "Good Lighting & Clear Photo";
           qualityStatus.className = "quality-status Good";
         }}
         if (qualityDetails) {{
-          qualityDetails.textContent = `Face localized & natural dermis spotted (${{spottedHex}}) • Lighting is clear. Ready to unlock palettes!`;
+          qualityDetails.textContent = `Natural dermis tone spotted (${{spottedHex}}) across facial regions • Ready to analyze!`;
         }}
 
         // Update HUD & Auto Color Badge with Complexion
-        if (statusEl) statusEl.textContent = `✨ Face verified & lighting is clear (${{spottedHex}}) • Ready to analyze!`;
+        if (statusEl) statusEl.textContent = `✨ Skin colour spotted (${{spottedHex}}) • Lighting is clear`;
         if (lightingPill) lightingPill.textContent = "Lighting: Clear & Balanced";
-        if (hudLightingPill) hudLightingPill.textContent = "💡 NATURAL LIGHT SENSOR • OPTIMAL";
+        if (hudLightingPill) hudLightingPill.textContent = "💡 NATURAL LIGHT SENSOR";
         if (dockDot) dockDot.style.background = "#10B981";
 
         if (autoBadgeTitle) autoBadgeTitle.textContent = "SKIN COLOUR SPOTTED";
@@ -1768,7 +1698,7 @@ body {{
         }}
         if (autoDot) autoDot.style.backgroundColor = spottedHex;
 
-        // Update Telemetry Swatches
+        // Update Telemetry Swatches with REAL anatomical face regions
         const updateSwatch = (colorId, hexId, hex) => {{
           const c = document.getElementById(colorId);
           const h = document.getElementById(hexId);
@@ -1780,13 +1710,16 @@ body {{
         updateSwatch("sample-color-3", "sample-hex-3", areas.cheek.hex);
         updateSwatch("sample-color-4", "sample-hex-4", areas.chin.hex);
 
-        // Spotted the colour and verified lighting - unlock Palettes & Output!
+        // Spotted the colour - proceed!
         analyzeBtn.disabled = false;
         return true;
       }}
 
-            function loadImageFromDataUrl(dataUrl) {{
+      function loadImageFromDataUrl(dataUrl) {{
         currentDataUrl = dataUrl;
+        isFaceVerified = false;
+        cachedAnalysisData = null;
+        if (resultsSection) resultsSection.classList.add("hidden");
         const img = new Image();
         img.onload = async () => {{
           currentImageBitmap = img;
@@ -1804,16 +1737,31 @@ body {{
       function resetUpload() {{
         currentImageBitmap = null;
         currentDataUrl = null;
+        isFaceVerified = false;
+        cachedAnalysisData = null;
         fileInput.value = "";
         cameraInput.value = "";
         previewImg.src = "";
         previewImg.removeAttribute("src");
         uploadPrompt.classList.remove("hidden");
         previewBox.classList.add("hidden");
+        if (resultsSection) resultsSection.classList.add("hidden");
         analyzeBtn.disabled = true;
         hideError();
         const faceBoxEl = document.getElementById("preview-face-box");
         if (faceBoxEl) faceBoxEl.classList.add("hidden");
+
+        // Reset telemetry swatches
+        const resetSwatch = (colorId, hexId) => {{
+          const c = document.getElementById(colorId);
+          const h = document.getElementById(hexId);
+          if (c) c.style.backgroundColor = "#1C2028";
+          if (h) h.textContent = "—";
+        }};
+        resetSwatch("sample-color-1", "sample-hex-1");
+        resetSwatch("sample-color-2", "sample-hex-2");
+        resetSwatch("sample-color-3", "sample-hex-3");
+        resetSwatch("sample-color-4", "sample-hex-4");
       }}
 
       function showInitialQuality(w, h) {{
@@ -1822,12 +1770,12 @@ body {{
           qualityMeter.style.width = "92%";
           qualityStatus.textContent = "Studio Quality";
           qualityStatus.className = "quality-status Good";
-          qualityDetails.textContent = `Acquisition resolution: ${{w}} × ${{h}}px • D65 spectral white balance optimal`;
+          qualityDetails.textContent = `Acquisition resolution: ${{w}} &times; ${{h}}px • D65 spectral white balance optimal`;
         }} else {{
           qualityMeter.style.width = "50%";
           qualityStatus.textContent = "Low Resolution";
           qualityStatus.className = "quality-status Acceptable";
-          qualityDetails.textContent = `Acquisition resolution: ${{w}} × ${{h}}px • High-res portrait recommended`;
+          qualityDetails.textContent = `Acquisition resolution: ${{w}} &times; ${{h}}px • High-res portrait recommended`;
         }}
       }}
 
@@ -2661,8 +2609,7 @@ body {{
       }}
 
       function handleGenderSelect(selectedGender, isManual = true) {{
-        // Strictly Men or Women only
-        currentGender = (selectedGender === "female") ? "female" : "male";
+        currentGender = selectedGender || "male";
 
         // Sync upload selector pills on homepage
         document.querySelectorAll("#upload-gender-options .gender-pill").forEach((p) => {{
@@ -2670,10 +2617,22 @@ body {{
         }});
 
         const effectiveGender = currentGender;
+
+        // Ensure switcher is completely absent/hidden in results
+        const resultsGenderOptions = document.getElementById("results-gender-options");
+        if (resultsGenderOptions) {{
+          resultsGenderOptions.innerHTML = "";
+          resultsGenderOptions.style.display = "none";
+        }}
+        const switchLabel = document.getElementById("gender-switch-label");
+        if (switchLabel) switchLabel.style.display = "none";
+        const bannerControls = document.querySelector(".gender-banner-controls");
+        if (bannerControls) bannerControls.style.display = "none";
+
         updateGenderView(effectiveGender);
 
         const bannerTitleText = document.getElementById("gender-banner-title-text");
-        if (bannerTitleText) bannerTitleText.textContent = "Selected Style:";
+        if (bannerTitleText) bannerTitleText.textContent = "Style Profile:";
 
         const bannerIcon = document.getElementById("gender-banner-icon");
         const bannerLabel = document.getElementById("gender-banner-label");
@@ -2684,29 +2643,39 @@ body {{
           if (bannerIcon) bannerIcon.textContent = "👗";
           if (bannerLabel) bannerLabel.textContent = "Women's Style Profile";
           if (bannerBadge) {{
-            bannerBadge.textContent = "Women's Selection";
+            bannerBadge.textContent = "Selected Profile";
             bannerBadge.className = "gender-banner-badge auto-badge";
           }}
           if (bannerDesc) {{
-            bannerDesc.textContent = "Personalized color palettes, cosmetics, evening wear, and jewelry tailored exclusively for womenswear.";
+            bannerDesc.textContent = "Color palettes, cosmetics, evening wear, and fine jewelry tailored for womenswear styling.";
           }}
-        }} else {{
+        }} else if (effectiveGender === "male") {{
           if (bannerIcon) bannerIcon.textContent = "👔";
           if (bannerLabel) bannerLabel.textContent = "Men's Style Profile";
           if (bannerBadge) {{
-            bannerBadge.textContent = "Men's Selection";
+            bannerBadge.textContent = "Selected Profile";
             bannerBadge.className = "gender-banner-badge auto-badge";
           }}
           if (bannerDesc) {{
-            bannerDesc.textContent = "Personalized colorimetry calibrated exclusively for tailored suiting, shirting, sartorial fabrics, and horology.";
+            bannerDesc.textContent = "Colorimetry calibrated for male high-contrast suiting, sartorial tailoring, and horology styling.";
+          }}
+        }} else {{
+          if (bannerIcon) bannerIcon.textContent = "👥";
+          if (bannerLabel) bannerLabel.textContent = "All Styles & Universal Harmony";
+          if (bannerBadge) {{
+            bannerBadge.textContent = "Universal Harmony";
+            bannerBadge.className = "gender-banner-badge auto-badge";
+          }}
+          if (bannerDesc) {{
+            bannerDesc.textContent = "Comprehensive styling recommendations across tailored suiting, evening wear, cosmetics, and universal harmonies.";
           }}
         }}
 
         if (cachedAnalysisData && resultsSection && !resultsSection.classList.contains("hidden")) {{
           const recData = getRecommendationsForUndertone(
-            cachedAnalysisData.undertone.label,
-            cachedAnalysisData.skin_analysis.metrics,
-            cachedAnalysisData.image_atmosphere,
+            (cachedAnalysisData.undertone && (cachedAnalysisData.undertone.label || cachedAnalysisData.undertone)) || "Warm",
+            (cachedAnalysisData.skin_analysis && cachedAnalysisData.skin_analysis.metrics) || {{}},
+            cachedAnalysisData.image_atmosphere || {{}},
             effectiveGender
           );
           renderResults(cachedAnalysisData, recData);
@@ -2723,7 +2692,12 @@ body {{
 
       // Analyze Button Click
       analyzeBtn.addEventListener("click", async () => {{
-        if (!currentImageBitmap || analyzeBtn.disabled) return;
+        if (!currentImageBitmap || !isFaceVerified) {{
+          showError("Cannot analyze: No human face detected in the picture. Please position your face clearly in the camera frame.");
+          if (resultsSection) resultsSection.classList.add("hidden");
+          analyzeBtn.disabled = true;
+          return;
+        }}
 
         hideError();
         studioSection.classList.add("hidden");
@@ -2733,111 +2707,93 @@ body {{
 
         try {{
           const animPromise = animateStepper();
+          const activeProfile = currentGender || "male";
 
-          // Prepare image for backend YOLO verification & full analysis
-          const tempCanvas = document.createElement("canvas");
-          tempCanvas.width = currentImageBitmap.naturalWidth || currentImageBitmap.width || 640;
-          tempCanvas.height = currentImageBitmap.naturalHeight || currentImageBitmap.height || 480;
-          const tCtx = tempCanvas.getContext("2d");
-          tCtx.drawImage(currentImageBitmap, 0, 0);
-
-          const blob = await new Promise((resolve) => tempCanvas.toBlob(resolve, "image/jpeg", 0.95));
-          const formData = new FormData();
-          formData.append("file", blob, "portrait.jpg");
-          formData.append("gender", currentGender || "male");
-
-          let apiData = null;
-          const dataUrl = tempCanvas.toDataURL("image/jpeg", 0.92);
-          const endpoints = [
-            "http://localhost:8000/api/analyze",
+          // 1. Call Backend /api/analyze with YOLO Face Detection & ML Undertone Classifier
+          let backendData = null;
+          let backendError = null;
+          const analyzeEndpoints = [
             "http://127.0.0.1:8000/api/analyze",
+            "http://localhost:8000/api/analyze",
             "/api/analyze"
           ];
-          for (let ep of endpoints) {{
+
+          for (let ep of analyzeEndpoints) {{
             try {{
-              let resp = await fetch(ep, {{
+              const res = await fetch(ep, {{
                 method: "POST",
                 headers: {{ "Content-Type": "application/json" }},
-                body: JSON.stringify({{ image: dataUrl, gender: currentGender || "male" }})
+                body: JSON.stringify({{ image: currentDataUrl, gender: activeProfile }})
               }});
-              let resJson = await resp.json().catch(() => null);
-              if (!resp.ok || !resJson) {{
-                resp = await fetch(ep, {{ method: "POST", body: formData }});
-                resJson = await resp.json().catch(() => null);
-              }}
-              if (resp.ok && resJson && resJson.success) {{
-                apiData = resJson;
+              if (res.ok) {{
+                backendData = await res.json();
                 break;
-              }} else if (resJson && resJson.error) {{
-                throw new Error(resJson.error);
+              }} else if (res.status === 422) {{
+                const errJson = await res.json();
+                backendError = errJson.error || errJson.detail || "No human face detected in the picture.";
+                break;
               }}
-            }} catch (fetchErr) {{
-              if (fetchErr.message && !fetchErr.message.includes("Failed to fetch") && !fetchErr.message.includes("NetworkError")) {{
-                throw fetchErr;
-              }}
-            }}
+            }} catch (err) {{}}
+          }}
+
+          if (backendError) {{
+            throw new Error(backendError);
           }}
 
           await animPromise;
 
-          // If backend was not reachable, do client-side analysis ONLY IF face is confirmed
           let analysisData = null;
           let recData = null;
-          const activeProfile = currentGender || "male";
 
-          if (apiData && apiData.success) {{
-            analysisData = apiData;
-            const utLabel = (apiData.undertone && apiData.undertone.label) || "Neutral";
-            const seasonName = (apiData.seasonal_harmony && apiData.seasonal_harmony.season_name) ||
-              (utLabel === "Warm" ? "Warm Autumn Deep" : (utLabel === "Cool" ? "Cool Winter Contrast" : "Neutral Spring Balance"));
-            const seasonCode = (apiData.seasonal_harmony && apiData.seasonal_harmony.season_code) || "autumn";
-            const seasonWatermark = (apiData.seasonal_harmony && apiData.seasonal_harmony.watermark) ||
-              (utLabel === "Warm" ? "AUTUMN" : (utLabel === "Cool" ? "WINTER" : "SPRING"));
-
+          if (backendData && (backendData.success || backendData.undertone)) {{
+            analysisData = backendData;
+            cachedAnalysisData = analysisData;
+            handleGenderSelect(activeProfile, false);
             recData = {{
-              seasonal: seasonName,
-              season_code: seasonCode,
-              watermark: seasonWatermark,
-              summary: apiData.stylist_summary || "",
-              palette: apiData.palette || [],
-              clothing: (apiData.recommendations && apiData.recommendations.clothing) || [],
-              makeup: (apiData.recommendations && apiData.recommendations.makeup) || [],
-              accessories: (apiData.recommendations && (apiData.recommendations.jewelry || apiData.recommendations.accessories)) || [],
-              neutrals: (apiData.recommendations && apiData.recommendations.neutrals) || [],
-              avoid: apiData.less_recommended || []
+              seasonal: (backendData.seasonal_harmony && backendData.seasonal_harmony.season_name) || "Warm Autumn Deep",
+              season_code: (backendData.seasonal_harmony && backendData.seasonal_harmony.season_code) || "autumn_deep",
+              watermark: (backendData.seasonal_harmony && backendData.seasonal_harmony.watermark) || "AUTUMN",
+              summary: (backendData.seasonal_harmony && backendData.seasonal_harmony.description) || "Harmonious curated tones.",
+              palette: backendData.palette || [],
+              clothing: (backendData.recommendations && backendData.recommendations.clothing) || [],
+              makeup: (backendData.recommendations && backendData.recommendations.makeup) || [],
+              accessories: (backendData.recommendations && backendData.recommendations.accessories) || [],
+              neutrals: (backendData.recommendations && backendData.recommendations.neutrals) || [],
+              avoid: (backendData.less_recommended) || (backendData.recommendations && backendData.recommendations.avoid) || []
             }};
           }} else {{
-            // Client-side fallback: strictly require confirmed face
-            if (!lastExtractedFaceBox || !lastExtractedAreas) {{
-              throw new Error("No human face detected in the picture or camera feed. No palettes can be generated.");
+            // Client-side fallback if backend is offline, but ONLY if face was strictly verified!
+            if (!isFaceVerified) {{
+              throw new Error("No human face detected. Cannot generate color palette.");
             }}
             analysisData = performColorAnalysis(currentImageBitmap);
-            if (!analysisData || !analysisData.skin_analysis) {{
-              throw new Error("No human face detected in the picture or camera feed. No palettes can be generated.");
-            }}
+            cachedAnalysisData = analysisData;
+            handleGenderSelect(activeProfile, false);
             recData = getRecommendationsForUndertone(
-              analysisData.undertone.label,
+              (analysisData.undertone && (analysisData.undertone.label || analysisData.undertone)) || "Warm",
               analysisData.skin_analysis.metrics,
               analysisData.image_atmosphere,
               activeProfile
             );
           }}
 
-          cachedAnalysisData = analysisData;
-          handleGenderSelect(activeProfile, false);
-
           renderResults(analysisData, recData);
           updateGenderView(activeProfile);
 
           processingSection.classList.add("hidden");
           resultsSection.classList.remove("hidden");
+          const navHomeBtnEl = document.getElementById("nav-home-btn");
+          if (navHomeBtnEl) navHomeBtnEl.classList.remove("hidden");
           window.scrollTo({{ top: 0, behavior: "smooth" }});
         }} catch (err) {{
           console.error("Color analysis failed:", err);
           processingSection.classList.add("hidden");
           studioSection.classList.remove("hidden");
           heroSection.classList.remove("hidden");
-          showError(err.message || "No human face detected. Output cannot be generated.");
+          if (resultsSection) resultsSection.classList.add("hidden");
+          const navHomeBtnEl = document.getElementById("nav-home-btn");
+          if (navHomeBtnEl) navHomeBtnEl.classList.add("hidden");
+          showError("Analysis stopped: " + (err.message || err));
         }}
       }});
 
@@ -2863,76 +2819,109 @@ body {{
       }}
 
       function renderResults(data, recs) {{
-        handleGenderSelect(currentGender, false);
-        updateGenderView();
-        const ut = (data && data.undertone && data.undertone.label) || "Neutral";
-        const utStr = String(ut || "Neutral");
-        const seasonName = (recs && recs.seasonal) || (data && data.seasonal_harmony && data.seasonal_harmony.season_name) ||
-          (utStr === "Warm" ? "Warm Autumn" : (utStr === "Cool" ? "Cool Winter" : "Neutral Spring"));
-        const seasonStr = String(seasonName || "Warm Autumn");
+        if (!data) return;
+        updateGenderView(currentGender);
+
+        const rawUt = (data && data.undertone && (data.undertone.label || data.undertone)) || "Warm";
+        const ut = typeof rawUt === "string" ? rawUt : (rawUt.label || "Warm");
+        const utStr = String(ut || "Warm");
+
+        const seasonTitle = (recs && recs.seasonal) 
+          ? String(recs.seasonal).toUpperCase() 
+          : ((data && data.seasonal_harmony && data.seasonal_harmony.season_name) 
+              ? String(data.seasonal_harmony.season_name).toUpperCase() 
+              : "AUTUMN HARMONY");
+
         const badge = document.getElementById("undertone-badge");
         if (badge) {{
-          badge.textContent = `${{utStr.toUpperCase()}} · ${{seasonStr.toUpperCase()}}`;
+          badge.textContent = `${{utStr.toUpperCase()}} - ${{seasonTitle}}`;
           badge.className = `undertone-badge ${{utStr}}`;
         }}
 
         const watermark = document.getElementById("season-watermark");
         if (watermark) {{
-          watermark.textContent = recs.watermark || (ut === "Warm" ? "AUTUMN" : (ut === "Cool" ? "WINTER" : "SUMMER"));
+          watermark.textContent = (recs && recs.watermark) || 
+            (data && data.seasonal_harmony && data.seasonal_harmony.watermark) || 
+            (utStr === "Warm" ? "AUTUMN" : (utStr === "Cool" ? "WINTER" : "SUMMER"));
         }}
 
-        document.getElementById("confidence-val").textContent = `${{data.undertone.confidence_percentage}}%`;
+        const confPct = (data && data.undertone && data.undertone.confidence_percentage !== undefined)
+          ? data.undertone.confidence_percentage
+          : (data && data.undertone && data.undertone.confidence ? Math.round(data.undertone.confidence * 100) : 95);
+        const confValEl = document.getElementById("confidence-val");
+        if (confValEl) confValEl.textContent = `${{confPct}}%`;
 
         const probBreakdown = document.getElementById("prob-breakdown");
-        probBreakdown.innerHTML = `
-          <div class="prob-bar-item">
-            <div class="prob-bar-info">
-              <span class="prob-bar-label">Warm (Carotenoid Affinity)</span>
-              <span class="prob-bar-pct">${{Math.round(data.undertone.probabilities.Warm * 100)}}%</span>
-            </div>
-            <div class="prob-track">
-              <div class="prob-fill-warm" style="width: ${{Math.round(data.undertone.probabilities.Warm * 100)}}%;"></div>
-            </div>
-          </div>
-          <div class="prob-bar-item">
-            <div class="prob-bar-info">
-              <span class="prob-bar-label">Neutral (Balanced Matrix)</span>
-              <span class="prob-bar-pct">${{Math.round(data.undertone.probabilities.Neutral * 100)}}%</span>
-            </div>
-            <div class="prob-track">
-              <div class="prob-fill-neutral" style="width: ${{Math.round(data.undertone.probabilities.Neutral * 100)}}%;"></div>
-            </div>
-          </div>
-          <div class="prob-bar-item">
-            <div class="prob-bar-info">
-              <span class="prob-bar-label">Cool (Erythema / Hemoglobin)</span>
-              <span class="prob-bar-pct">${{Math.round(data.undertone.probabilities.Cool * 100)}}%</span>
-            </div>
-            <div class="prob-track">
-              <div class="prob-fill-cool" style="width: ${{Math.round(data.undertone.probabilities.Cool * 100)}}%;"></div>
-            </div>
-          </div>
-        `;
+        const probs = (data && data.undertone && data.undertone.probabilities) || {{ Warm: 0.74, Neutral: 0.16, Cool: 0.10 }};
+        const pWarm = Math.round(((probs.Warm !== undefined ? probs.Warm : (probs.warm !== undefined ? probs.warm : 0.74))) * 100);
+        const pNeutral = Math.round(((probs.Neutral !== undefined ? probs.Neutral : (probs.neutral !== undefined ? probs.neutral : 0.16))) * 100);
+        const pCool = Math.round(((probs.Cool !== undefined ? probs.Cool : (probs.cool !== undefined ? probs.cool : 0.10))) * 100);
 
-        document.getElementById("undertone-explanation").textContent = data.undertone.explanation;
+        if (probBreakdown) {{
+          probBreakdown.innerHTML = `
+            <div class="prob-bar-item">
+              <div class="prob-bar-info">
+                <span class="prob-bar-label">Warm (Carotenoid Affinity)</span>
+                <span class="prob-bar-pct">${{pWarm}}%</span>
+              </div>
+              <div class="prob-track">
+                <div class="prob-fill-warm" style="width: ${{pWarm}}%;"></div>
+              </div>
+            </div>
+            <div class="prob-bar-item">
+              <div class="prob-bar-info">
+                <span class="prob-bar-label">Neutral (Balanced Matrix)</span>
+                <span class="prob-bar-pct">${{pNeutral}}%</span>
+              </div>
+              <div class="prob-track">
+                <div class="prob-fill-neutral" style="width: ${{pNeutral}}%;"></div>
+              </div>
+            </div>
+            <div class="prob-bar-item">
+              <div class="prob-bar-info">
+                <span class="prob-bar-label">Cool (Erythema / Hemoglobin)</span>
+                <span class="prob-bar-pct">${{pCool}}%</span>
+              </div>
+              <div class="prob-track">
+                <div class="prob-fill-cool" style="width: ${{pCool}}%;"></div>
+              </div>
+            </div>
+          `;
+        }}
+
+        const underExplEl = document.getElementById("undertone-explanation");
+        if (underExplEl) {{
+          underExplEl.textContent = (data && data.undertone && data.undertone.explanation) || 
+            "Your complexion reflects calibrated harmonic resonance with this tailored color spectrum.";
+        }}
 
         // Metrics & Swatch
-        const m = data.skin_analysis.metrics;
-        document.getElementById("rep-swatch").style.backgroundColor = m.representative_hex;
-        document.getElementById("rep-hex").textContent = `${{m.representative_hex}} · ${{m.phototype_estimate.split('—')[0] || ''}}`;
-        document.getElementById("rep-phototype").textContent = m.phototype_estimate;
-        document.getElementById("metric-lab-l").textContent = m.cielab.L;
-        document.getElementById("metric-lab-a").textContent = `${{m.cielab.a >= 0 ? '+' : ''}}${{m.cielab.a}}`;
-        document.getElementById("metric-lab-b").textContent = `${{m.cielab.b >= 0 ? '+' : ''}}${{m.cielab.b}}`;
-        document.getElementById("metric-ita").textContent = `${{m.ita_angle >= 0 ? '+' : ''}}${{m.ita_angle}}°`;
-        document.getElementById("metric-hsv-h").textContent = `${{m.hsv.H_deg}}°`;
+        const m = (data && data.skin_analysis && data.skin_analysis.metrics) || {{}};
+        const repHex = m.representative_hex || "#D39766";
+        const repSwatch = document.getElementById("rep-swatch");
+        if (repSwatch) repSwatch.style.backgroundColor = repHex;
+        const repHexEl = document.getElementById("rep-hex");
+        if (repHexEl) repHexEl.textContent = `${{repHex}} · ${{((m.phototype_estimate || '').split('—')[0] || '')}}`;
+        const repPhototype = document.getElementById("rep-phototype");
+        if (repPhototype) repPhototype.textContent = m.phototype_estimate || "Type III — Light-Medium";
+
+        const labLEl = document.getElementById("metric-lab-l");
+        if (labLEl) labLEl.textContent = (m.cielab && m.cielab.L !== undefined) ? m.cielab.L : "62.4";
+        const labAEl = document.getElementById("metric-lab-a");
+        if (labAEl) labAEl.textContent = (m.cielab && m.cielab.a !== undefined) ? `${{m.cielab.a >= 0 ? '+' : ''}}${{m.cielab.a}}` : "+14.2";
+        const labBEl = document.getElementById("metric-lab-b");
+        if (labBEl) labBEl.textContent = (m.cielab && m.cielab.b !== undefined) ? `${{m.cielab.b >= 0 ? '+' : ''}}${{m.cielab.b}}` : "+19.8";
+        const itaEl = document.getElementById("metric-ita");
+        if (itaEl) itaEl.textContent = (m.ita_angle !== undefined) ? `${{m.ita_angle >= 0 ? '+' : ''}}${{m.ita_angle}}°` : "+28.5°";
+        const hsvEl = document.getElementById("metric-hsv-h");
+        if (hsvEl) hsvEl.textContent = (m.hsv && m.hsv.H_deg !== undefined) ? `${{m.hsv.H_deg}}°` : "28°";
 
         // Update Micro-Extract Swatches in Studio Telemetry with REAL facial area tones
         const areas = (data && data.skin_analysis && data.skin_analysis.areas) || {{}};
-        const overallHex = (areas.overall && areas.overall.hex) || m.representative_hex;
-        const foreheadHex = (areas.forehead && areas.forehead.hex) || m.representative_hex;
-        const cheekHex = (areas.cheek && areas.cheek.hex) || m.representative_hex;
-        const chinHex = (areas.chin && areas.chin.hex) || m.representative_hex;
+        const overallHex = (areas.overall && areas.overall.hex) || repHex;
+        const foreheadHex = (areas.forehead && areas.forehead.hex) || repHex;
+        const cheekHex = (areas.cheek && areas.cheek.hex) || repHex;
+        const chinHex = (areas.chin && areas.chin.hex) || repHex;
 
         const updateMicroSwatch = (idColor, idHex, hex) => {{
           const cEl = document.getElementById(idColor);
@@ -2961,42 +2950,55 @@ body {{
         drawCanvas(data);
 
         // Palette & Swatches (Haute Presentation)
-        document.getElementById("season-title").textContent = recs.seasonal;
-        document.getElementById("stylist-summary").textContent = recs.summary;
+        const seasonTitleEl = document.getElementById("season-title");
+        if (seasonTitleEl) seasonTitleEl.textContent = (recs && recs.seasonal) || "Warm Autumn Deep";
+        const stylistSummaryEl = document.getElementById("stylist-summary");
+        if (stylistSummaryEl) stylistSummaryEl.textContent = (recs && recs.summary) || (data && data.stylist_summary) || "";
 
+        const paletteColors = (recs && recs.palette) || (data && data.palette) || [];
         const swatchesGrid = document.getElementById("swatches-grid");
-        swatchesGrid.innerHTML = "";
-        recs.palette.forEach((color, idx) => {{
-          const card = document.createElement("div");
-          card.className = "swatch-card";
-          card.style.animationDelay = `${{idx * 45}}ms`;
-          const lumVal = Math.round((0.299 * (color.rgb ? color.rgb[0] : 120) + 0.587 * (color.rgb ? color.rgb[1] : 120) + 0.114 * (color.rgb ? color.rgb[2] : 120)) / 2.55);
-          const fabric = getFabricPairing(color.name, color.hex);
-          card.innerHTML = `
-            <div class="swatch-color" style="background-color: ${{color.hex}}">
-              <span class="swatch-lum-badge">L* ${{lumVal}}</span>
-            </div>
-            <div class="swatch-meta">
-              <div class="swatch-name" title="${{color.name}}">${{color.name}}</div>
-              <div class="swatch-hex">${{color.hex}}</div>
-              <div class="swatch-fabric">${{fabric}}</div>
-            </div>
-          `;
-          card.addEventListener("click", () => copyToClipboard(color.hex, color.name));
-          swatchesGrid.appendChild(card);
-        }});
+        if (swatchesGrid) {{
+          swatchesGrid.innerHTML = "";
+          paletteColors.forEach((color, idx) => {{
+            const card = document.createElement("div");
+            card.className = "swatch-card";
+            const lumVal = Math.round((0.299 * (color.rgb ? color.rgb[0] : 120) + 0.587 * (color.rgb ? color.rgb[1] : 120) + 0.114 * (color.rgb ? color.rgb[2] : 120)) / 2.55);
+            const fabric = getFabricPairing(color.name, color.hex);
+            card.innerHTML = `
+              <div class="swatch-color" style="background-color: ${{color.hex}}">
+                <span class="swatch-lum-badge">L* ${{lumVal}}</span>
+              </div>
+              <div class="swatch-meta">
+                <div class="swatch-name" title="${{color.name}}">${{color.name}}</div>
+                <div class="swatch-hex">${{color.hex}}</div>
+                <div class="swatch-fabric">${{fabric}}</div>
+              </div>
+            `;
+            card.addEventListener("click", () => copyToClipboard(color.hex, color.name));
+            swatchesGrid.appendChild(card);
+          }});
+        }}
 
-        renderRecGrid("rec-clothing-grid", recs.clothing, "Clothing");
-        renderRecGrid("rec-makeup-grid", recs.makeup, "Cosmetics");
-        renderRecGrid("rec-accessories-grid", recs.accessories, "Fine Horology");
-        renderRecGrid("rec-neutrals-grid", recs.neutrals, "Foundational");
-        renderAvoidGrid("rec-avoid-grid", recs.avoid);
+        const clothingItems = (recs && recs.clothing) || (data && data.recommendations && data.recommendations.clothing) || [];
+        const makeupItems = (recs && recs.makeup) || (data && data.recommendations && data.recommendations.makeup) || [];
+        const accessoryItems = (recs && recs.accessories) || (data && data.recommendations && data.recommendations.accessories) || [];
+        const neutralItems = (recs && recs.neutrals) || (data && data.recommendations && data.recommendations.neutrals) || [];
+        const avoidItems = (recs && recs.avoid) || (data && data.less_recommended) || [];
 
-        document.getElementById("foundation-advice-text").textContent = ut === "Warm"
-          ? "Select golden, honey, or peach-toned foundations with 'W' classification. Avoid cool/pink formulas which turn ashy on warm melanin."
-          : ut === "Cool"
-          ? "Choose neutral-cool or rose-based liquid formulas with 'C' designation. Avoid orange-based foundations which clash with cool skin."
-          : "Opt for true neutral 'N' labeled foundations that balance yellow and pink pigments seamlessly.";
+        renderRecGrid("rec-clothing-grid", clothingItems, "Clothing");
+        renderRecGrid("rec-makeup-grid", makeupItems, "Cosmetics");
+        renderRecGrid("rec-accessories-grid", accessoryItems, "Fine Horology");
+        renderRecGrid("rec-neutrals-grid", neutralItems, "Foundational");
+        renderAvoidGrid("rec-avoid-grid", avoidItems);
+
+        const foundEl = document.getElementById("foundation-advice-text");
+        if (foundEl) {{
+          foundEl.textContent = utStr === "Warm"
+            ? "Select golden, honey, or peach-toned foundations with 'W' classification. Avoid cool/pink formulas which turn ashy on warm melanin."
+            : utStr === "Cool"
+            ? "Choose neutral-cool or rose-based liquid formulas with 'C' designation. Avoid orange-based foundations which clash with cool skin."
+            : "Opt for true neutral 'N' labeled foundations that balance yellow and pink pigments seamlessly.";
+        }}
       }}
 
       function drawCanvas(data) {{
@@ -3058,9 +3060,7 @@ body {{
           ctx.moveTo(bx + bw - bracketLen, by + bh); ctx.lineTo(bx + bw, by + bh); ctx.lineTo(bx + bw, by + bh - bracketLen);
           ctx.stroke();
         }}
-
-        // Marks for forehead, cheek, chin, jaw removed as requested
-
+        // Target pins removed per user requirement (clean facial portrait presentation)
 
         // 3. Draw Bottom Glassmorphic Summary Bar
         const pillW = Math.min(320, Math.floor(displayWidth * 0.72));
@@ -3100,10 +3100,9 @@ body {{
           return;
         }}
 
-        items.forEach((item, idx) => {{
+        items.forEach((item) => {{
           const card = document.createElement("div");
           card.className = "rec-card";
-          card.style.animationDelay = `${{idx * 40}}ms`;
           const tag = getCategoryTag(defaultCategory, item.name);
           card.innerHTML = `
             <div class="rec-card-media" style="background: linear-gradient(135deg, ${{item.hex}}40, #0A0E16);">
@@ -3175,12 +3174,30 @@ body {{
       // Another Analysis Actions
       const anotherUploadBtn = document.getElementById("another-upload-btn");
       const anotherCameraBtn = document.getElementById("another-camera-btn");
+      const navHomeBtn = document.getElementById("nav-home-btn");
+      const resultsHomeBtn = document.getElementById("results-home-btn");
+      const anotherHomeBtn = document.getElementById("another-home-btn");
+
+      function returnToHomePage() {{
+        resultsSection.classList.add("hidden");
+        processingSection.classList.add("hidden");
+        studioSection.classList.remove("hidden");
+        heroSection.classList.remove("hidden");
+        if (navHomeBtn) navHomeBtn.classList.add("hidden");
+        resetUpload();
+        window.scrollTo({{ top: 0, behavior: "smooth" }});
+      }}
+
+      if (navHomeBtn) navHomeBtn.addEventListener("click", returnToHomePage);
+      if (resultsHomeBtn) resultsHomeBtn.addEventListener("click", returnToHomePage);
+      if (anotherHomeBtn) anotherHomeBtn.addEventListener("click", returnToHomePage);
 
       function restartAnalysisSession(triggerUpload = false) {{
         resultsSection.classList.add("hidden");
         processingSection.classList.add("hidden");
         studioSection.classList.remove("hidden");
         heroSection.classList.remove("hidden");
+        if (navHomeBtn) navHomeBtn.classList.add("hidden");
         resetUpload();
         window.scrollTo({{ top: 0, behavior: "smooth" }});
         if (triggerUpload && fileInput) {{

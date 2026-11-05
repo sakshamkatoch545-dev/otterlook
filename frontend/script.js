@@ -1035,8 +1035,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json();
       await animationPromise;
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || "An error occurred during facial color analysis.");
+      if (!response.ok || (!data.success && !data.undertone)) {
+        throw new Error(data.error || data.detail || "An error occurred during facial color analysis.");
       }
 
       // Sync single face box with backend neural bounding box
@@ -1067,12 +1067,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       processingSection.classList.add("hidden");
       resultsSection.classList.remove("hidden");
+      const navHomeBtnEl = document.getElementById("nav-home-btn");
+      if (navHomeBtnEl) navHomeBtnEl.classList.remove("hidden");
       window.scrollTo({ top: 0, behavior: "smooth" });
 
     } catch (err) {
       processingSection.classList.add("hidden");
       studioSection.classList.remove("hidden");
       heroSection.classList.remove("hidden");
+      const navHomeBtnEl = document.getElementById("nav-home-btn");
+      if (navHomeBtnEl) navHomeBtnEl.classList.add("hidden");
       showError(err.message || "Failed to connect to backend server.");
     }
   });
@@ -1080,12 +1084,30 @@ document.addEventListener("DOMContentLoaded", () => {
   // Re-analyze & Another Analysis Actions
   const anotherUploadBtn = document.getElementById("another-upload-btn");
   const anotherCameraBtn = document.getElementById("another-camera-btn");
+  const navHomeBtn = document.getElementById("nav-home-btn");
+  const resultsHomeBtn = document.getElementById("results-home-btn");
+  const anotherHomeBtn = document.getElementById("another-home-btn");
+
+  function returnToHomePage() {
+    resultsSection.classList.add("hidden");
+    processingSection.classList.add("hidden");
+    studioSection.classList.remove("hidden");
+    heroSection.classList.remove("hidden");
+    if (navHomeBtn) navHomeBtn.classList.add("hidden");
+    resetUploadState();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  if (navHomeBtn) navHomeBtn.addEventListener("click", returnToHomePage);
+  if (resultsHomeBtn) resultsHomeBtn.addEventListener("click", returnToHomePage);
+  if (anotherHomeBtn) anotherHomeBtn.addEventListener("click", returnToHomePage);
 
   function restartAnalysisSession(triggerUpload = false) {
     resultsSection.classList.add("hidden");
     processingSection.classList.add("hidden");
     studioSection.classList.remove("hidden");
     heroSection.classList.remove("hidden");
+    if (navHomeBtn) navHomeBtn.classList.add("hidden");
     resetUploadState();
     window.scrollTo({ top: 0, behavior: "smooth" });
     if (triggerUpload && fileInput) {
@@ -1166,7 +1188,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleGenderSelect(selectedGender, isManual = true) {
-    currentGender = (selectedGender === "female") ? "female" : "male";
+    currentGender = (selectedGender === "female" || selectedGender === "all") ? selectedGender : "male";
 
     // Sync pills across upload selector
     document.querySelectorAll("#upload-gender-options .gender-pill").forEach((pill) => {
@@ -1175,7 +1197,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const effectiveGender = currentGender;
 
-
+    // Ensure results switch controls are permanently absent
+    const resultsGenderOptions = document.getElementById("results-gender-options");
+    if (resultsGenderOptions) {
+      resultsGenderOptions.innerHTML = "";
+      resultsGenderOptions.style.display = "none";
+    }
+    const switchLabel = document.getElementById("gender-switch-label");
+    if (switchLabel) switchLabel.style.display = "none";
+    const bannerControls = document.querySelector(".gender-banner-controls");
+    if (bannerControls) bannerControls.style.display = "none";
 
     updateGenderView(effectiveGender);
 
@@ -1210,7 +1241,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } else {
       if (bannerIcon) bannerIcon.textContent = "👥";
-      if (bannerLabel) bannerLabel.textContent = "Men's Style Profile";
+      if (bannerLabel) bannerLabel.textContent = "Universal Harmony Profile";
       if (bannerBadge) {
         bannerBadge.textContent = "Universal Harmony";
         bannerBadge.className = "gender-banner-badge auto-badge";
@@ -1407,7 +1438,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Auto-detect gender from API response and apply styling profile
     handleGenderSelect(currentGender, false);
-    const undertone = (data && data.undertone && data.undertone.label) || "Neutral";
+    const rawUt = (data && data.undertone && (data.undertone.label || data.undertone)) || "Neutral";
+    const undertone = typeof rawUt === "string" ? rawUt : (rawUt.label || "Neutral");
     const utStr = String(undertone || "Neutral");
     const confidencePct = (data && data.undertone && data.undertone.confidence_percentage) !== undefined ? data.undertone.confidence_percentage : 94;
 
@@ -1841,6 +1873,31 @@ document.addEventListener("DOMContentLoaded", () => {
       const chosen = chip.getAttribute("data-undertone");
       if (chosen) handleFeedbackSubmission(chosen);
     });
+  });
+
+  // --- Google Material Design 3 Ripple Interaction Engine ---
+  function triggerMaterialRipple(event, targetElement) {
+    const rect = targetElement.getBoundingClientRect();
+    const circle = document.createElement("span");
+    const diameter = Math.max(rect.width, rect.height);
+    const radius = diameter / 2;
+    circle.style.width = circle.style.height = `${diameter}px`;
+    circle.style.left = `${event.clientX - rect.left - radius}px`;
+    circle.style.top = `${event.clientY - rect.top - radius}px`;
+    circle.classList.add("m3-ripple");
+    const existingRipple = targetElement.querySelector(".m3-ripple");
+    if (existingRipple) existingRipple.remove();
+    targetElement.appendChild(circle);
+    setTimeout(() => {
+      if (circle && circle.parentNode) circle.remove();
+    }, 600);
+  }
+
+  document.addEventListener("pointerdown", (e) => {
+    const interactiveTarget = e.target.closest(".btn, .tab-btn, .swatch-card, .skin-harmony-card, .rec-card, .feedback-chip, .theme-toggle");
+    if (interactiveTarget) {
+      triggerMaterialRipple(e, interactiveTarget);
+    }
   });
 
   // Global restrictions to disable copy, cut, paste and context menu
