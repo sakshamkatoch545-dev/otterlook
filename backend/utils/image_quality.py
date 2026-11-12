@@ -92,7 +92,9 @@ def analyze_image_quality(image_bgr: np.ndarray) -> Dict[str, Any]:
         status = "Good"
         message = "Image quality is optimal for accurate color and undertone analysis."
         is_valid = True
-    elif overall_score >= 40 and is_res_ok:
+    elif overall_score >= 30 and is_res_ok:
+        # Lowered from 40 → 30: allow marginally dim/contrasty images through
+        # when a face has already been successfully detected.
         status = "Acceptable"
         message = "Image quality is acceptable, though optimal natural lighting is recommended."
         is_valid = True

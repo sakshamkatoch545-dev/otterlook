@@ -1,9 +1,8 @@
 """
 Face Detection and Facial Landmark Localization Module.
-Powered by YOLOv8-Face (Deep Neural Network SOTA face detector)
-and OpenCV FacemarkLBF (68-point high-precision facial landmark engine).
-Ensures that if no face is detected in the image or camera feed,
-no output or false positives are generated.
+Powered by a 4-engine cascade: MediaPipe (most robust for selfies), 
+YOLOv8-Face (deep SOTA), OpenCV YuNet (neural), and Haar Cascade (fallback).
+Ensures that if no face is detected, no output or false positives are generated.
 """
 
 import os
@@ -11,10 +10,28 @@ import cv2
 import numpy as np
 from typing import Dict, Any, List, Optional, Tuple
 
+
+def _preprocess_for_detection(image_bgr: np.ndarray) -> np.ndarray:
+    """
+    Apply CLAHE contrast enhancement to improve face detection on
+    dim, overexposed, or low-contrast images. Returns a processed BGR copy.
+    """
+    try:
+        lab = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(lab)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        l_eq = clahe.apply(l)
+        lab_eq = cv2.merge([l_eq, a, b])
+        return cv2.cvtColor(lab_eq, cv2.COLOR_LAB2BGR)
+    except Exception:
+        return image_bgr
+
+
 class FaceDetector:
     def __init__(self):
         self.yolo_detector = None
         self.yunet_detector = None
+        self.mediapipe_detector = None
         self.facemark = None
         self.haar_cascade = None
         self._init_detectors()
@@ -23,16 +40,45 @@ class FaceDetector:
         models_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
         os.makedirs(models_dir, exist_ok=True)
 
-        # 1. Initialize YOLO Face Model
+        # 1. MediaPipe Tasks Face Detection (mediapipe >= 0.10 / 1.x API)
+        try:
+            from mediapipe.tasks.python import BaseOptions
+            from mediapipe.tasks.python.vision import FaceDetector as MpFaceDetector, FaceDetectorOptions
+            import urllib.request
+
+            mp_model_path = os.path.join(models_dir, "blaze_face_short_range.tflite")
+            if not os.path.exists(mp_model_path):
+                url = (
+                    "https://storage.googleapis.com/mediapipe-models/"
+                    "face_detector/blaze_face_short_range/float16/1/"
+                    "blaze_face_short_range.tflite"
+                )
+                try:
+                    urllib.request.urlretrieve(url, mp_model_path)
+                except Exception:
+                    mp_model_path = None
+
+            if mp_model_path and os.path.exists(mp_model_path):
+                mp_opts = FaceDetectorOptions(
+                    base_options=BaseOptions(model_asset_path=mp_model_path),
+                    min_detection_confidence=0.30,
+                )
+                self.mediapipe_detector = MpFaceDetector.create_from_options(mp_opts)
+            else:
+                self.mediapipe_detector = None
+        except Exception:
+            self.mediapipe_detector = None
+
+        # 2. YOLOv8-Face (Deep neural SOTA face detector)
         yolo_path = os.path.join(models_dir, "yolov8n-face.pt")
         if os.path.exists(yolo_path):
             try:
                 from ultralytics import YOLO
                 self.yolo_detector = YOLO(yolo_path)
-            except Exception as e:
+            except Exception:
                 self.yolo_detector = None
 
-        # 2. Secondary Face Detector: OpenCV YuNet Neural Engine
+        # 3. OpenCV YuNet Neural Engine (secondary)
         yunet_path = os.path.join(models_dir, "face_detection_yunet_2023mar.onnx")
         if not os.path.exists(yunet_path):
             try:
@@ -48,14 +94,14 @@ class FaceDetector:
                     model=yunet_path,
                     config="",
                     input_size=(320, 320),
-                    score_threshold=0.5,
+                    score_threshold=0.30,   # Lowered from 0.50 for better recall
                     nms_threshold=0.3,
                     top_k=5000
                 )
             except Exception:
                 self.yunet_detector = None
 
-        # 3. Initialize FacemarkLBF 68-Point Landmark Model
+        # 4. FacemarkLBF 68-Point Landmark Model
         lbf_path = os.path.join(models_dir, "lbfmodel.yaml")
         if os.path.exists(lbf_path) and hasattr(cv2, "face") and hasattr(cv2.face, "createFacemarkLBF"):
             try:
@@ -64,7 +110,7 @@ class FaceDetector:
             except Exception:
                 self.facemark = None
 
-        # 4. Fallback Haar Cascade
+        # 5. Fallback Haar Cascade
         cascade_path = os.path.join(models_dir, "haarcascade_frontalface_default.xml")
         if not os.path.exists(cascade_path) and hasattr(cv2, "data") and hasattr(cv2.data, "haarcascades"):
             cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
@@ -89,170 +135,185 @@ class FaceDetector:
             pass
         return None
 
+    def _pick_best_face_bbox(self, candidates: List[Dict], img_w: int, img_h: int) -> Optional[Dict]:
+        """Score candidates by: largest area × confidence × centrality, return best."""
+        if not candidates:
+            return None
+        center_x, center_y = img_w / 2.0, img_h / 2.0
+        best, best_score = None, -1.0
+        for c in candidates:
+            x, y, w, h = c["x"], c["y"], c["w"], c["h"]
+            area = max(1, w * h)
+            conf = c.get("conf", 0.75)
+            cx, cy = x + w / 2.0, y + h / 2.0
+            dist = (((cx - center_x) / img_w) ** 2 + ((cy - center_y) / img_h) ** 2) ** 0.5
+            centrality = max(0.4, 1.0 - dist)
+            score = (area ** 0.75) * conf * centrality
+            if score > best_score:
+                best_score = score
+                best = c
+        return best
+
+    def _make_result(self, bbox, landmarks, regions, conf, detector_type, img_w, img_h):
+        return {
+            "success": True,
+            "face_count": 1,
+            "message": f"Face localized via {detector_type}.",
+            "detector_type": detector_type,
+            "confidence": conf,
+            "landmarks": landmarks,
+            "bounding_box": bbox,
+            "regions": regions,
+        }
+
     def detect_faces(self, image_bgr: np.ndarray) -> Dict[str, Any]:
         """
-        Detects faces in the image using YOLO face detection.
-        Enforces strict single-face constraint:
-        - If NO face is detected in the image or camera frame: returns success=False, face_count=0.
-        - If multiple faces detected: returns success=False.
-        - If exactly 1 face detected: extracts precise bounding box and anatomical dermal regions.
+        Detects faces using a 4-engine cascade (MediaPipe → YOLO → YuNet → Haar).
+        Each engine is tried on both the raw image and a CLAHE-enhanced version.
+        Returns the single best face candidate, or success=False if none found.
         """
         if image_bgr is None or image_bgr.size == 0:
             return {
-                "success": False,
-                "face_count": 0,
+                "success": False, "face_count": 0,
                 "message": "Empty or invalid image.",
-                "landmarks": None,
-                "bounding_box": None,
-                "regions": {}
+                "landmarks": None, "bounding_box": None, "regions": {}
             }
 
         img_h, img_w = image_bgr.shape[:2]
+        # Prepare CLAHE-enhanced version for difficult images
+        enhanced = _preprocess_for_detection(image_bgr)
+        images_to_try = [image_bgr, enhanced]
 
-        # 1. Primary Engine: YOLO Face Detection
+        # ── Engine 1: MediaPipe ──────────────────────────────────────────────
+        if self.mediapipe_detector is not None:
+            try:
+                import mediapipe as mp
+                for img_candidate in images_to_try:
+                    img_rgb = cv2.cvtColor(img_candidate, cv2.COLOR_BGR2RGB)
+                    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=img_rgb)
+                    mp_result = self.mediapipe_detector.detect(mp_image)
+                    if mp_result.detections:
+                        candidates = []
+                        for det in mp_result.detections:
+                            bb = det.bounding_box
+                            x = max(0, bb.origin_x)
+                            y = max(0, bb.origin_y)
+                            w = max(10, min(bb.width, img_w - x))
+                            h = max(10, min(bb.height, img_h - y))
+                            conf = det.categories[0].score if det.categories else 0.6
+                            candidates.append({"x": x, "y": y, "w": w, "h": h, "conf": float(conf)})
+                        best = self._pick_best_face_bbox(candidates, img_w, img_h)
+                        if best:
+                            bbox = [best["x"], best["y"], best["w"], best["h"]]
+                            landmarks = self._extract_landmarks_lbf(image_bgr, bbox)
+                            regions = (self._get_regions_from_68_landmarks(landmarks, bbox, img_w, img_h)
+                                       if landmarks else self._get_regions_from_bbox(bbox, img_w, img_h))
+                            return self._make_result(bbox, landmarks, regions, best["conf"], "mediapipe", img_w, img_h)
+            except Exception:
+                pass
+
+        # ── Engine 2: YOLO (multi-scale) ────────────────────────────────────
         if self.yolo_detector is not None:
             try:
-                results = self.yolo_detector(image_bgr, conf=0.35, verbose=False)
-                boxes = results[0].boxes if len(results) > 0 else None
+                # Try multiple confidence thresholds and both raw + enhanced
+                conf_thresholds = [0.35, 0.22, 0.12]
+                scales = [1.0]
+                # Also try rescaled versions if image is very large or very small
+                shorter_side = min(img_w, img_h)
+                if shorter_side > 800:
+                    scales.append(640 / shorter_side)
+                if shorter_side < 300:
+                    scales.append(480 / shorter_side)
 
-                # Multi-scale check if tight crop or slight angle or low light
-                if boxes is None or len(boxes) == 0:
-                    results = self.yolo_detector(image_bgr, conf=0.22, verbose=False)
-                    boxes = results[0].boxes if len(results) > 0 else None
+                for img_candidate in images_to_try:
+                    for scale in scales:
+                        if abs(scale - 1.0) > 0.05:
+                            new_w = int(img_w * scale)
+                            new_h = int(img_h * scale)
+                            proc = cv2.resize(img_candidate, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+                        else:
+                            proc = img_candidate
+                            new_w, new_h = img_w, img_h
 
-                if boxes is None or len(boxes) == 0:
-                    results = self.yolo_detector(image_bgr, conf=0.15, verbose=False)
-                    boxes = results[0].boxes if len(results) > 0 else None
-
-                if boxes is not None and len(boxes) > 0:
-                    # Always capture the primary face that is closest (largest area) and most defined (confidence/clarity)
-                    scored_candidates = []
-                    center_x, center_y = img_w / 2.0, img_h / 2.0
-
-                    for idx, b in enumerate(boxes):
-                        x1, y1, x2, y2 = map(int, b.xyxy[0].tolist())
-                        bw = max(1, x2 - x1)
-                        bh = max(1, y2 - y1)
-                        area = bw * bh
-                        conf = float(b.conf[0]) if hasattr(b, 'conf') and len(b.conf) > 0 else 0.85
-                        # Centrality factor: closer to image center is more likely the user
-                        cx = x1 + bw / 2.0
-                        cy = y1 + bh / 2.0
-                        dist_sq = ((cx - center_x) / img_w) ** 2 + ((cy - center_y) / img_h) ** 2
-                        centrality = max(0.5, 1.0 - (dist_sq ** 0.5))
-                        # Combined score: large area (close to camera) + high definition + centered
-                        score = (area ** 0.75) * conf * centrality
-                        scored_candidates.append((score, idx))
-
-                    scored_candidates.sort(key=lambda x: x[0], reverse=True)
-                    best_idx = scored_candidates[0][1]
-                    target_box = boxes[best_idx]
-                    x1, y1, x2, y2 = map(int, target_box.xyxy[0].tolist())
-                    fx = max(0, min(x1, img_w - 10))
-                    fy = max(0, min(y1, img_h - 10))
-                    fw = max(10, min(x2 - x1, img_w - fx))
-                    fh = max(10, min(y2 - y1, img_h - fy))
-                    bbox = [fx, fy, fw, fh]
-                    conf = float(target_box.conf[0])
-
-                    landmarks_68 = self._extract_landmarks_lbf(image_bgr, bbox)
-                    if landmarks_68:
-                        regions = self._get_regions_from_68_landmarks(landmarks_68, bbox, img_w, img_h)
-                    else:
-                        regions = self._get_regions_from_bbox(bbox, img_w, img_h)
-
-                    return {
-                        "success": True,
-                        "face_count": 1,
-                        "message": "Face localized via YOLO Face detector.",
-                        "detector_type": "yolo_face",
-                        "confidence": conf,
-                        "landmarks": landmarks_68,
-                        "bounding_box": bbox,
-                        "regions": regions
-                    }
+                        for conf_thresh in conf_thresholds:
+                            results = self.yolo_detector(proc, conf=conf_thresh, verbose=False)
+                            boxes = results[0].boxes if len(results) > 0 else None
+                            if boxes is not None and len(boxes) > 0:
+                                candidates = []
+                                for b in boxes:
+                                    x1, y1, x2, y2 = map(int, b.xyxy[0].tolist())
+                                    # Rescale back to original image coords
+                                    x1 = int(x1 / scale); y1 = int(y1 / scale)
+                                    x2 = int(x2 / scale); y2 = int(y2 / scale)
+                                    bw = max(10, min(x2 - x1, img_w - max(0, x1)))
+                                    bh = max(10, min(y2 - y1, img_h - max(0, y1)))
+                                    conf = float(b.conf[0]) if hasattr(b, 'conf') and len(b.conf) > 0 else 0.75
+                                    candidates.append({"x": max(0, x1), "y": max(0, y1), "w": bw, "h": bh, "conf": conf})
+                                best = self._pick_best_face_bbox(candidates, img_w, img_h)
+                                if best:
+                                    bbox = [best["x"], best["y"], best["w"], best["h"]]
+                                    landmarks = self._extract_landmarks_lbf(image_bgr, bbox)
+                                    regions = (self._get_regions_from_68_landmarks(landmarks, bbox, img_w, img_h)
+                                               if landmarks else self._get_regions_from_bbox(bbox, img_w, img_h))
+                                    return self._make_result(bbox, landmarks, regions, best["conf"], "yolo_face", img_w, img_h)
             except Exception:
                 pass
 
-        # 2. Secondary Neural Engine: OpenCV YuNet
+        # ── Engine 3: OpenCV YuNet ───────────────────────────────────────────
         if self.yunet_detector is not None:
             try:
-                self.yunet_detector.setInputSize((img_w, img_h))
-                _, faces = self.yunet_detector.detect(image_bgr)
-                if faces is not None and len(faces) > 0:
-                    valid_faces = [f for f in faces if f[-1] >= 0.25]
-                    if valid_faces:
-                        # Pick closest, largest, and most defined face
-                        center_x, center_y = img_w / 2.0, img_h / 2.0
-                        def yunet_score(f):
-                            fx, fy, fw, fh = f[:4]
-                            conf = float(f[-1])
-                            cx = fx + fw / 2.0
-                            cy = fy + fh / 2.0
-                            dist = (((cx - center_x) / img_w) ** 2 + ((cy - center_y) / img_h) ** 2) ** 0.5
-                            centrality = max(0.5, 1.0 - dist)
-                            return ((fw * fh) ** 0.75) * conf * centrality
-
-                        best_face = max(valid_faces, key=yunet_score)
-                        fx, fy, fw, fh = map(int, best_face[:4])
-                        bbox = [max(0, fx), max(0, fy), min(fw, img_w - fx), min(fh, img_h - fy)]
-                        landmarks_68 = self._extract_landmarks_lbf(image_bgr, bbox)
-                        if landmarks_68:
-                            regions = self._get_regions_from_68_landmarks(landmarks_68, bbox, img_w, img_h)
-                        else:
-                            regions = self._get_regions_from_bbox(bbox, img_w, img_h)
-
-                        return {
-                            "success": True,
-                            "face_count": 1,
-                            "message": "Face localized via YuNet detector.",
-                            "detector_type": "opencv_yunet",
-                            "confidence": float(best_face[-1]),
-                            "landmarks": landmarks_68,
-                            "bounding_box": bbox,
-                            "regions": regions
-                        }
+                for img_candidate in images_to_try:
+                    self.yunet_detector.setInputSize((img_candidate.shape[1], img_candidate.shape[0]))
+                    _, faces = self.yunet_detector.detect(img_candidate)
+                    if faces is not None and len(faces) > 0:
+                        valid_faces = [f for f in faces if f[-1] >= 0.18]
+                        if valid_faces:
+                            candidates = []
+                            for f in valid_faces:
+                                fx, fy, fw, fh = f[:4]
+                                candidates.append({
+                                    "x": max(0, int(fx)), "y": max(0, int(fy)),
+                                    "w": max(10, min(int(fw), img_w - max(0, int(fx)))),
+                                    "h": max(10, min(int(fh), img_h - max(0, int(fy)))),
+                                    "conf": float(f[-1])
+                                })
+                            best = self._pick_best_face_bbox(candidates, img_w, img_h)
+                            if best:
+                                bbox = [best["x"], best["y"], best["w"], best["h"]]
+                                landmarks = self._extract_landmarks_lbf(image_bgr, bbox)
+                                regions = (self._get_regions_from_68_landmarks(landmarks, bbox, img_w, img_h)
+                                           if landmarks else self._get_regions_from_bbox(bbox, img_w, img_h))
+                                return self._make_result(bbox, landmarks, regions, best["conf"], "opencv_yunet", img_w, img_h)
             except Exception:
                 pass
 
-        # 3. Fallback Haar Cascade
+        # ── Engine 4: Haar Cascade (fallback) ───────────────────────────────
         if self.haar_cascade is not None and not self.haar_cascade.empty():
             try:
-                gray = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY)
-                faces = self.haar_cascade.detectMultiScale(
-                    gray, scaleFactor=1.08, minNeighbors=4, minSize=(32, 32)
-                )
-                if len(faces) >= 1:
-                    areas = [f[2] * f[3] for f in faces]
-                    best_idx = int(np.argmax(areas))
-                    (fx, fy, fw, fh) = map(int, faces[best_idx])
-                    bbox = [fx, fy, fw, fh]
-                    landmarks_68 = self._extract_landmarks_lbf(image_bgr, bbox)
-                    if landmarks_68:
-                        regions = self._get_regions_from_68_landmarks(landmarks_68, bbox, img_w, img_h)
-                    else:
-                        regions = self._get_regions_from_bbox(bbox, img_w, img_h)
-
-                    return {
-                        "success": True,
-                        "face_count": 1,
-                        "message": "Face localized via Haar cascade detector.",
-                        "detector_type": "haar_cascade",
-                        "landmarks": landmarks_68,
-                        "bounding_box": bbox,
-                        "regions": regions
-                    }
+                for img_candidate in images_to_try:
+                    gray = cv2.cvtColor(img_candidate, cv2.COLOR_BGR2GRAY)
+                    for (sf, mn) in [(1.06, 3), (1.08, 4), (1.10, 3)]:
+                        faces = self.haar_cascade.detectMultiScale(
+                            gray, scaleFactor=sf, minNeighbors=mn, minSize=(28, 28)
+                        )
+                        if len(faces) >= 1:
+                            candidates = [{"x": int(fx), "y": int(fy), "w": int(fw), "h": int(fh), "conf": 0.55}
+                                          for fx, fy, fw, fh in faces]
+                            best = self._pick_best_face_bbox(candidates, img_w, img_h)
+                            if best:
+                                bbox = [best["x"], best["y"], best["w"], best["h"]]
+                                landmarks = self._extract_landmarks_lbf(image_bgr, bbox)
+                                regions = (self._get_regions_from_68_landmarks(landmarks, bbox, img_w, img_h)
+                                           if landmarks else self._get_regions_from_bbox(bbox, img_w, img_h))
+                                return self._make_result(bbox, landmarks, regions, 0.55, "haar_cascade", img_w, img_h)
             except Exception:
                 pass
 
-        # STRICT CRITICAL RULE: If no face is detected, DO NOT produce output or fake face boxes!
+        # STRICT: No face found across all 4 engines
         return {
-            "success": False,
-            "face_count": 0,
-            "message": "No face detected in the picture or camera feed. Please position your face clearly in the camera frame.",
-            "landmarks": None,
-            "bounding_box": None,
-            "regions": {}
+            "success": False, "face_count": 0,
+            "message": "No face detected. Please position your face clearly in the frame with good lighting.",
+            "landmarks": None, "bounding_box": None, "regions": {}
         }
 
     def _get_regions_from_68_landmarks(

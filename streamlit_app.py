@@ -1405,59 +1405,118 @@ body {{
 
       // --- YOLO Human Face Verification Sensor ---
       async function verifyHumanFaceWithYOLO(img) {{
+        const maxDim = 800;
+        let w = img.naturalWidth || img.width || 640;
+        let h = img.naturalHeight || img.height || 480;
+        if (w > maxDim || h > maxDim) {{
+          const sc = maxDim / Math.max(w, h);
+          w = Math.round(w * sc);
+          h = Math.round(h * sc);
+        }}
+        // Minimum size guard
+        w = Math.max(w, 100);
+        h = Math.max(h, 100);
+
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = w;
+        tempCanvas.height = h;
+        const tCtx = tempCanvas.getContext("2d");
+        tCtx.drawImage(img, 0, 0, w, h);
+
+        const dataUrl = tempCanvas.toDataURL("image/jpeg", 0.92);
+        const endpoints = [
+          "http://127.0.0.1:8000/api/detect-face",
+          "http://localhost:8000/api/detect-face",
+          "/api/detect-face"
+        ];
+
+        // 1. Try JSON payload with 8s timeout (fastest)
+        for (let ep of endpoints) {{
+          try {{
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), 8000);
+            const res = await fetch(ep, {{
+              method: "POST",
+              headers: {{ "Content-Type": "application/json" }},
+              body: JSON.stringify({{ image: dataUrl }}),
+              signal: controller.signal
+            }});
+            clearTimeout(tid);
+            if (res.ok) {{
+              const resJson = await res.json();
+              console.log("[FaceCheck] Backend responded:", ep, resJson);
+              return resJson;
+            }}
+            if (res.status === 422) {{
+              const resJson = await res.json().catch(() => ({{}}));
+              return {{ has_face: false, face_count: 0, message: resJson.error || "No face detected by AI." }};
+            }}
+          }} catch (err) {{
+            console.warn("[FaceCheck] JSON attempt failed on", ep, err.name);
+          }}
+        }}
+
+        // 2. Try multipart FormData (some proxy configs block JSON)
         try {{
-          const tempCanvas = document.createElement("canvas");
-          const maxDim = 640;
-          let w = img.naturalWidth || img.width || 640;
-          let h = img.naturalHeight || img.height || 480;
-          if (w > maxDim || h > maxDim) {{
-            const sc = maxDim / Math.max(w, h);
-            w = Math.round(w * sc);
-            h = Math.round(h * sc);
-          }}
-          tempCanvas.width = w;
-          tempCanvas.height = h;
-          const tCtx = tempCanvas.getContext("2d");
-          tCtx.drawImage(img, 0, 0, w, h);
-
-          const dataUrl = tempCanvas.toDataURL("image/jpeg", 0.90);
-          const endpoints = [
-            "http://localhost:8000/api/detect-face",
-            "http://127.0.0.1:8000/api/detect-face",
-            "/api/detect-face"
-          ];
-
-          for (let ep of endpoints) {{
-            try {{
-              const res = await fetch(ep, {{
-                method: "POST",
-                headers: {{ "Content-Type": "application/json" }},
-                body: JSON.stringify({{ image: dataUrl }})
-              }});
-              if (res.ok) {{
-                const resJson = await res.json();
-                return resJson;
-              }}
-            }} catch (err) {{}}
-          }}
-
-          const blob = await new Promise((resolve) => tempCanvas.toBlob(resolve, "image/jpeg", 0.90));
+          const blob = await new Promise((resolve) => tempCanvas.toBlob(resolve, "image/jpeg", 0.92));
           if (blob) {{
+            const fd = new FormData();
+            fd.append("file", blob, "face_check.jpg");
             for (let ep of endpoints) {{
               try {{
-                const fd = new FormData();
-                fd.append("file", blob, "photo.jpg");
-                const res = await fetch(ep, {{ method: "POST", body: fd }});
+                const controller = new AbortController();
+                const tid = setTimeout(() => controller.abort(), 8000);
+                const res = await fetch(ep, {{ method: "POST", body: fd, signal: controller.signal }});
+                clearTimeout(tid);
                 if (res.ok) {{
-                  return await res.json();
+                  const resJson = await res.json();
+                  console.log("[FaceCheck] FormData backend responded:", ep, resJson);
+                  return resJson;
                 }}
-              }} catch (err) {{}}
+              }} catch (err) {{
+                console.warn("[FaceCheck] FormData attempt failed on", ep, err.name);
+              }}
             }}
           }}
-        }} catch (e) {{
-          console.warn("YOLO verification request failed:", e);
+        }} catch (blobErr) {{}}
+
+        // 3. Backend unreachable — strict client-side skin + structure check
+        console.warn("[FaceCheck] Backend unreachable — running client-side fallback");
+        try {{
+          const fbW = 240, fbH = 180;
+          const fbCanvas = document.createElement("canvas");
+          fbCanvas.width = fbW; fbCanvas.height = fbH;
+          const fbCtx = fbCanvas.getContext("2d");
+          fbCtx.drawImage(img, 0, 0, fbW, fbH);
+          const fbData = fbCtx.getImageData(0, 0, fbW, fbH).data;
+
+          const faceZoneLimit = Math.floor(fbH * 0.68) * fbW;
+          let faceSkinPx = 0, bodySkinPx = 0, totalPx = fbW * fbH;
+
+          for (let i = 0; i < fbData.length; i += 4) {{
+            const r = fbData[i], g = fbData[i + 1], b = fbData[i + 2];
+            if (isSkinPixel(r, g, b)) {{
+              const pixIdx = i / 4;
+              if (pixIdx < faceZoneLimit) faceSkinPx++;
+              else bodySkinPx++;
+            }}
+          }}
+
+          const faceSkinRatio = faceSkinPx / totalPx;
+          const faceToBodyRatio = bodySkinPx > 0 ? faceSkinPx / bodySkinPx : faceSkinPx;
+          console.log("[FaceCheck] fallback: faceSkinRatio=", faceSkinRatio.toFixed(3), "faceToBody=", faceToBodyRatio.toFixed(2));
+
+          if (faceSkinRatio > 0.08 && faceSkinPx > 300 && faceToBodyRatio > 1.4) {{
+            return {{ has_face: true, face_count: 1, lighting_clear: true,
+                     message: "Face verified (client fallback — connect backend for AI accuracy)." }};
+          }}
+          return {{ has_face: false, face_count: 0,
+                   message: "No human face detected (client fallback). Please ensure your face is clearly visible and well-lit." }};
+        }} catch (fbErr) {{
+          console.error("[FaceCheck] Fallback error:", fbErr);
         }}
-        return null;
+
+        return {{ has_face: false, message: "Face detection unavailable. Please check your connection." }};
       }}
 
       // --- Auto Colour Detection & Lighting Quality Sensor ---
