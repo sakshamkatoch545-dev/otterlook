@@ -799,11 +799,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // CONDITION 1: NO HUMAN FACE DETECTED -> STRICTLY NO PALETTES, NO OUTPUT!
     if (!yoloResult || !yoloResult.has_face) {
+      isFaceVerified = false;
       const failMsg = (yoloResult && yoloResult.message) || "No human face detected. Please position your face clearly in the camera frame.";
       showError(failMsg);
 
       if (faceBoxEl) faceBoxEl.classList.add("hidden");
       analyzeBtn.disabled = true;
+      // Hide any previously visible results — strictly no output
+      if (resultsSection) resultsSection.classList.add("hidden");
+      const navHomeBtnEl = document.getElementById("nav-home-btn");
+      if (navHomeBtnEl) navHomeBtnEl.classList.add("hidden");
 
       if (qualityBar) qualityBar.classList.remove("hidden");
       if (qualityMeter) {

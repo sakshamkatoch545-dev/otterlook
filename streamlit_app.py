@@ -1601,6 +1601,8 @@ body {{
           if (faceBoxEl) faceBoxEl.classList.add("hidden");
           analyzeBtn.disabled = true;
           if (resultsSection) resultsSection.classList.add("hidden");
+          const navHomeBtnEl = document.getElementById("nav-home-btn");
+          if (navHomeBtnEl) navHomeBtnEl.classList.add("hidden");
 
           if (qualityBar) qualityBar.classList.remove("hidden");
           if (qualityMeter) {{
