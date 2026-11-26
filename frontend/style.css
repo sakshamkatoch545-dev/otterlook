@@ -3925,11 +3925,24 @@ body, button, input, select, textarea,
   display: block;
 }
 
-/* Rec Grid (Haute Wardrobe Cards) */
+/* Rec Grid (Haute Wardrobe Cards - Balanced 4-column desktop alignment) */
 .rec-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.25rem;
+  align-items: stretch;
+}
+
+@media (min-width: 640px) {
+  .rec-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .rec-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .rec-card {
@@ -3937,6 +3950,7 @@ body, button, input, select, textarea,
   border: 1px solid rgba(212, 175, 55, 0.18);
   border-radius: var(--radius-md);
   overflow: hidden;
+  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
