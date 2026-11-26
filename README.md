@@ -26,6 +26,39 @@
 
 ---
 
+## Live Production Showcase (`https://otterlook.vercel.app/`)
+
+All screenshots and real-time telemetry below were captured directly from the live production deployment at **[https://otterlook.vercel.app/](https://otterlook.vercel.app/)** with **All Styles** auto-detection enabled.
+
+### 1. Upload Studio & "All Styles" Auto-Detection Selector
+![Otterlook AI Upload Studio](docs/screenshots/01_landing_studio.png)
+
+### 2. Real-Time Observed Analysis Results (Live API + UI)
+
+| Metric / Output | Portrait 1 (Auto-Detected Male) | Portrait 2 (Auto-Detected Female) |
+| :--- | :--- | :--- |
+| **Requested Mode** | `All Styles` (`gender="all"`) | `All Styles` (`gender="all"`) |
+| **Auto-Detected Gender** | **Men's Style** (`100.0%` confidence) | **Women's Style** (`100.0%` confidence) |
+| **Image Quality Gate** | `75 / 100` (`Good`, `682×1024`, Blur `1223.2`) | `97 / 100` (`Good`, `1024×906`, Blur `1637.67`) |
+| **Predicted Undertone** | **Warm · Deep Warm Autumn** (`40.7%`) | **Cool · True Cool Summer** (`58.8%`) |
+| **Class Probabilities** | Warm `40.7%` · Cool `37.4%` · Neutral `21.9%` | Cool `58.8%` · Warm `22.1%` · Neutral `19.1%` |
+| **Representative Skin Tone** | `#947363` — Brown / Deep (`Fitzpatrick V`) | `#947973` — Tan / Olive (`Fitzpatrick IV`) |
+| **CIELAB & Typology** | $L^* = 50.7$, $a^* = +11.6$, $b^* = +13.9$, $\text{ITA}^\circ = 2.8^\circ$, $b^*/a^* = 1.21$ | $L^* = 53.0$, $a^* = +10.7$, $b^* = +9.8$, $\text{ITA}^\circ = 17.1^\circ$, $b^*/a^* = 0.92$ |
+| **Look 1 Upperwear** | Suede Overshirt over Slub Cotton Tee (`#FFBF00`) | Silk Crepe de Chine Button-Down (`#E30B5C`) |
+| **Look 1 Bottomwear** | Slim Straight Garment-Dyed Chinos (`#8D021F`) | High-Waist Pleated Wide-Leg Pants (`#120A8F`) |
+| **Look 1 Footwear** | Suede Penny Loafers (`#5C9AB8`) | Pointed-Toe Suede Kitten Heels (`#5CA7B8`) |
+| **Look 1 Panel 04** | Fine Horology & Men's Jewellery (`Artisan Signet Ring`, `Minimalist Huggies`, `Chronograph Watch`) | Fine Jewellery & Lip Tint (`Layered Paperclip Chain`, `Sculptural Drops`, `Velvet Rosewood Lip Tint`) |
+
+### 3. Male Portrait — Live Colorimetry & 4-Column Menswear Lookboard
+![Male Portrait Live Colorimetry Results](docs/screenshots/02_male_results_overview.png)
+![Male Portrait 4-Column Menswear Lookboard](docs/screenshots/03_male_lookboard.png)
+
+### 4. Female Portrait — Live Colorimetry & 4-Column Womenswear Lookboard
+![Female Portrait Live Colorimetry Results](docs/screenshots/04_female_results_overview.png)
+![Female Portrait 4-Column Womenswear Lookboard](docs/screenshots/05_female_lookboard.png)
+
+---
+
 ## System Architecture
 
 ```mermaid
