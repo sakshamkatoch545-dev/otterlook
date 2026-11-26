@@ -6,16 +6,16 @@ Includes pure NumPy fallbacks for cross-platform zero-dependency operation.
 """
 
 import numpy as np
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, List, Optional, Tuple
 
 try:
     import cv2
 except Exception:
     cv2 = None
 
-def analyze_image_quality(image_bgr: np.ndarray) -> Dict[str, Any]:
+def analyze_image_quality(image_bgr: np.ndarray, bbox: Optional[List[int]] = None) -> Dict[str, Any]:
     """
-    Evaluates image quality metrics:
+    Evaluates image quality metrics (scoped to the padded face ROI when bbox is provided):
     1. Resolution: Width, Height, Aspect Ratio
     2. Blur: Laplacian operator variance
     3. Brightness: Mean gray intensity & over/under-exposure clipping
@@ -35,18 +35,31 @@ def analyze_image_quality(image_bgr: np.ndarray) -> Dict[str, Any]:
     # 1. Resolution Check
     min_dimension = 160
     is_res_ok = (h >= min_dimension and w >= min_dimension)
+
+    # Scope lighting, contrast, and blur checks to the padded face ROI if provided
+    eval_bgr = image_bgr
+    if bbox is not None and len(bbox) == 4:
+        bx, by, bw, bh = bbox
+        pad_x = int(bw * 0.20)
+        pad_y = int(bh * 0.20)
+        x1 = max(0, bx - pad_x)
+        y1 = max(0, by - pad_y)
+        x2 = min(w, bx + bw + pad_x)
+        y2 = min(h, by + bh + pad_y)
+        if (x2 - x1) >= 32 and (y2 - y1) >= 32:
+            eval_bgr = image_bgr[y1:y2, x1:x2]
     
     # Grayscale conversion
     if cv2 is not None:
         try:
-            gray = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY)
+            gray = cv2.cvtColor(eval_bgr, cv2.COLOR_BGR2GRAY)
             laplacian_var = float(cv2.Laplacian(gray, cv2.CV_64F).var())
         except Exception:
-            gray = (0.114 * image_bgr[:, :, 0] + 0.587 * image_bgr[:, :, 1] + 0.299 * image_bgr[:, :, 2]).astype(np.float64)
+            gray = (0.114 * eval_bgr[:, :, 0] + 0.587 * eval_bgr[:, :, 1] + 0.299 * eval_bgr[:, :, 2]).astype(np.float64)
             lap = gray[:-2, 1:-1] + gray[2:, 1:-1] + gray[1:-1, :-2] + gray[1:-1, 2:] - 4 * gray[1:-1, 1:-1]
             laplacian_var = float(np.var(lap))
     else:
-        gray = (0.114 * image_bgr[:, :, 0] + 0.587 * image_bgr[:, :, 1] + 0.299 * image_bgr[:, :, 2]).astype(np.float64)
+        gray = (0.114 * eval_bgr[:, :, 0] + 0.587 * eval_bgr[:, :, 1] + 0.299 * eval_bgr[:, :, 2]).astype(np.float64)
         lap = gray[:-2, 1:-1] + gray[2:, 1:-1] + gray[1:-1, :-2] + gray[1:-1, 2:] - 4 * gray[1:-1, 1:-1]
         laplacian_var = float(np.var(lap))
     

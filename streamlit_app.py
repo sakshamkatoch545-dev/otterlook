@@ -92,7 +92,7 @@ st.markdown("""
 
 # Automatically ensure the Otterlook FastAPI backend runs in background for YOLO face detection
 def _ensure_backend_server():
-    import subprocess, sys, urllib.request
+    import subprocess, sys, urllib.request, time
     try:
         urllib.request.urlopen("http://127.0.0.1:8000/api/health", timeout=0.8)
         return
@@ -106,6 +106,13 @@ def _ensure_backend_server():
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL
     )
+    for _ in range(6):
+        time.sleep(0.5)
+        try:
+            urllib.request.urlopen("http://127.0.0.1:8000/api/health", timeout=0.8)
+            return
+        except Exception:
+            pass
 
 _ensure_backend_server()
 
@@ -212,7 +219,7 @@ body {{
       </div>
       <h2 class="hero-headline">Find the Colors that <em>Naturally Flatter You</em></h2>
       <p class="hero-description">
-        Upload a clear photo taken in natural daylight. Our smart scanner spots your skin tone, checks your lighting, and reveals your personal color season and best outfit shades.
+        Upload a clear photo taken in natural daylight. Our smart system spots your skin tone, checks your lighting, and reveals your personal color season and best outfit shades.
       </p>
 
       <div class="hero-badges">
@@ -280,7 +287,12 @@ body {{
             <div class="preview-box hidden" id="preview-box">
               <div class="preview-stage" id="preview-stage">
                 <img id="preview-img" src="" alt="Analyzed Photo">
-                <button class="remove-btn" id="remove-img-btn" title="Remove image">&times;</button>
+                <button class="remove-btn" id="remove-img-btn" title="Remove image" aria-label="Remove image">
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="1" y1="1" x2="13" y2="13"></line>
+                    <line x1="13" y1="1" x2="1" y2="13"></line>
+                  </svg>
+                </button>
                 
                 <!-- Auto Colour & Lighting Detection Overlay (Replaces Face Detection Box) -->
                 <div class="biometric-overlay" id="biometric-overlay">
@@ -297,7 +309,7 @@ body {{
                         <span class="auto-color-badge-title" id="auto-color-badge-title">SPOTTING COMPLEXION...</span>
                         <span class="auto-color-badge-hex" id="face-box-hex">CALIBRATING</span>
                       </div>
-                      <span class="auto-color-status-tag" id="face-box-sublabel">AUTO SCAN</span>
+                      <span class="auto-color-status-tag" id="face-box-sublabel">AUTO DETECT</span>
                     </div>
                   </div>
 
@@ -315,16 +327,34 @@ body {{
                   <!-- Reference anchor for backward compatibility -->
                   <div id="box-face" style="display: none;"></div>
 
-                  <!-- Laser Scan Line FX -->
-                  <div class="scanline-fx" id="scanline-fx"></div>
-
                   <!-- Viewport Bottom Dock -->
                   <div class="viewport-dock">
                     <div class="dock-status">
                       <span class="dock-dot" id="dock-dot"></span>
-                      <span id="mesh-status-text">Scanning photo lighting and complexion...</span>
+                      <span id="mesh-status-text">Checking photo lighting and complexion...</span>
                     </div>
                     <span class="hud-pill" id="lighting-status-pill">Checking Lighting...</span>
+                  </div>
+                </div>
+
+                <!-- No Human Face Detected Action Overlay -->
+                <div class="no-face-overlay hidden" id="no-face-overlay">
+                  <div class="no-face-dialog">
+                    <div class="no-face-icon-circle">
+                      <span class="material-symbols-outlined" style="font-size: 32px;">face_retouching_off</span>
+                    </div>
+                    <h4 class="no-face-title">No Human Face Detected</h4>
+                    <p class="no-face-desc">No human face was recognized in this picture. Please take a live photo or upload another image with your face clearly visible.</p>
+                    <div class="no-face-actions">
+                      <button type="button" class="btn btn-camera" id="overlay-camera-btn">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">photo_camera</span>
+                        <span>Click Picture</span>
+                      </button>
+                      <button type="button" class="btn btn-outline" id="overlay-upload-btn">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">folder_open</span>
+                        <span>Upload Image</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -343,21 +373,73 @@ body {{
             <div class="quality-details" id="quality-details"></div>
           </div>
 
-          <!-- Error Banner -->
+          <!-- Error Banner with Immediate Retry Actions -->
           <div class="error-banner hidden" id="error-banner">
-            <span class="material-symbols-outlined" style="font-size: 20px;">error</span>
-            <div class="error-text" id="error-text"></div>
+            <div class="error-icon-circle">
+              <span class="material-symbols-outlined" style="font-size: 18px;">warning</span>
+            </div>
+            <div class="error-body">
+              <div class="error-text" id="error-text"></div>
+              <div class="error-action-btns hidden" id="error-action-btns">
+                <button type="button" class="btn-action btn-action-camera" id="banner-camera-btn">
+                  <span class="material-symbols-outlined" style="font-size: 14px;">photo_camera</span>
+                  Click Picture
+                </button>
+                <button type="button" class="btn-action btn-action-upload" id="banner-upload-btn">
+                  <span class="material-symbols-outlined" style="font-size: 14px;">folder_open</span>
+                  Upload Image
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Styling Profile Selector -->
-      <div class="gender-selector-wrapper">
-        <span class="gender-selector-label">Style Recommendations For:</span>
-        <div class="gender-options" id="upload-gender-options">
-          <button type="button" class="gender-pill active" data-gender="male">Men's Style</button>
-          <button type="button" class="gender-pill" data-gender="female">Women's Style</button>
-          <button type="button" class="gender-pill" data-gender="all">All Styles</button>
+      <!-- Styling & Wardrobe Preference Selectors -->
+      <div class="wardrobe-preselect-container">
+        <!-- Gender / Styling Profile Selector -->
+        <div class="gender-selector-wrapper">
+          <span class="gender-selector-label">
+            <span class="material-symbols-outlined" style="font-size: 16px;">person</span>
+            <span>Style Recommendations For:</span>
+          </span>
+          <div class="gender-options" id="upload-gender-options">
+            <button type="button" class="gender-pill active" data-gender="male">Men's Style</button>
+            <button type="button" class="gender-pill" data-gender="female">Women's Style</button>
+            <button type="button" class="gender-pill" data-gender="all">All Styles</button>
+          </div>
+        </div>
+
+        <!-- Clothing Type Selector (All Types & Kinds) -->
+        <div class="wardrobe-selector-group">
+          <span class="wardrobe-group-label">
+            <span class="material-symbols-outlined" style="font-size: 16px;">checkroom</span>
+            <span>What type of clothes do you wear?</span>
+          </span>
+          <div class="style-pills-row" id="upload-clothing-options">
+            <button type="button" class="style-pill active" data-type="all">✨ All Kinds</button>
+            <button type="button" class="style-pill" data-type="casual">👕 Casual & Everyday</button>
+            <button type="button" class="style-pill" data-type="formal">👔 Formal & Business</button>
+            <button type="button" class="style-pill" data-type="streetwear">👟 Streetwear & Urban</button>
+            <button type="button" class="style-pill" data-type="ethnic">🥻 Traditional & Ethnic</button>
+            <button type="button" class="style-pill" data-type="party">🍸 Party & Glam</button>
+            <button type="button" class="style-pill" data-type="athleisure">🏃 Athleisure</button>
+          </div>
+        </div>
+
+        <!-- Weather / Season Selector (All Weather Types) -->
+        <div class="wardrobe-selector-group">
+          <span class="wardrobe-group-label">
+            <span class="material-symbols-outlined" style="font-size: 16px;">wb_sunny</span>
+            <span>Weather / Season:</span>
+          </span>
+          <div class="style-pills-row" id="upload-weather-options">
+            <button type="button" class="weather-pill active" data-weather="all">🌍 All Weathers</button>
+            <button type="button" class="weather-pill" data-weather="summer">☀️ Summer & Hot</button>
+            <button type="button" class="weather-pill" data-weather="winter">❄️ Winter & Cold</button>
+            <button type="button" class="weather-pill" data-weather="monsoon">🌧️ Monsoon & Rainy</button>
+            <button type="button" class="weather-pill" data-weather="spring_autumn">🍂 Spring / Autumn</button>
+          </div>
         </div>
       </div>
 
@@ -673,6 +755,76 @@ body {{
         </div>
       </div>
 
+      <!-- Bespoke Outfit Lookbook Showcase (3 to 4 Curated Looks for Upper, Bottom, Shoes, Jewellery & Makeup) -->
+      <div class="card outfit-studio-card" id="outfit-studio-card">
+        <div class="outfit-studio-header">
+          <div class="outfit-header-left">
+            <span class="card-tag">Bespoke Haute Lookbook</span>
+            <h3 class="outfit-studio-title">3 to 4 Palette-Harmonized Complete Outfits</h3>
+            <p class="outfit-studio-desc">
+              Complete ensembles tailored specifically to your detected color harmony for <strong>Upperwear</strong>, <strong>Bottomwear</strong>, <strong>Shoes</strong>, and <strong>Jewellery & Beauty</strong> (Rings, Earrings, Horology for Men; Necklaces, Earrings, Lip Tints for Women) across all weather conditions.
+            </p>
+          </div>
+          <div class="outfit-live-badge">
+            <span class="pulse-dot"></span>
+            <span>Live Wardrobe Synthesizer</span>
+          </div>
+        </div>
+
+        <!-- Interactive Wardrobe & Weather Controls Bar -->
+        <div class="outfit-controls-bar">
+          <!-- Clothing Type Filter -->
+          <div class="control-filter-item">
+            <label class="control-label">
+              <span class="material-symbols-outlined" style="font-size: 15px;">checkroom</span>
+              <span>Clothing Style / Type:</span>
+            </label>
+            <div class="filter-pills-scroll" id="results-clothing-options">
+              <button type="button" class="filter-pill active" data-type="all">✨ All Kinds</button>
+              <button type="button" class="filter-pill" data-type="casual">👕 Casual & Everyday</button>
+              <button type="button" class="filter-pill" data-type="formal">👔 Formal & Business</button>
+              <button type="button" class="filter-pill" data-type="streetwear">👟 Streetwear & Urban</button>
+              <button type="button" class="filter-pill" data-type="ethnic">🥻 Traditional & Ethnic</button>
+              <button type="button" class="filter-pill" data-type="party">🍸 Party & Glam</button>
+              <button type="button" class="filter-pill" data-type="athleisure">🏃 Athleisure</button>
+            </div>
+          </div>
+
+          <!-- Weather Filter -->
+          <div class="control-filter-item">
+            <label class="control-label">
+              <span class="material-symbols-outlined" style="font-size: 15px;">wb_sunny</span>
+              <span>Weather & Climate:</span>
+            </label>
+            <div class="filter-pills-scroll" id="results-weather-options">
+              <button type="button" class="weather-filter-pill active" data-weather="all">🌍 All Weathers</button>
+              <button type="button" class="weather-filter-pill" data-weather="summer">☀️ Summer & Hot</button>
+              <button type="button" class="weather-filter-pill" data-weather="winter">❄️ Winter & Cold</button>
+              <button type="button" class="weather-filter-pill" data-weather="monsoon">🌧️ Monsoon & Rainy</button>
+              <button type="button" class="weather-filter-pill" data-weather="spring_autumn">🍂 Spring / Autumn</button>
+            </div>
+          </div>
+
+          <!-- Gender Switcher -->
+          <div class="control-filter-item">
+            <label class="control-label">
+              <span class="material-symbols-outlined" style="font-size: 15px;">person</span>
+              <span>Wardrobe Category:</span>
+            </label>
+            <div class="filter-pills-scroll" id="results-gender-options">
+              <button type="button" class="gender-filter-pill" data-gender="male">Men's Wardrobe</button>
+              <button type="button" class="gender-filter-pill" data-gender="female">Women's Wardrobe</button>
+              <button type="button" class="gender-filter-pill active" data-gender="all">All Styles</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3 to 4 Outfit Look Cards Grid -->
+        <div class="outfit-looks-grid" id="outfit-looks-grid">
+          <!-- Dynamically populated with 3 to 4 styled looks -->
+        </div>
+      </div>
+
       <!-- Skin-Tone Calibrated Optical Metrics -->
       <div class="optical-metrics-row">
         <div class="optical-metric-card">
@@ -874,6 +1026,12 @@ body {{
       const qualityDetails = document.getElementById("quality-details");
       const errorBanner = document.getElementById("error-banner");
       const errorText = document.getElementById("error-text");
+      const errorActionBtns = document.getElementById("error-action-btns");
+      const bannerCameraBtn = document.getElementById("banner-camera-btn");
+      const bannerUploadBtn = document.getElementById("banner-upload-btn");
+      const noFaceOverlay = document.getElementById("no-face-overlay");
+      const overlayCameraBtn = document.getElementById("overlay-camera-btn");
+      const overlayUploadBtn = document.getElementById("overlay-upload-btn");
 
       const processingSection = document.getElementById("processing-section");
       const resultsSection = document.getElementById("results-section");
@@ -890,6 +1048,8 @@ body {{
       let currentImageBitmap = null;
       let currentDataUrl = null;
       let currentGender = "male";
+      let currentClothingType = "all";
+      let currentWeather = "all";
       let cachedAnalysisData = null;
       let isFaceVerified = false;
 
@@ -1423,18 +1583,19 @@ body {{
         const tCtx = tempCanvas.getContext("2d");
         tCtx.drawImage(img, 0, 0, w, h);
 
-        const dataUrl = tempCanvas.toDataURL("image/jpeg", 0.92);
+        const dataUrl = tempCanvas.toDataURL("image/jpeg", 0.85);
         const endpoints = [
           "http://127.0.0.1:8000/api/detect-face",
           "http://localhost:8000/api/detect-face",
           "/api/detect-face"
         ];
 
-        // 1. Try JSON payload with 8s timeout (fastest)
+        // 1. Try JSON payload with reliable 4.0s timeout
+        let backendAvailable = false;
         for (let ep of endpoints) {{
           try {{
             const controller = new AbortController();
-            const tid = setTimeout(() => controller.abort(), 8000);
+            const tid = setTimeout(() => controller.abort(), 4000);
             const res = await fetch(ep, {{
               method: "POST",
               headers: {{ "Content-Type": "application/json" }},
@@ -1442,6 +1603,7 @@ body {{
               signal: controller.signal
             }});
             clearTimeout(tid);
+            backendAvailable = true;
             if (res.ok) {{
               const resJson = await res.json();
               console.log("[FaceCheck] Backend responded:", ep, resJson);
@@ -1449,74 +1611,183 @@ body {{
             }}
             if (res.status === 422) {{
               const resJson = await res.json().catch(() => ({{}}));
-              return {{ has_face: false, face_count: 0, message: resJson.error || "No face detected by AI." }};
+              return {{ has_face: false, face_count: 0, message: resJson.error || "No human face detected." }};
             }}
           }} catch (err) {{
-            console.warn("[FaceCheck] JSON attempt failed on", ep, err.name);
+            console.warn("[FaceCheck] Fast JSON attempt failed on", ep, err.name);
           }}
         }}
 
-        // 2. Try multipart FormData (some proxy configs block JSON)
-        try {{
-          const blob = await new Promise((resolve) => tempCanvas.toBlob(resolve, "image/jpeg", 0.92));
-          if (blob) {{
-            const fd = new FormData();
-            fd.append("file", blob, "face_check.jpg");
-            for (let ep of endpoints) {{
-              try {{
-                const controller = new AbortController();
-                const tid = setTimeout(() => controller.abort(), 8000);
-                const res = await fetch(ep, {{ method: "POST", body: fd, signal: controller.signal }});
-                clearTimeout(tid);
-                if (res.ok) {{
-                  const resJson = await res.json();
-                  console.log("[FaceCheck] FormData backend responded:", ep, resJson);
-                  return resJson;
-                }}
-              }} catch (err) {{
-                console.warn("[FaceCheck] FormData attempt failed on", ep, err.name);
+        // 2. Try multipart FormData only if backend seemed partially available
+        if (backendAvailable) {{
+          try {{
+            const blob = await new Promise((resolve) => tempCanvas.toBlob(resolve, "image/jpeg", 0.85));
+            if (blob) {{
+              const fd = new FormData();
+              fd.append("file", blob, "face_check.jpg");
+              for (let ep of endpoints) {{
+                try {{
+                  const controller = new AbortController();
+                  const tid = setTimeout(() => controller.abort(), 4000);
+                  const res = await fetch(ep, {{ method: "POST", body: fd, signal: controller.signal }});
+                  clearTimeout(tid);
+                  if (res.ok) {{
+                    const resJson = await res.json();
+                    return resJson;
+                  }}
+                }} catch (err) {{}}
               }}
             }}
-          }}
-        }} catch (blobErr) {{}}
+          }} catch (blobErr) {{}}
+        }}
 
-        // 3. Backend unreachable — strict client-side skin + structure check
-        console.warn("[FaceCheck] Backend unreachable — running client-side fallback");
+        // 3. Backend unreachable — check Native Browser FaceDetector API (Chrome / Edge / Android)
+        if (typeof window !== "undefined" && "FaceDetector" in window) {{
+          try {{
+            const detector = new window.FaceDetector({{ fastMode: true, maxDetectedFaces: 1 }});
+            const nativeFaces = await detector.detect(img);
+            if (nativeFaces && nativeFaces.length > 0) {{
+              const nb = nativeFaces[0].boundingBox;
+              const nw = img.naturalWidth || img.width || 640;
+              const nh = img.naturalHeight || img.height || 480;
+              console.log("[FaceCheck] Native browser FaceDetector found face:", nb);
+              return {{
+                has_face: true,
+                face_count: nativeFaces.length,
+                lighting_clear: true,
+                confidence: 0.95,
+                detector_type: "native_face_detector",
+                bounding_box: {{
+                  x: nb.x, y: nb.y, w: nb.width, h: nb.height,
+                  pctX: (nb.x / nw) * 100, pctY: (nb.y / nh) * 100,
+                  pctW: (nb.width / nw) * 100, pctH: (nb.height / nh) * 100
+                }},
+                message: "Face localized via Neural Face Detector."
+              }};
+            }} else {{
+              return {{
+                has_face: false,
+                face_count: 0,
+                lighting_clear: false,
+                message: "No human face detected. Please position your face clearly in the frame."
+              }};
+            }}
+          }} catch (nativeErr) {{
+            console.warn("[FaceCheck] Native FaceDetector error:", nativeErr);
+          }}
+        }}
+
+        // 4. Algorithmic biometric fallback
+        console.warn("[FaceCheck] Backend unreachable — running algorithmic biometric check");
         try {{
-          const fbW = 240, fbH = 180;
+          const fbW = 200, fbH = 200;
           const fbCanvas = document.createElement("canvas");
           fbCanvas.width = fbW; fbCanvas.height = fbH;
           const fbCtx = fbCanvas.getContext("2d");
           fbCtx.drawImage(img, 0, 0, fbW, fbH);
           const fbData = fbCtx.getImageData(0, 0, fbW, fbH).data;
 
-          const faceZoneLimit = Math.floor(fbH * 0.68) * fbW;
-          let faceSkinPx = 0, bodySkinPx = 0, totalPx = fbW * fbH;
+          let totalLum = 0, totalSkin = 0;
+          let skinXSum = 0, skinYSum = 0;
+          let minX = fbW, maxX = 0, minY = fbH, maxY = 0;
+          const totalPixels = fbW * fbH;
+          const lums = [];
 
           for (let i = 0; i < fbData.length; i += 4) {{
             const r = fbData[i], g = fbData[i + 1], b = fbData[i + 2];
+            const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+            totalLum += lum;
+            if (i % 16 === 0) lums.push(lum);
+
             if (isSkinPixel(r, g, b)) {{
-              const pixIdx = i / 4;
-              if (pixIdx < faceZoneLimit) faceSkinPx++;
-              else bodySkinPx++;
+              const pxIdx = i / 4;
+              const pxX = pxIdx % fbW;
+              const pxY = Math.floor(pxIdx / fbW);
+              // Focus on head/face upper 85% region
+              if (pxY < fbH * 0.85) {{
+                totalSkin++;
+                skinXSum += pxX;
+                skinYSum += pxY;
+                if (pxX < minX) minX = pxX;
+                if (pxX > maxX) maxX = pxX;
+                if (pxY < minY) minY = pxY;
+                if (pxY > maxY) maxY = pxY;
+              }}
             }}
           }}
 
-          const faceSkinRatio = faceSkinPx / totalPx;
-          const faceToBodyRatio = bodySkinPx > 0 ? faceSkinPx / bodySkinPx : faceSkinPx;
-          console.log("[FaceCheck] fallback: faceSkinRatio=", faceSkinRatio.toFixed(3), "faceToBody=", faceToBodyRatio.toFixed(2));
-
-          if (faceSkinRatio > 0.08 && faceSkinPx > 300 && faceToBodyRatio > 1.4) {{
-            return {{ has_face: true, face_count: 1, lighting_clear: true,
-                     message: "Face verified (client fallback — connect backend for AI accuracy)." }};
+          const meanLum = totalLum / totalPixels;
+          let lumVar = 0;
+          for (let l of lums) {{
+            const d = l - meanLum;
+            lumVar += d * d;
           }}
-          return {{ has_face: false, face_count: 0,
-                   message: "No human face detected (client fallback). Please ensure your face is clearly visible and well-lit." }};
+          lumVar = lumVar / lums.length;
+          if (lumVar < 18) {{
+            return {{
+              has_face: false,
+              face_count: 0,
+              message: "No human face detected. Image is completely uniform or blank."
+            }};
+          }}
+
+          const clusterW = Math.max(0, maxX - minX);
+          const clusterH = Math.max(0, maxY - minY);
+          const clusterArea = clusterW * clusterH;
+
+          // Real human face in portrait/selfie mode takes up a concentrated, distinct region
+          // Reject if skin cluster is too small, absent, or diffuse pattern (curtains/walls)
+          if (totalSkin < 160 || clusterW < 30 || clusterH < 35 || clusterArea < 1200) {{
+            return {{
+              has_face: false,
+              face_count: 0,
+              message: "No human face detected. Please ensure your face is clearly visible."
+            }};
+          }}
+
+          const aspect = clusterH / clusterW;
+          if (aspect < 0.60 || aspect > 2.4) {{
+            return {{
+              has_face: false,
+              face_count: 0,
+              message: "No human face detected. Object shape does not match a human face."
+            }};
+          }}
+
+          const clusterDensity = totalSkin / clusterArea;
+          // In real human faces, skin pixels form a coherent cluster (density >= 0.16)
+          // Diffuse patterns (curtains, wallpapers, textures) have low cluster density (< 0.08)
+          if (clusterDensity < 0.16) {{
+            return {{
+              has_face: false,
+              face_count: 0,
+              message: "No human face detected. Detected texture does not match a human face."
+            }};
+          }}
+
+          const cx = (skinXSum / totalSkin) / fbW;
+          const cy = (skinYSum / totalSkin) / fbH;
+          if (cx >= 0.15 && cx <= 0.85 && cy >= 0.10 && cy <= 0.82) {{
+            return {{
+              has_face: true,
+              face_count: 1,
+              lighting_clear: true,
+              confidence: 0.80,
+              detector_type: "biometric_fallback",
+              message: "Face verified (local biometric detector)."
+            }};
+          }}
+
+          return {{
+            has_face: false,
+            face_count: 0,
+            message: "No human face detected. Please position your face closer to the center."
+          }};
         }} catch (fbErr) {{
           console.error("[FaceCheck] Fallback error:", fbErr);
         }}
 
-        return {{ has_face: false, message: "Face detection unavailable. Please check your connection." }};
+        return {{ has_face: false, message: "No human face detected. Please check your image." }};
       }}
 
       // --- Auto Colour Detection & Lighting Quality Sensor ---
@@ -1530,7 +1801,7 @@ body {{
         const autoBadgeTag = document.getElementById("face-box-sublabel");
         const autoDot = document.getElementById("face-box-color-dot");
 
-        if (statusEl) statusEl.textContent = "Scanning photo lighting and facial regions...";
+        if (statusEl) statusEl.textContent = "Checking photo lighting and complexion...";
 
         const origW = img.naturalWidth || img.width || 320;
         const origH = img.naturalHeight || img.height || 400;
@@ -1595,7 +1866,7 @@ body {{
         if (!yoloResult || !yoloResult.has_face) {{
           isFaceVerified = false;
           const failMsg = (yoloResult && yoloResult.message) || "No human face detected. Please position your face clearly in the camera frame.";
-          showError(failMsg);
+          showError(failMsg, true);
 
           const faceBoxEl = document.getElementById("preview-face-box");
           if (faceBoxEl) faceBoxEl.classList.add("hidden");
@@ -1717,18 +1988,50 @@ body {{
         hideError();
         const spottedHex = areas.overall.hex;
 
-        // Position and display ONLY the AI Face Bounding Box (just the box, no points)
+        // Render sleek Auto-Selector Box around the detected face
         const faceBoxEl = document.getElementById("preview-face-box");
-        const faceBoxTag = document.getElementById("preview-face-box-tag");
-        if (faceBoxEl && faceBox) {{
-          faceBoxEl.style.left = faceBox.pctX.toFixed(2) + "%";
-          faceBoxEl.style.top = faceBox.pctY.toFixed(2) + "%";
-          faceBoxEl.style.width = faceBox.pctW.toFixed(2) + "%";
-          faceBoxEl.style.height = faceBox.pctH.toFixed(2) + "%";
-          faceBoxEl.classList.remove("hidden");
-        }}
-        if (faceBoxTag) {{
-          faceBoxTag.textContent = "AI FACE MESH";
+        if (faceBoxEl) {{
+          const boxToRender = (yoloResult && yoloResult.bounding_box && yoloResult.bounding_box.pctW !== undefined)
+            ? yoloResult.bounding_box
+            : faceBox;
+          if (boxToRender && previewImg && previewImg.naturalWidth && previewImg.naturalHeight) {{
+            const positionBox = () => {{
+              const overlay = document.getElementById("face-regions-overlay");
+              if (!overlay || !previewImg.clientWidth || !previewImg.clientHeight) return;
+              const oRect = overlay.getBoundingClientRect();
+              const iRect = previewImg.getBoundingClientRect();
+              const natRatio = previewImg.naturalWidth / previewImg.naturalHeight;
+              const renRatio = iRect.width / iRect.height;
+              let drawW = iRect.width, drawH = iRect.height, offX = 0, offY = 0;
+              if (natRatio > renRatio) {{
+                drawH = iRect.width / natRatio;
+                offY = (iRect.height - drawH) / 2;
+              }} else {{
+                drawW = iRect.height * natRatio;
+                offX = (iRect.width - drawW) / 2;
+              }}
+              const baseLeft = (iRect.left - oRect.left) + offX;
+              const baseTop = (iRect.top - oRect.top) + offY;
+              const px = boxToRender.pctX !== undefined ? boxToRender.pctX : 25;
+              const py = boxToRender.pctY !== undefined ? boxToRender.pctY : 15;
+              const pw = boxToRender.pctW !== undefined ? boxToRender.pctW : 50;
+              const ph = boxToRender.pctH !== undefined ? boxToRender.pctH : 65;
+
+              faceBoxEl.style.left = `${{baseLeft + (px / 100) * drawW}}px`;
+              faceBoxEl.style.top = `${{baseTop + (py / 100) * drawH}}px`;
+              faceBoxEl.style.width = `${{(pw / 100) * drawW}}px`;
+              faceBoxEl.style.height = `${{(ph / 100) * drawH}}px`;
+              faceBoxEl.style.display = "block";
+              faceBoxEl.classList.remove("hidden");
+
+              const tagEl = document.getElementById("preview-face-box-tag");
+              if (tagEl) tagEl.textContent = "AUTO-SELECTED FACE";
+            }};
+            positionBox();
+            requestAnimationFrame(positionBox);
+          }} else {{
+            faceBoxEl.classList.add("hidden");
+          }}
         }}
 
         // Update Quality Bar: Optimal
@@ -1840,11 +2143,44 @@ body {{
         }}
       }}
 
-      function showError(msg) {{
+      function triggerCameraCapture() {{
+        hideError();
+        if (cameraBtn) {{
+          cameraBtn.click();
+        }} else if (cameraInput) {{
+          cameraInput.click();
+        }}
+      }}
+
+      function triggerFileUpload() {{
+        hideError();
+        if (fileInput) {{
+          fileInput.click();
+        }}
+      }}
+
+      if (overlayCameraBtn) overlayCameraBtn.addEventListener("click", triggerCameraCapture);
+      if (bannerCameraBtn) bannerCameraBtn.addEventListener("click", triggerCameraCapture);
+      if (overlayUploadBtn) overlayUploadBtn.addEventListener("click", triggerFileUpload);
+      if (bannerUploadBtn) bannerUploadBtn.addEventListener("click", triggerFileUpload);
+
+      function showError(msg, isNoFace = false) {{
         errorText.textContent = msg;
         errorBanner.classList.remove("hidden");
+        if (isNoFace) {{
+          if (errorActionBtns) errorActionBtns.classList.remove("hidden");
+          if (noFaceOverlay) noFaceOverlay.classList.remove("hidden");
+        }} else {{
+          if (errorActionBtns) errorActionBtns.classList.add("hidden");
+          if (noFaceOverlay) noFaceOverlay.classList.add("hidden");
+        }}
       }}
-      function hideError() {{ errorBanner.classList.add("hidden"); }}
+
+      function hideError() {{
+        errorBanner.classList.add("hidden");
+        if (errorActionBtns) errorActionBtns.classList.add("hidden");
+        if (noFaceOverlay) noFaceOverlay.classList.add("hidden");
+      }}
 
       function showToast(msg) {{
         toast.textContent = msg;
@@ -2671,26 +3007,24 @@ body {{
 
       function handleGenderSelect(selectedGender, isManual = true) {{
         currentGender = selectedGender || "male";
+        const effectiveGender = currentGender;
 
         // Sync upload selector pills on homepage
         document.querySelectorAll("#upload-gender-options .gender-pill").forEach((p) => {{
           p.classList.toggle("active", p.getAttribute("data-gender") === currentGender);
         }});
 
-        const effectiveGender = currentGender;
+        // Sync results live outfit studio pills
+        document.querySelectorAll("#results-gender-options .gender-filter-pill").forEach((p) => {{
+          p.classList.toggle("active", p.getAttribute("data-gender") === currentGender);
+        }});
 
-        // Ensure switcher is completely absent/hidden in results
-        const resultsGenderOptions = document.getElementById("results-gender-options");
-        if (resultsGenderOptions) {{
-          resultsGenderOptions.innerHTML = "";
-          resultsGenderOptions.style.display = "none";
-        }}
         const switchLabel = document.getElementById("gender-switch-label");
         if (switchLabel) switchLabel.style.display = "none";
         const bannerControls = document.querySelector(".gender-banner-controls");
         if (bannerControls) bannerControls.style.display = "none";
 
-        updateGenderView(effectiveGender);
+        updateGenderView(currentGender);
 
         const bannerTitleText = document.getElementById("gender-banner-title-text");
         if (bannerTitleText) bannerTitleText.textContent = "Style Profile:";
@@ -2751,6 +3085,62 @@ body {{
         }});
       }});
 
+      // Wire up upload clothing type & weather pre-select pills
+      document.querySelectorAll("#upload-clothing-options .style-pill").forEach((pill) => {{
+        pill.addEventListener("click", () => {{
+          document.querySelectorAll("#upload-clothing-options .style-pill").forEach((p) => p.classList.remove("active"));
+          pill.classList.add("active");
+          currentClothingType = pill.getAttribute("data-type") || "all";
+          document.querySelectorAll("#results-clothing-options .filter-pill").forEach((p) => {{
+            p.classList.toggle("active", p.getAttribute("data-type") === currentClothingType);
+          }});
+        }});
+      }});
+
+      document.querySelectorAll("#upload-weather-options .weather-pill").forEach((pill) => {{
+        pill.addEventListener("click", () => {{
+          document.querySelectorAll("#upload-weather-options .weather-pill").forEach((p) => p.classList.remove("active"));
+          pill.classList.add("active");
+          currentWeather = pill.getAttribute("data-weather") || "all";
+          document.querySelectorAll("#results-weather-options .weather-filter-pill").forEach((p) => {{
+            p.classList.toggle("active", p.getAttribute("data-weather") === currentWeather);
+          }});
+        }});
+      }});
+
+      // Wire up results outfit studio live filter pills
+      document.querySelectorAll("#results-clothing-options .filter-pill").forEach((pill) => {{
+        pill.addEventListener("click", () => {{
+          document.querySelectorAll("#results-clothing-options .filter-pill").forEach((p) => p.classList.remove("active"));
+          pill.classList.add("active");
+          currentClothingType = pill.getAttribute("data-type") || "all";
+          document.querySelectorAll("#upload-clothing-options .style-pill").forEach((p) => {{
+            p.classList.toggle("active", p.getAttribute("data-type") === currentClothingType);
+          }});
+          fetchOrUpdateOutfits();
+        }});
+      }});
+
+      document.querySelectorAll("#results-weather-options .weather-filter-pill").forEach((pill) => {{
+        pill.addEventListener("click", () => {{
+          document.querySelectorAll("#results-weather-options .weather-filter-pill").forEach((p) => p.classList.remove("active"));
+          pill.classList.add("active");
+          currentWeather = pill.getAttribute("data-weather") || "all";
+          document.querySelectorAll("#upload-weather-options .weather-pill").forEach((p) => {{
+            p.classList.toggle("active", p.getAttribute("data-weather") === currentWeather);
+          }});
+          fetchOrUpdateOutfits();
+        }});
+      }});
+
+      document.querySelectorAll("#results-gender-options .gender-filter-pill").forEach((pill) => {{
+        pill.addEventListener("click", () => {{
+          const g = pill.getAttribute("data-gender");
+          handleGenderSelect(g, true);
+          fetchOrUpdateOutfits();
+        }});
+      }});
+
       // Analyze Button Click
       analyzeBtn.addEventListener("click", async () => {{
         if (!currentImageBitmap || !isFaceVerified) {{
@@ -2784,7 +3174,12 @@ body {{
               const res = await fetch(ep, {{
                 method: "POST",
                 headers: {{ "Content-Type": "application/json" }},
-                body: JSON.stringify({{ image: currentDataUrl, gender: activeProfile }})
+                body: JSON.stringify({{
+                  image: currentDataUrl,
+                  gender: activeProfile,
+                  clothing_type: currentClothingType,
+                  weather: currentWeather
+                }})
               }});
               if (res.ok) {{
                 backendData = await res.json();
@@ -2883,6 +3278,54 @@ body {{
         if (!data) return;
         updateGenderView(currentGender);
 
+        // Biometric Face Recognition Status Badge
+        let recBadge = document.getElementById("face-recognition-badge");
+        if (!recBadge) {{
+          recBadge = document.createElement("div");
+          recBadge.id = "face-recognition-badge";
+          recBadge.className = "face-recognition-badge";
+          const resSec = document.getElementById("results-section");
+          if (resSec) resSec.prepend(recBadge);
+        }}
+        if (recBadge && data && data.recognition) {{
+          const pid = data.recognition.profile_id || "";
+          const forgetHtml = pid
+            ? ` <button type="button" class="forget-profile-btn" data-profile-id="${{pid}}" title="Delete this face profile from database memory">Forget Profile</button>`
+            : "";
+          if (data.recognition.is_recognized) {{
+            recBadge.innerHTML = `<span class="rec-icon">⚡</span> <strong>Recognized Client Profile</strong> · Loaded your calibrated signature colorimetry (${{data.recognition.similarity}}% biometric match)${{forgetHtml}}`;
+            recBadge.className = "face-recognition-badge recognized";
+            recBadge.style.display = "inline-flex";
+          }} else {{
+            recBadge.innerHTML = `<span class="rec-icon">✨</span> <strong>New Face Profile Registered</strong> · Unique colorimetry calibrated and saved to database memory${{forgetHtml}}`;
+            recBadge.className = "face-recognition-badge new-profile";
+            recBadge.style.display = "inline-flex";
+          }}
+          const forgetBtn = recBadge.querySelector(".forget-profile-btn");
+          if (forgetBtn) {{
+            forgetBtn.addEventListener("click", async () => {{
+              const id = forgetBtn.getAttribute("data-profile-id");
+              if (!id) return;
+              forgetBtn.disabled = true;
+              forgetBtn.textContent = "Removing...";
+              for (const ep of [`http://127.0.0.1:8000/api/face-profile/${{encodeURIComponent(id)}}`, `/api/face-profile/${{encodeURIComponent(id)}}`]) {{
+                try {{
+                  const res = await fetch(ep, {{ method: "DELETE" }});
+                  if (res.ok) {{
+                    recBadge.innerHTML = `<span class="rec-icon">🗑️</span> <strong>Profile Removed</strong> · Your facial biometric memory was erased from the database.`;
+                    recBadge.className = "face-recognition-badge new-profile";
+                    showToast("Biometric face profile deleted from database.");
+                    return;
+                  }}
+                }} catch (e) {{}}
+              }}
+              forgetBtn.disabled = false;
+              forgetBtn.textContent = "Forget Profile";
+              showToast("Could not remove profile right now.");
+            }});
+          }}
+        }}
+
         const rawUt = (data && data.undertone && (data.undertone.label || data.undertone)) || "Warm";
         const ut = typeof rawUt === "string" ? rawUt : (rawUt.label || "Warm");
         const utStr = String(ut || "Warm");
@@ -2906,9 +3349,10 @@ body {{
             (utStr === "Warm" ? "AUTUMN" : (utStr === "Cool" ? "WINTER" : "SUMMER"));
         }}
 
-        const confPct = (data && data.undertone && data.undertone.confidence_percentage !== undefined)
+        const rawConf = (data && data.undertone && data.undertone.confidence_percentage !== undefined)
           ? data.undertone.confidence_percentage
           : (data && data.undertone && data.undertone.confidence ? Math.round(data.undertone.confidence * 100) : 95);
+        const confPct = String(rawConf).replace("%", "");
         const confValEl = document.getElementById("confidence-val");
         if (confValEl) confValEl.textContent = `${{confPct}}%`;
 
@@ -2978,11 +3422,12 @@ body {{
         if (hsvEl) hsvEl.textContent = (m.hsv && m.hsv.H_deg !== undefined) ? `${{m.hsv.H_deg}}°` : "28°";
 
         // Update Micro-Extract Swatches in Studio Telemetry with REAL facial area tones
+        const regSamples = (data && data.skin_analysis && data.skin_analysis.region_samples) || {{}};
         const areas = (data && data.skin_analysis && data.skin_analysis.areas) || {{}};
         const overallHex = (areas.overall && areas.overall.hex) || repHex;
-        const foreheadHex = (areas.forehead && areas.forehead.hex) || repHex;
-        const cheekHex = (areas.cheek && areas.cheek.hex) || repHex;
-        const chinHex = (areas.chin && areas.chin.hex) || repHex;
+        const foreheadHex = (areas.forehead && areas.forehead.hex) || (regSamples.forehead && regSamples.forehead.hex) || repHex;
+        const cheekHex = (areas.cheek && areas.cheek.hex) || (regSamples.left_cheek && regSamples.left_cheek.hex) || (regSamples.right_cheek && regSamples.right_cheek.hex) || repHex;
+        const chinHex = (areas.chin && areas.chin.hex) || (regSamples.chin && regSamples.chin.hex) || repHex;
 
         const updateMicroSwatch = (idColor, idHex, hex) => {{
           const cEl = document.getElementById(idColor);
@@ -3060,6 +3505,284 @@ body {{
             ? "Choose neutral-cool or rose-based liquid formulas with 'C' designation. Avoid orange-based foundations which clash with cool skin."
             : "Opt for true neutral 'N' labeled foundations that balance yellow and pink pigments seamlessly.";
         }}
+
+        // 6. Bespoke 3 to 4 Curated Outfit Lookbooks
+        if (data && data.outfits && data.outfits.length > 0) {{
+          renderCuratedOutfits(data.outfits);
+        }} else {{
+          fetchOrUpdateOutfits();
+        }}
+      }}
+
+      function renderCuratedOutfits(outfits) {{
+        const grid = document.getElementById("outfit-looks-grid");
+        if (!grid) return;
+        grid.innerHTML = "";
+
+        if (!outfits || outfits.length === 0) {{
+          grid.innerHTML = `<p style="grid-column: 1 / -1; color: var(--text-muted); text-align: center; padding: 2.5rem; background: rgba(255,255,255,0.02); border-radius: var(--radius-md);">No curated outfits found for this specific combination. Try adjusting the clothing or weather filters above.</p>`;
+          return;
+        }}
+
+        outfits.forEach((look, idx) => {{
+          const card = document.createElement("div");
+          card.className = "outfit-look-card";
+          card.id = `outfit-card-${{look.look_id || idx + 1}}`;
+
+          const upper = look.upper || {{}};
+          const bottom = look.bottom || {{}};
+          const shoes = look.shoes || {{}};
+          const jewellery = look.jewellery || {{}};
+          const isFemale = jewellery.type === "female";
+
+          let jewelleryHTML = "";
+          if (isFemale) {{
+            const neck = jewellery.necklace || {{}};
+            const ear = jewellery.earrings || {{}};
+            const lip = jewellery.lipstick_tint || {{}};
+            jewelleryHTML = `
+              <div class="jewellery-subgrid">
+                <div class="jewellery-item-chip">
+                  <span class="jewel-icon-tag">NECKLACE</span>
+                  <span><strong>${{neck.name || "Statement Collar"}}</strong> · ${{neck.metal || "18k Warm Gold"}}</span>
+                </div>
+                <div class="jewellery-item-chip">
+                  <span class="jewel-icon-tag">EARRINGS</span>
+                  <span><strong>${{ear.name || "Sculptural Drops"}}</strong> · ${{ear.metal || "Fine Precious Metal"}}</span>
+                </div>
+                <div class="jewellery-item-chip" style="background: rgba(225, 29, 72, 0.08); border: 1px solid rgba(225, 29, 72, 0.2);">
+                  <span class="piece-color-dot" style="width: 14px; height: 14px; background: ${{lip.color_hex || '#C25D4E'}}; margin: 0;"></span>
+                  <span class="jewel-icon-tag" style="background: rgba(225, 29, 72, 0.2); color: #FB7185;">LIP TINT</span>
+                  <span><strong>${{lip.name || "Velvet Lip Tint"}}</strong> · <i>${{lip.finish || "Velvet Stained Satin"}}</i></span>
+                </div>
+              </div>
+            `;
+          }} else {{
+            const ring = jewellery.rings || {{}};
+            const ear = jewellery.earrings || {{}};
+            const watch = jewellery.watch || {{}};
+            jewelleryHTML = `
+              <div class="jewellery-subgrid">
+                <div class="jewellery-item-chip">
+                  <span class="jewel-icon-tag">RING</span>
+                  <span><strong>${{ring.name || "Signet Ring"}}</strong> · ${{ring.metal || "18k Brushed Gold"}}</span>
+                </div>
+                <div class="jewellery-item-chip">
+                  <span class="jewel-icon-tag">EARRING</span>
+                  <span><strong>${{ear.name || "Minimalist Stud"}}</strong> · ${{ear.metal || "Brushed Metal / Obsidian"}}</span>
+                </div>
+                <div class="jewellery-item-chip">
+                  <span class="jewel-icon-tag">WATCH</span>
+                  <span><strong>${{watch.name || "Horology"}}</strong> · ${{watch.dial || "Sunburst Dial"}}</span>
+                </div>
+              </div>
+            `;
+          }}
+
+          card.innerHTML = `
+            <div class="look-header-badge-row">
+              <div class="look-meta-tags">
+                <span class="look-number-badge">LOOK 0${{look.look_number || idx + 1}}</span>
+                <span class="look-tag-chip">${{look.clothing_type || "Styling"}}</span>
+                <span class="look-tag-chip">${{look.weather || "All-Season"}}</span>
+                <span class="look-tag-chip">${{look.gender || "Wardrobe"}}</span>
+              </div>
+              <div class="look-harmony-badge">
+                <span class="material-symbols-outlined" style="font-size: 15px;">verified</span>
+                <span>${{look.harmony_score || 96.5}}% Match</span>
+              </div>
+            </div>
+
+            <h4 class="look-card-title">${{look.title || `Look ${{idx + 1}}`}}</h4>
+            <p class="look-card-concept">${{look.concept || "Harmonized palette styling formulated for your natural complexion."}}</p>
+
+            <div class="outfit-visual-container" id="visual-container-${{look.look_number || idx + 1}}">
+              ${{look.svg_illustration || ""}}
+            </div>
+
+            <div class="outfit-pieces-list">
+              <div class="piece-row">
+                <div class="piece-color-dot" style="background: ${{upper.color_hex || '#D4AF37'}};"></div>
+                <div class="piece-info">
+                  <div class="piece-meta-top">
+                    <span class="piece-category">${{upper.category || "Upperwear / Top"}}</span>
+                    <span class="piece-hex">${{upper.color_hex || ""}}</span>
+                  </div>
+                  <div class="piece-name">${{upper.name}}</div>
+                  <div class="piece-subtext"><strong>Color:</strong> ${{upper.color_name}} • <strong>Fabric:</strong> ${{upper.fabric || "Premium Weave"}} • <strong>Cut:</strong> ${{upper.silhouette || "Tailored"}}</div>
+                  <div class="piece-tip">💡 ${{upper.styling_tip || ""}}</div>
+                </div>
+              </div>
+
+              <div class="piece-row">
+                <div class="piece-color-dot" style="background: ${{bottom.color_hex || '#1E293B'}};"></div>
+                <div class="piece-info">
+                  <div class="piece-meta-top">
+                    <span class="piece-category">${{bottom.category || "Bottomwear"}}</span>
+                    <span class="piece-hex">${{bottom.color_hex || ""}}</span>
+                  </div>
+                  <div class="piece-name">${{bottom.name}}</div>
+                  <div class="piece-subtext"><strong>Color:</strong> ${{bottom.color_name}} • <strong>Fabric:</strong> ${{bottom.fabric || "Structured Weave"}} • <strong>Silhouette:</strong> ${{bottom.silhouette || "Classic"}}</div>
+                  <div class="piece-tip">💡 ${{bottom.styling_tip || ""}}</div>
+                </div>
+              </div>
+
+              <div class="piece-row">
+                <div class="piece-color-dot" style="background: ${{shoes.color_hex || '#475569'}};"></div>
+                <div class="piece-info">
+                  <div class="piece-meta-top">
+                    <span class="piece-category">${{shoes.category || "Footwear / Shoes"}}</span>
+                    <span class="piece-hex">${{shoes.color_hex || ""}}</span>
+                  </div>
+                  <div class="piece-name">${{shoes.name}}</div>
+                  <div class="piece-subtext"><strong>Color:</strong> ${{shoes.color_name}} • <strong>Material:</strong> ${{shoes.material || "Fine Leather"}}</div>
+                  <div class="piece-tip">💡 ${{shoes.styling_tip || ""}}</div>
+                </div>
+              </div>
+
+              <div class="piece-row">
+                <div class="piece-color-dot" style="background: ${{isFemale ? (jewellery.lipstick_tint && jewellery.lipstick_tint.color_hex ? jewellery.lipstick_tint.color_hex : '#D4AF37') : (jewellery.rings && jewellery.rings.accent_hex ? jewellery.rings.accent_hex : '#D4AF37')}};"></div>
+                <div class="piece-info">
+                  <div class="piece-meta-top">
+                    <span class="piece-category">${{isFemale ? "Fine Jewellery & Lip Tint" : "Fine Horology & Men's Jewellery"}}</span>
+                    <span class="piece-hex">${{isFemale ? (jewellery.lipstick_tint && jewellery.lipstick_tint.color_hex ? jewellery.lipstick_tint.color_hex : '') : (jewellery.rings && jewellery.rings.accent_hex ? jewellery.rings.accent_hex : '')}}</span>
+                  </div>
+                  ${{jewelleryHTML}}
+                  <div class="piece-tip">💡 ${{jewellery.styling_tip || ""}}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="outfit-card-footer">
+              <button type="button" class="btn-download-outfit" data-look="${{look.look_number || idx + 1}}">
+                <span class="material-symbols-outlined" style="font-size: 16px;">download</span>
+                <span>Download Lookboard (PNG)</span>
+              </button>
+              <button type="button" class="btn-copy-look" data-look="${{look.look_number || idx + 1}}">
+                <span class="material-symbols-outlined" style="font-size: 16px;">content_copy</span>
+                <span>Copy Specs</span>
+              </button>
+            </div>
+          `;
+
+          const dlBtn = card.querySelector(".btn-download-outfit");
+          if (dlBtn) {{
+            dlBtn.addEventListener("click", () => {{
+              const svgEl = card.querySelector(".outfit-flatlay-svg");
+              downloadOutfitAsPNG(look.look_number || idx + 1, svgEl, look.title);
+            }});
+          }}
+
+          const cpBtn = card.querySelector(".btn-copy-look");
+          if (cpBtn) {{
+            cpBtn.addEventListener("click", () => {{
+              const jText = isFemale
+                ? `Necklace: ${{jewellery.necklace && jewellery.necklace.name ? jewellery.necklace.name : 'N/A'}}, Lip Tint: ${{jewellery.lipstick_tint && jewellery.lipstick_tint.name ? jewellery.lipstick_tint.name : 'N/A'}}`
+                : `Ring: ${{jewellery.rings && jewellery.rings.name ? jewellery.rings.name : 'N/A'}}, Watch: ${{jewellery.watch && jewellery.watch.name ? jewellery.watch.name : 'N/A'}}`;
+              const text = `${{look.title}} (${{look.clothing_type}} • ${{look.weather}})\n` +
+                `Upper: ${{upper.name}} (${{upper.color_hex}})\n` +
+                `Bottom: ${{bottom.name}} (${{bottom.color_hex}})\n` +
+                `Shoes: ${{shoes.name}} (${{shoes.color_hex}})\n` +
+                `Jewellery & Accessories: ${{jText}}`;
+              navigator.clipboard.writeText(text).then(() => {{
+                showToast("Copied outfit ensemble specs to clipboard!");
+              }}).catch(() => {{
+                showToast("Copied to clipboard!");
+              }});
+            }});
+          }}
+
+          grid.appendChild(card);
+        }});
+      }}
+
+      async function fetchOrUpdateOutfits() {{
+        if (!cachedAnalysisData) return;
+        const grid = document.getElementById("outfit-looks-grid");
+        if (grid) {{
+          grid.style.opacity = "0.5";
+          grid.style.pointerEvents = "none";
+        }}
+        try {{
+          const rawUt = (cachedAnalysisData.undertone && (cachedAnalysisData.undertone.label || cachedAnalysisData.undertone)) || "Warm";
+          const utStr = typeof rawUt === "string" ? rawUt : (rawUt.label || "Warm");
+          const repHex = (cachedAnalysisData.skin_analysis && cachedAnalysisData.skin_analysis.metrics && cachedAnalysisData.skin_analysis.metrics.representative_hex) || "#C68B59";
+          
+          const payload = {{
+            undertone: utStr,
+            palette: cachedAnalysisData.palette || [],
+            clothing_type: currentClothingType,
+            weather: currentWeather,
+            gender: currentGender,
+            skin_hex: repHex
+          }};
+
+          const res = await fetch("http://127.0.0.1:8000/api/generate-outfits", {{
+            method: "POST",
+            headers: {{ "Content-Type": "application/json" }},
+            body: JSON.stringify(payload)
+          }});
+
+          if (res.ok) {{
+            const data = await res.json();
+            if (data.outfits) {{
+              cachedAnalysisData.outfits = data.outfits;
+              renderCuratedOutfits(data.outfits);
+            }}
+          }}
+        }} catch (e) {{
+          console.warn("Failed to update outfits:", e);
+        }} finally {{
+          if (grid) {{
+            grid.style.opacity = "1";
+            grid.style.pointerEvents = "auto";
+          }}
+        }}
+      }}
+
+      function downloadOutfitAsPNG(lookNumber, svgElement, title) {{
+        if (!svgElement) return;
+        try {{
+          const svgString = new XMLSerializer().serializeToString(svgElement);
+          const svgBlob = new Blob([svgString], {{ type: "image/svg+xml;charset=utf-8" }});
+          const URL = window.URL || window.webkitURL || window;
+          const blobURL = URL.createObjectURL(svgBlob);
+          const image = new Image();
+
+          image.onload = () => {{
+            const canvas = document.createElement("canvas");
+            const vb = svgElement.viewBox && svgElement.viewBox.baseVal;
+            const vbW = (vb && vb.width) || 660;
+            const vbH = (vb && vb.height) || 840;
+            canvas.width = vbW * 2;
+            canvas.height = vbH * 2;
+            const ctx = canvas.getContext("2d");
+            const isLight = document.documentElement.getAttribute("data-theme") === "light";
+            ctx.fillStyle = isLight ? "#FFFFFF" : "#0B0E17";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(blobURL);
+
+            canvas.toBlob((pngBlob) => {{
+              if (!pngBlob) return;
+              const a = document.createElement("a");
+              const safeTitle = (title || `Look_${{lookNumber}}`).replace(/[^a-zA-Z0-9_-]/g, "_");
+              a.download = `Otterlook_${{safeTitle}}_Outfit_Board.png`;
+              a.href = URL.createObjectURL(pngBlob);
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              showToast(`Exported Look 0${{lookNumber}} high-res outfit board!`);
+            }}, "image/png", 0.95);
+          }};
+          image.src = blobURL;
+        }} catch (err) {{
+          const svgBlob = new Blob([new XMLSerializer().serializeToString(svgElement)], {{ type: "image/svg+xml" }});
+          const a = document.createElement("a");
+          a.download = `Otterlook_Look_${{lookNumber}}_Outfit_Board.svg`;
+          a.href = URL.createObjectURL(svgBlob);
+          a.click();
+        }}
       }}
 
       function drawCanvas(data) {{
@@ -3084,43 +3807,7 @@ body {{
         const hex = metrics.representative_hex || "#D4AF37";
         const utLabel = (data && data.undertone && data.undertone.label) || "Undertone";
 
-        // 1. Draw Sleek Luxury Gold Face Bounding Oval / Box
-        if (faceBox) {{
-          const bx = Math.round(faceBox.x * scale);
-          const by = Math.round(faceBox.y * scale);
-          const bw = Math.round(faceBox.width * scale);
-          const bh = Math.round(faceBox.height * scale);
-
-          ctx.save();
-          ctx.strokeStyle = "rgba(242, 202, 80, 0.40)";
-          ctx.lineWidth = 1.5;
-          ctx.setLineDash([4, 4]);
-          ctx.beginPath();
-          ctx.roundRect(bx, by, bw, bh, 14);
-          ctx.stroke();
-          ctx.restore();
-
-          // Elegant corner brackets
-          const bracketLen = Math.min(20, Math.floor(bw * 0.15));
-          ctx.strokeStyle = "#F2CA50";
-          ctx.lineWidth = 2.5;
-
-          ctx.beginPath();
-          ctx.moveTo(bx, by + bracketLen); ctx.lineTo(bx, by); ctx.lineTo(bx + bracketLen, by);
-          ctx.stroke();
-
-          ctx.beginPath();
-          ctx.moveTo(bx + bw - bracketLen, by); ctx.lineTo(bx + bw, by); ctx.lineTo(bx + bw, by + bracketLen);
-          ctx.stroke();
-
-          ctx.beginPath();
-          ctx.moveTo(bx, by + bh - bracketLen); ctx.lineTo(bx, by + bh); ctx.lineTo(bx + bracketLen, by + bh);
-          ctx.stroke();
-
-          ctx.beginPath();
-          ctx.moveTo(bx + bw - bracketLen, by + bh); ctx.lineTo(bx + bw, by + bh); ctx.lineTo(bx + bw, by + bh - bracketLen);
-          ctx.stroke();
-        }}
+        // Face bounding box and corner brackets removed per user requirement (clean portrait view)
         // Target pins removed per user requirement (clean facial portrait presentation)
 
         // 3. Draw Bottom Glassmorphic Summary Bar
@@ -3148,7 +3835,7 @@ body {{
 
         ctx.fillStyle = "#F2CA50";
         ctx.font = "bold 11px sans-serif";
-        const genderLabel = (data.gender && data.gender.detected) ? ` • ${{data.gender.detected}}` : '';
+        const genderLabel = (data && data.gender && data.gender.detected) ? ` • ${{data.gender.detected}}` : '';
         ctx.fillText("Dermis: " + hex + " • " + utLabel + genderLabel, pillX + 32, pillY + 21);
       }}
 

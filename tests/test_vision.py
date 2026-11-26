@@ -62,3 +62,15 @@ def test_colour_feature_extraction(feature_extractor):
     assert "ita" in ml_feats
     assert ml_feats["mean_r"] > 200
     assert "representative_hex" in features["display_metrics"]
+
+
+def test_face_detector_rank_candidates_picks_largest_central_face(face_detector):
+    """Verify _rank_face_candidates orders larger/more-central faces first."""
+    candidates = [
+        {"x": 10, "y": 10, "w": 50, "h": 60, "conf": 0.90},    # small corner face
+        {"x": 140, "y": 100, "w": 160, "h": 200, "conf": 0.95},  # large central face
+    ]
+    ranked = face_detector._rank_face_candidates(candidates, 480, 480)
+    assert len(ranked) == 2
+    assert ranked[0]["w"] == 160
+    assert ranked[1]["w"] == 50

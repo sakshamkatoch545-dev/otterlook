@@ -14,7 +14,7 @@
   <!-- Ultra-Fast High-Precision Neural Geometry & Feature Engine -->
   <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="bg-atelier-grid" oncopy="return false;" oncut="return false;" oncontextmenu="return false;">
+<body class="bg-atelier-grid">
   <!-- Ambient Luxury Light Orbs -->
   <div class="ambient-orbs">
     <div class="orb-gold"></div>
@@ -71,7 +71,7 @@
       </div>
       <h2 class="hero-headline">Find the Colors that <em>Naturally Flatter You</em></h2>
       <p class="hero-description">
-        Upload a clear photo taken in natural daylight. Our smart scanner spots your skin tone, checks your lighting, and reveals your personal color season and best outfit shades.
+        Upload a clear photo taken in natural daylight. Our smart system spots your skin tone, checks your lighting, and reveals your personal color season and best outfit shades.
       </p>
 
       <div class="hero-badges">
@@ -139,7 +139,12 @@
             <div class="preview-box hidden" id="preview-box">
               <div class="preview-stage" id="preview-stage">
                 <img id="preview-img" src="" alt="Analyzed Photo">
-                <button class="remove-btn" id="remove-img-btn" title="Remove image">×</button>
+                <button class="remove-btn" id="remove-img-btn" title="Remove image" aria-label="Remove image">
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="1" y1="1" x2="13" y2="13"></line>
+                    <line x1="13" y1="1" x2="1" y2="13"></line>
+                  </svg>
+                </button>
                 
                 <!-- Auto Colour & Lighting Detection Overlay (Replaces Face Detection Box) -->
                 <div class="biometric-overlay" id="biometric-overlay">
@@ -156,7 +161,7 @@
                         <span class="auto-color-badge-title" id="auto-color-badge-title">SPOTTING COMPLEXION...</span>
                         <span class="auto-color-badge-hex" id="face-box-hex">CALIBRATING</span>
                       </div>
-                      <span class="auto-color-status-tag" id="face-box-sublabel">AUTO SCAN</span>
+                      <span class="auto-color-status-tag" id="face-box-sublabel">AUTO DETECT</span>
                     </div>
                   </div>
 
@@ -175,16 +180,34 @@
                   <!-- Reference anchor for backward compatibility -->
                   <div id="box-face" style="display: none;"></div>
 
-                  <!-- Laser Scan Line FX -->
-                  <div class="scanline-fx" id="scanline-fx"></div>
-
                   <!-- Viewport Bottom Dock -->
                   <div class="viewport-dock">
                     <div class="dock-status">
                       <span class="dock-dot" id="dock-dot"></span>
-                      <span id="mesh-status-text">Scanning photo lighting and complexion...</span>
+                      <span id="mesh-status-text">Checking photo lighting and complexion...</span>
                     </div>
                     <span class="hud-pill" id="lighting-status-pill">Checking Lighting...</span>
+                  </div>
+                </div>
+
+                <!-- No Human Face Detected Action Overlay -->
+                <div class="no-face-overlay hidden" id="no-face-overlay">
+                  <div class="no-face-dialog">
+                    <div class="no-face-icon-circle">
+                      <span class="material-symbols-outlined" style="font-size: 32px;">face_retouching_off</span>
+                    </div>
+                    <h4 class="no-face-title">No Human Face Detected</h4>
+                    <p class="no-face-desc">No human face was recognized in this picture. Please take a live photo or upload another image with your face clearly visible.</p>
+                    <div class="no-face-actions">
+                      <button type="button" class="btn btn-camera" id="overlay-camera-btn">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">photo_camera</span>
+                        <span>Click Picture</span>
+                      </button>
+                      <button type="button" class="btn btn-outline" id="overlay-upload-btn">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">folder_open</span>
+                        <span>Upload Image</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -203,21 +226,73 @@
             <div class="quality-details" id="quality-details"></div>
           </div>
 
-          <!-- Error Banner -->
+          <!-- Error Banner with Immediate Retry Actions -->
           <div class="error-banner hidden" id="error-banner">
-            <span class="material-symbols-outlined" style="font-size: 20px;">error</span>
-            <div class="error-text" id="error-text"></div>
+            <div class="error-icon-circle">
+              <span class="material-symbols-outlined" style="font-size: 18px;">warning</span>
+            </div>
+            <div class="error-body">
+              <div class="error-text" id="error-text"></div>
+              <div class="error-action-btns hidden" id="error-action-btns">
+                <button type="button" class="btn-action btn-action-camera" id="banner-camera-btn">
+                  <span class="material-symbols-outlined" style="font-size: 14px;">photo_camera</span>
+                  Click Picture
+                </button>
+                <button type="button" class="btn-action btn-action-upload" id="banner-upload-btn">
+                  <span class="material-symbols-outlined" style="font-size: 14px;">folder_open</span>
+                  Upload Image
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Styling Profile Selector -->
-      <div class="gender-selector-wrapper">
-        <span class="gender-selector-label">Style Recommendations For:</span>
-        <div class="gender-options" id="upload-gender-options">
-          <button type="button" class="gender-pill active" data-gender="male">Men's Style</button>
-          <button type="button" class="gender-pill" data-gender="female">Women's Style</button>
-          <button type="button" class="gender-pill" data-gender="all">All Styles</button>
+      <!-- Styling & Wardrobe Preference Selectors -->
+      <div class="wardrobe-preselect-container">
+        <!-- Gender / Styling Profile Selector -->
+        <div class="gender-selector-wrapper">
+          <span class="gender-selector-label">
+            <span class="material-symbols-outlined" style="font-size: 16px;">person</span>
+            <span>Style Recommendations For:</span>
+          </span>
+          <div class="gender-options" id="upload-gender-options">
+            <button type="button" class="gender-pill active" data-gender="male">Men's Style</button>
+            <button type="button" class="gender-pill" data-gender="female">Women's Style</button>
+            <button type="button" class="gender-pill" data-gender="all">All Styles</button>
+          </div>
+        </div>
+
+        <!-- Clothing Type Selector (All Types & Kinds) -->
+        <div class="wardrobe-selector-group">
+          <span class="wardrobe-group-label">
+            <span class="material-symbols-outlined" style="font-size: 16px;">checkroom</span>
+            <span>What type of clothes do you wear?</span>
+          </span>
+          <div class="style-pills-row" id="upload-clothing-options">
+            <button type="button" class="style-pill active" data-type="all">✨ All Kinds</button>
+            <button type="button" class="style-pill" data-type="casual">👕 Casual & Everyday</button>
+            <button type="button" class="style-pill" data-type="formal">👔 Formal & Business</button>
+            <button type="button" class="style-pill" data-type="streetwear">👟 Streetwear & Urban</button>
+            <button type="button" class="style-pill" data-type="ethnic">🥻 Traditional & Ethnic</button>
+            <button type="button" class="style-pill" data-type="party">🍸 Party & Glam</button>
+            <button type="button" class="style-pill" data-type="athleisure">🏃 Athleisure</button>
+          </div>
+        </div>
+
+        <!-- Weather / Season Selector (All Weather Types) -->
+        <div class="wardrobe-selector-group">
+          <span class="wardrobe-group-label">
+            <span class="material-symbols-outlined" style="font-size: 16px;">wb_sunny</span>
+            <span>Weather / Season:</span>
+          </span>
+          <div class="style-pills-row" id="upload-weather-options">
+            <button type="button" class="weather-pill active" data-weather="all">🌍 All Weathers</button>
+            <button type="button" class="weather-pill" data-weather="summer">☀️ Summer & Hot</button>
+            <button type="button" class="weather-pill" data-weather="winter">❄️ Winter & Cold</button>
+            <button type="button" class="weather-pill" data-weather="monsoon">🌧️ Monsoon & Rainy</button>
+            <button type="button" class="weather-pill" data-weather="spring_autumn">🍂 Spring / Autumn</button>
+          </div>
         </div>
       </div>
 
@@ -552,6 +627,76 @@
         </div>
       </div>
 
+      <!-- Bespoke Outfit Lookbook Showcase (3 to 4 Curated Looks for Upper, Bottom, Shoes, Jewellery & Makeup) -->
+      <div class="card outfit-studio-card" id="outfit-studio-card">
+        <div class="outfit-studio-header">
+          <div class="outfit-header-left">
+            <span class="card-tag">Bespoke Haute Lookbook</span>
+            <h3 class="outfit-studio-title">3 to 4 Palette-Harmonized Complete Outfits</h3>
+            <p class="outfit-studio-desc">
+              Complete ensembles tailored specifically to your detected color harmony for <strong>Upperwear</strong>, <strong>Bottomwear</strong>, <strong>Shoes</strong>, and <strong>Jewellery & Beauty</strong> (Rings, Earrings, Horology for Men; Necklaces, Earrings, Lip Tints for Women) across all weather conditions.
+            </p>
+          </div>
+          <div class="outfit-live-badge">
+            <span class="pulse-dot"></span>
+            <span>Live Wardrobe Synthesizer</span>
+          </div>
+        </div>
+
+        <!-- Interactive Wardrobe & Weather Controls Bar -->
+        <div class="outfit-controls-bar">
+          <!-- Clothing Type Filter -->
+          <div class="control-filter-item">
+            <label class="control-label">
+              <span class="material-symbols-outlined" style="font-size: 15px;">checkroom</span>
+              <span>Clothing Style / Type:</span>
+            </label>
+            <div class="filter-pills-scroll" id="results-clothing-options">
+              <button type="button" class="filter-pill active" data-type="all">✨ All Kinds</button>
+              <button type="button" class="filter-pill" data-type="casual">👕 Casual & Everyday</button>
+              <button type="button" class="filter-pill" data-type="formal">👔 Formal & Business</button>
+              <button type="button" class="filter-pill" data-type="streetwear">👟 Streetwear & Urban</button>
+              <button type="button" class="filter-pill" data-type="ethnic">🥻 Traditional & Ethnic</button>
+              <button type="button" class="filter-pill" data-type="party">🍸 Party & Glam</button>
+              <button type="button" class="filter-pill" data-type="athleisure">🏃 Athleisure</button>
+            </div>
+          </div>
+
+          <!-- Weather Filter -->
+          <div class="control-filter-item">
+            <label class="control-label">
+              <span class="material-symbols-outlined" style="font-size: 15px;">wb_sunny</span>
+              <span>Weather & Climate:</span>
+            </label>
+            <div class="filter-pills-scroll" id="results-weather-options">
+              <button type="button" class="weather-filter-pill active" data-weather="all">🌍 All Weathers</button>
+              <button type="button" class="weather-filter-pill" data-weather="summer">☀️ Summer & Hot</button>
+              <button type="button" class="weather-filter-pill" data-weather="winter">❄️ Winter & Cold</button>
+              <button type="button" class="weather-filter-pill" data-weather="monsoon">🌧️ Monsoon & Rainy</button>
+              <button type="button" class="weather-filter-pill" data-weather="spring_autumn">🍂 Spring / Autumn</button>
+            </div>
+          </div>
+
+          <!-- Gender Switcher -->
+          <div class="control-filter-item">
+            <label class="control-label">
+              <span class="material-symbols-outlined" style="font-size: 15px;">person</span>
+              <span>Wardrobe Category:</span>
+            </label>
+            <div class="filter-pills-scroll" id="results-gender-options">
+              <button type="button" class="gender-filter-pill" data-gender="male">Men's Wardrobe</button>
+              <button type="button" class="gender-filter-pill" data-gender="female">Women's Wardrobe</button>
+              <button type="button" class="gender-filter-pill active" data-gender="all">All Styles</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3 to 4 Outfit Look Cards Grid -->
+        <div class="outfit-looks-grid" id="outfit-looks-grid">
+          <!-- Dynamically populated with 3 to 4 styled looks -->
+        </div>
+      </div>
+
       <!-- Skin-Tone Calibrated Optical Metrics -->
       <div class="optical-metrics-row">
         <div class="optical-metric-card">
@@ -671,6 +816,10 @@
       </div>
       <div class="camera-video-wrapper">
         <video id="camera-video" playsinline autoplay muted></video>
+        <div class="camera-guide-overlay" aria-hidden="true">
+          <div class="camera-face-oval"></div>
+          <div class="camera-live-meter" id="camera-live-meter">Checking lighting...</div>
+        </div>
       </div>
       <div class="camera-controls">
         <button type="button" class="btn btn-outline" id="camera-flip-btn">

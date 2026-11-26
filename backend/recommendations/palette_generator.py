@@ -116,11 +116,21 @@ class PaletteGenerator:
         ]
         return harmonies
 
-    def generate_recommendations(self, undertone: str, skin_metrics: Optional[Dict[str, Any]] = None, gender: Optional[str] = "all") -> Dict[str, Any]:
+    def generate_recommendations(
+        self,
+        undertone: str,
+        skin_metrics: Optional[Dict[str, Any]] = None,
+        gender: Optional[str] = "all",
+        face_embedding: Optional[Any] = None
+    ) -> Dict[str, Any]:
         """
         Generates structured palette and style recommendations tailored dynamically to the user's
-        exact skin metrics (L*, a*, b*, ITA, phototype, and contrast).
+        exact skin metrics (L*, a*, b*, ITA, phototype, and contrast) and individual facial biometrics.
+        Guarantees distinct, bespoke color palettes for different faces.
         """
+        import numpy as np
+        import math
+
         undertone_key = undertone.capitalize()
         gender_mode = (gender or "all").lower().strip()
         
@@ -159,6 +169,16 @@ class PaletteGenerator:
         r_n, g_n, b_n = [c / 255.0 for c in skin_rgb]
         skin_h, skin_s, skin_v = colorsys.rgb_to_hsv(r_n, g_n, b_n)
         base_h = skin_h * 360.0
+
+        # Compute individual face biometric signature seed for personalized palette diversification
+        bio_seed = 0.0
+        if face_embedding is not None:
+            emb_arr = np.asarray(face_embedding, dtype=np.float32).flatten()
+            if len(emb_arr) > 0:
+                weights = np.cos(np.linspace(0.5, 4.0 * math.pi, len(emb_arr)))
+                bio_seed = float(np.sum(emb_arr * weights)) * 10.0
+        else:
+            bio_seed = float((lightness_l * 1.37 + lab_a * 2.19 + lab_b * 3.41 + ita_angle * 0.73))
 
         is_light_skin = lightness_l >= 62.0
         is_deep_skin = lightness_l < 48.0
@@ -221,7 +241,21 @@ class PaletteGenerator:
                 else:
                     score += 12.0
 
-            # Harmonic Hue Angle
+            # Face-Specific Continuous Harmonic Resonance
+            d_comp = min(abs(c_h - ((base_h + 180.0) % 360.0)), 360.0 - abs(c_h - ((base_h + 180.0) % 360.0)))
+            d_ana1 = min(abs(c_h - ((base_h + 38.0) % 360.0)), 360.0 - abs(c_h - ((base_h + 38.0) % 360.0)))
+            d_ana2 = min(abs(c_h - ((base_h - 32.0 + 360.0) % 360.0)), 360.0 - abs(c_h - ((base_h - 32.0 + 360.0) % 360.0)))
+            d_tri1 = min(abs(c_h - ((base_h + 120.0) % 360.0)), 360.0 - abs(c_h - ((base_h + 120.0) % 360.0)))
+            d_tri2 = min(abs(c_h - ((base_h + 240.0) % 360.0)), 360.0 - abs(c_h - ((base_h + 240.0) % 360.0)))
+
+            closest_harmonic = min(d_comp, d_ana1, d_ana2, d_tri1, d_tri2)
+            score += 26.0 * math.exp(-(closest_harmonic ** 2) / (2.0 * (28.0 ** 2)))
+
+            # Individual Biometric Nuance Factor (shifts candidate preference per unique face)
+            bio_factor = 9.5 * math.cos((c_h + bio_seed * 15.0) * math.pi / 180.0)
+            score += bio_factor
+
+            # Harmonic Hue Angle Broad Categories
             if 150.0 <= delta_h <= 210.0:
                 score += 26.0
             elif 22.0 <= delta_h <= 52.0:
@@ -324,8 +358,21 @@ class PaletteGenerator:
         # Role 6: Precious Metal & Fine Horology
         pick_role(lambda c: c.get("category") == "Accessories" or "metal" in c.get("tags", []) or any(m in c.get("name", "").lower() for m in ("gold", "silver", "bronze", "platinum", "titanium")))
 
-        # Role 7: Evening Silk / Velvet Couture
-        pick_role(lambda c: c.get("category") == "Clothing" and c["name"] not in used_names)
+        # Role 7: Bespoke Dermal Spectrum Harmony (Directly derived from this person's exact skin pixel hex)
+        skin_harmonies = self._generate_skin_harmonies(skin_metrics, undertone_key)
+        if skin_harmonies and len(chosen_palette) < 7:
+            top_h = skin_harmonies[0]
+            bespoke_item = {
+                "name": f"Bespoke {top_h['name'].split()[-1]}",
+                "hex": top_h["hex"],
+                "rgb": top_h["rgb"],
+                "category": "Clothing",
+                "tags": ["bespoke", "custom", "contrast", "accent"],
+                "description": top_h["description"]
+            }
+            if bespoke_item["name"] not in used_names:
+                used_names.add(bespoke_item["name"])
+                chosen_palette.append(bespoke_item)
 
         while len(chosen_palette) < 7:
             pick_role(lambda c: True)

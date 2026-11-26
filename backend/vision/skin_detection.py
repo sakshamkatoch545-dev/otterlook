@@ -6,7 +6,7 @@ Includes pure NumPy fallbacks for cross-platform zero-dependency operation.
 """
 
 import numpy as np
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Optional, Tuple
 
 try:
     import cv2
@@ -16,6 +16,31 @@ except Exception:
 class SkinExtractor:
     def __init__(self):
         pass
+
+    def _normalize_illumination(self, image_bgr: np.ndarray) -> np.ndarray:
+        """
+        Applies gentle damped Gray-World white-balance normalization when a strong
+        ambient lighting cast is detected, preserving natural skin undertone while
+        reducing tungsten/fluorescent tint distortion.
+        """
+        if image_bgr is None or image_bgr.size == 0:
+            return image_bgr
+
+        img_f = image_bgr.astype(np.float32)
+        means = img_f.mean(axis=(0, 1))  # B, G, R
+        min_mean = float(np.min(means))
+        max_mean = float(np.max(means))
+
+        # Skip near-black images or well-balanced lighting
+        if min_mean < 15.0 or (max_mean / max(min_mean, 1e-6)) <= 1.12:
+            return image_bgr
+
+        gray_mean = float(np.mean(means))
+        gains = np.clip(gray_mean / np.maximum(means, 1e-6), 0.82, 1.22)
+        balanced = np.clip(img_f * gains[None, None, :], 0, 255)
+        # Blend 45% normalized + 55% original to retain authentic dermal warmth/coolness
+        blended = np.clip(0.45 * balanced + 0.55 * img_f, 0, 255).astype(np.uint8)
+        return blended
 
     def extract_skin_pixels(self, image_bgr: np.ndarray, regions: Dict[str, Dict[str, int]]) -> Dict[str, Any]:
         """
@@ -28,6 +53,7 @@ class SkinExtractor:
                 "total_pixels": 0
             }
 
+        image_bgr = self._normalize_illumination(image_bgr)
         img_h, img_w = image_bgr.shape[:2]
         all_clean_pixels = []
         region_details = {}

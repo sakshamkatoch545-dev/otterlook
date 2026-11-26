@@ -24,12 +24,12 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request, Response
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request, Response, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 from backend.utils.image_quality import analyze_image_quality
 from backend.vision.face_detection import FaceDetector
@@ -37,15 +37,31 @@ from backend.vision.skin_detection import SkinExtractor
 from backend.vision.colour_extraction import ColourFeatureExtractor
 from backend.ml.predictor import UndertonePredictor
 from backend.recommendations.palette_generator import PaletteGenerator
+from backend.recommendations.outfit_synthesizer import (
+    generate_curated_outfits,
+    CLOTHING_TYPES,
+    WEATHER_TYPES
+)
+from backend.vision.face_biometrics import extract_face_embedding
+from backend.db.face_memory import face_memory_db
 from backend.db import supabase_client
 
 logger = logging.getLogger("otterlook.api")
 
 
-# Pydantic model for feedback requests
+# Pydantic models
 class FeedbackRequest(BaseModel):
     analysis_id: str
     corrected_undertone: str  # "Warm", "Cool", or "Neutral"
+
+
+class GenerateOutfitsRequest(BaseModel):
+    undertone: str = "Warm"
+    palette: Optional[List[Dict[str, Any]]] = None
+    clothing_type: str = "all"
+    weather: str = "all"
+    gender: str = "all"
+    skin_hex: Optional[str] = "#C68B59"
 
 app = FastAPI(
     title="AI-Based Personal Colour Analysis API",
@@ -54,9 +70,12 @@ app = FastAPI(
 )
 
 # Enable CORS for frontend flexibility across Streamlit (localhost:8501) and standalone (localhost:8000)
+_raw_origins = os.environ.get("ALLOWED_ORIGINS", "*").strip()
+_allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()] if _raw_origins != "*" else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -69,8 +88,13 @@ async def add_pna_and_cors_headers(request: Request, call_next):
         response = Response(status_code=200)
     else:
         response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Private-Network"] = "true"
+    req_origin = request.headers.get("origin")
+    if _allowed_origins == ["*"]:
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+    elif req_origin and req_origin in _allowed_origins:
+        response.headers["Access-Control-Allow-Origin"] = req_origin
+        response.headers["Vary"] = "Origin"
     response.headers["Access-Control-Allow-Methods"] = "*"
     response.headers["Access-Control-Allow-Headers"] = "*"
     return response
@@ -114,12 +138,22 @@ async def detect_face(
         if file is not None:
             contents = await file.read()
             if contents:
+                if len(contents) > MAX_FILE_SIZE:
+                    return JSONResponse(
+                        status_code=400,
+                        content={"has_face": False, "face_count": 0, "lighting_clear": False, "message": "File size exceeds the 15MB limit."}
+                    )
                 nparr = np.frombuffer(contents, np.uint8)
                 image_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
         if image_bgr is None or image_bgr.size == 0:
             body = await request.body()
             if body:
+                if len(body) > MAX_FILE_SIZE * 2:
+                    return JSONResponse(
+                        status_code=400,
+                        content={"has_face": False, "face_count": 0, "lighting_clear": False, "message": "Payload exceeds size limit."}
+                    )
                 try:
                     data = json.loads(body.decode("utf-8"))
                     img_str = data.get("image") or data.get("file")
@@ -127,6 +161,11 @@ async def detect_face(
                         if "," in img_str:
                             img_str = img_str.split(",", 1)[1]
                         img_bytes = base64.b64decode(img_str)
+                        if len(img_bytes) > MAX_FILE_SIZE:
+                            return JSONResponse(
+                                status_code=400,
+                                content={"has_face": False, "face_count": 0, "lighting_clear": False, "message": "File size exceeds the 15MB limit."}
+                            )
                         nparr = np.frombuffer(img_bytes, np.uint8)
                         image_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                 except Exception:
@@ -138,45 +177,48 @@ async def detect_face(
                 content={"has_face": False, "face_count": 0, "lighting_clear": False, "message": "Invalid or unreadable image."}
             )
         
-        # 1. Face detection FIRST (YOLO)
-        face_res = face_detector.detect_faces(image_bgr)
+        # 1. Human Face Detection FIRST (fast bbox-only pass for /api/detect-face)
+        face_res = face_detector.detect_faces(image_bgr, extract_landmarks=False)
         if not face_res.get("success") or face_res.get("face_count", 0) == 0:
             return {
                 "has_face": False,
                 "face_count": 0,
                 "lighting_clear": False,
                 "bounding_box": None,
-                "message": "No human face detected. Please ensure your face is clearly visible."
+                "message": face_res.get("message") or "No human face detected. Please ensure your face is clearly visible."
             }
         
         img_h, img_w = image_bgr.shape[:2]
         bbox = face_res.get("bounding_box")
-        pct_bbox = None
-        if bbox:
-            pct_bbox = {
-                "x": bbox[0],
-                "y": bbox[1],
-                "w": bbox[2],
-                "h": bbox[3],
-                "pctX": (bbox[0] / img_w) * 100,
-                "pctY": (bbox[1] / img_h) * 100,
-                "pctW": (bbox[2] / img_w) * 100,
-                "pctH": (bbox[3] / img_h) * 100
+        def _to_pct_box(b):
+            return {
+                "x": b[0],
+                "y": b[1],
+                "w": b[2],
+                "h": b[3],
+                "pctX": (b[0] / img_w) * 100,
+                "pctY": (b[1] / img_h) * 100,
+                "pctW": (b[2] / img_w) * 100,
+                "pctH": (b[3] / img_h) * 100
             }
+        pct_bbox = _to_pct_box(bbox) if bbox else None
+        raw_faces = face_res.get("all_faces") or ([bbox] if bbox else [])
+        faces_list = [_to_pct_box(fb) for fb in raw_faces]
 
-        # 2. Lighting & Clarity check SECOND
-        quality_res = analyze_image_quality(image_bgr)
+        # 2. Lighting & Clarity check SECOND (scoped to selected face ROI)
+        quality_res = analyze_image_quality(image_bgr, bbox=bbox)
         lighting_is_clear = bool(quality_res.get("is_valid", True))
 
         msg = "Face localized and lighting is clear." if lighting_is_clear else f"Face detected, but lighting is not clear: {quality_res.get('message')}"
 
         return {
             "has_face": True,
-            "face_count": face_res.get("face_count", 1),
+            "face_count": face_res.get("face_count", len(faces_list) or 1),
             "lighting_clear": lighting_is_clear,
             "quality_status": quality_res.get("status", "Good"),
             "quality_message": quality_res.get("message", "Optimal lighting."),
             "bounding_box": pct_bbox,
+            "faces": faces_list,
             "confidence": face_res.get("confidence", 0.9),
             "detector_type": face_res.get("detector_type", "yolo_face"),
             "message": msg
@@ -190,8 +232,11 @@ async def detect_face(
 @app.post("/api/analyze")
 async def analyze_portrait(
     request: Request,
+    background_tasks: BackgroundTasks,
     file: Optional[UploadFile] = File(None),
-    gender: Optional[str] = Form("all")
+    gender: Optional[str] = Form("all"),
+    clothing_type: Optional[str] = Form("all"),
+    weather: Optional[str] = Form("all")
 ):
     """
     Complete analysis pipeline:
@@ -201,9 +246,12 @@ async def analyze_portrait(
     4. Outlier rejection & statistical color feature extraction (RGB, HSV, CIELAB, ITA)
     5. ML undertone classification (Random Forest / SVM)
     6. Personalized palette & style recommendations generation
+    7. Synthesize 3 to 4 complete styled looks (Upper, Bottom, Shoes, Jewellery & Makeup)
     """
     image_bgr = None
     user_gender = gender or "all"
+    user_clothing_type = clothing_type or "all"
+    user_weather = weather or "all"
 
     try:
         if file is not None and file.filename:
@@ -234,6 +282,10 @@ async def analyze_portrait(
                         image_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                     if data.get("gender"):
                         user_gender = data.get("gender")
+                    if data.get("clothing_type"):
+                        user_clothing_type = data.get("clothing_type")
+                    if data.get("weather"):
+                        user_weather = data.get("weather")
                 except HTTPException:
                     raise
                 except Exception:
@@ -260,8 +312,8 @@ async def analyze_portrait(
             }
         )
 
-    # Step 2: Quality & Lighting Check SECOND (Strict: Lighting not clear -> No output/palettes!)
-    quality_result = analyze_image_quality(image_bgr)
+    # Step 2: Quality & Lighting Check SECOND (scoped to detected face ROI)
+    quality_result = analyze_image_quality(image_bgr, bbox=face_result.get("bounding_box"))
     if not quality_result["is_valid"]:
         return JSONResponse(
             status_code=422,
@@ -303,32 +355,141 @@ async def analyze_portrait(
             }
         )
 
-    # Step 5: ML Undertone Classification
-    ml_prediction = undertone_predictor.predict(color_features["ml_features"])
-    predicted_undertone = ml_prediction["label"]
+    # Step 4b: Extract Facial Biometric Embedding & Check Face Memory Database
+    bbox = face_result.get("bounding_box") or [0, 0, image_bgr.shape[1], image_bgr.shape[0]]
+    landmarks = face_result.get("landmarks")
+    face_embedding = extract_face_embedding(
+        image_bgr=image_bgr,
+        bbox=bbox,
+        landmarks=landmarks,
+        skin_result=skin_result
+    )
+
+    recognized_profile = None
+    similarity_score = 0.0
+    saved_face_id = None
+    match_result = face_memory_db.find_matching_profile(face_embedding, threshold=0.82)
+    if match_result is not None:
+        recognized_profile, similarity_score = match_result
+        face_memory_db.touch_profile(recognized_profile["face_id"], face_embedding)
+        saved_face_id = recognized_profile["face_id"]
+        logger.info("Recognized returning face %s (similarity: %.1f%%)", saved_face_id, similarity_score * 100)
 
     sel_gender = (user_gender or "all").lower().strip()
     if sel_gender not in ("male", "female", "all"):
         sel_gender = "all"
 
-    # Step 6: Personalized Palette & Styling Recommendation Engine (Tailored to Selected Gender)
-    recommendations_result = palette_generator.generate_recommendations(
-        undertone=predicted_undertone,
-        skin_metrics=color_features["display_metrics"],
-        gender=sel_gender
-    )
+    if recognized_profile is not None:
+        # Recognized returning face: retrieve the exact same calibrated signature palette and answers!
+        predicted_undertone = recognized_profile["undertone"]
+        conf_val = float(recognized_profile["confidence"])
+        saved_probs = recognized_profile.get("probabilities")
+        if not saved_probs or not isinstance(saved_probs, dict):
+            rem = max(0.0, 1.0 - conf_val)
+            saved_probs = {
+                cls: (round(conf_val, 4) if cls == predicted_undertone else round(rem / 2.0, 4))
+                for cls in ("Warm", "Neutral", "Cool")
+            }
+        ml_prediction = {
+            "label": predicted_undertone,
+            "confidence": conf_val,
+            "confidence_percentage": round(conf_val * 100, 1),
+            "probabilities": saved_probs,
+            "model_name": "Biometric Memory Signature",
+            "explanation": f"Recognized returning face profile ({round(similarity_score * 100, 1)}% biometric confidence). Loaded your calibrated signature colorimetry.",
+            "key_factors": ["Biometric facial landmark match", "Dermal colorimetry signature alignment", "Consistent spectral profile"]
+        }
 
-    # Persist analysis to Supabase (non-blocking, graceful fallback)
+        # Generate styling with saved palette and harmonies
+        recommendations_result = palette_generator.generate_recommendations(
+            undertone=predicted_undertone,
+            skin_metrics=color_features["display_metrics"],
+            gender=sel_gender,
+            face_embedding=face_embedding
+        )
+        if recognized_profile.get("palette"):
+            recommendations_result["palette"] = recognized_profile["palette"]
+        if recognized_profile.get("skin_harmonies"):
+            recommendations_result["skin_harmonies"] = recognized_profile["skin_harmonies"]
+
+        rep_skin_hex = recognized_profile.get("skin_hex") or color_features["display_metrics"].get("representative_hex") or "#C68B59"
+
+        saved_outfits = recognized_profile.get("curated_outfits")
+        if saved_outfits and user_clothing_type == "all" and user_weather == "all":
+            curated_outfits = saved_outfits
+        else:
+            curated_outfits = generate_curated_outfits(
+                undertone=predicted_undertone,
+                palette=recommendations_result.get("palette", []),
+                clothing_type=user_clothing_type,
+                weather=user_weather,
+                gender=sel_gender,
+                skin_hex=rep_skin_hex
+            )
+    else:
+        # Step 5: New Face ML Undertone Classification
+        ml_prediction = undertone_predictor.predict(color_features["ml_features"])
+        predicted_undertone = ml_prediction["label"]
+
+        # Step 6: Personalized Differentiated Palette (unique to this distinct face)
+        recommendations_result = palette_generator.generate_recommendations(
+            undertone=predicted_undertone,
+            skin_metrics=color_features["display_metrics"],
+            gender=sel_gender,
+            face_embedding=face_embedding
+        )
+
+        # Step 7: Synthesize 3 to 4 Curated Outfit Looks
+        rep_skin_hex = color_features["display_metrics"].get("representative_hex") or skin_result.get("representative_hex") or "#C68B59"
+        curated_outfits = generate_curated_outfits(
+            undertone=predicted_undertone,
+            palette=recommendations_result.get("palette", []),
+            clothing_type=user_clothing_type,
+            weather=user_weather,
+            gender=sel_gender,
+            skin_hex=rep_skin_hex
+        )
+
+        # Register and save this new face profile into persistent database
+        saved_face_id = face_memory_db.save_profile(
+            embedding=face_embedding,
+            undertone=predicted_undertone,
+            confidence=ml_prediction["confidence"],
+            palette=recommendations_result.get("palette", []),
+            skin_metrics=color_features["display_metrics"],
+            gender=sel_gender,
+            skin_hex=rep_skin_hex,
+            skin_harmonies=recommendations_result.get("skin_harmonies", []),
+            curated_outfits=curated_outfits,
+            probabilities=ml_prediction.get("probabilities")
+        )
+        logger.info("Registered new distinct face profile %s into database.", saved_face_id)
+
+    recognition_info = {
+        "is_recognized": recognized_profile is not None,
+        "profile_id": saved_face_id,
+        "similarity": round(similarity_score * 100, 1) if recognized_profile else 100.0,
+        "detection_count": (recognized_profile["detection_count"] + 1) if recognized_profile else 1,
+        "first_seen": recognized_profile["created_at"] if recognized_profile else "Just now",
+        "message": (
+            f"✓ Recognized Returning Client ({round(similarity_score * 100, 1)}% biometric match) • Loaded your calibrated signature profile"
+            if recognized_profile else
+            "✓ Calibrated new unique facial colorimetry • Saved profile to database memory"
+        )
+    }
+
+    # Persist analysis to Supabase asynchronously via BackgroundTasks so it NEVER blocks user response
     analysis_id = None
     try:
-        analysis_id = supabase_client.save_analysis(
+        background_tasks.add_task(
+            supabase_client.save_analysis,
             features=color_features["ml_features"],
             predicted_undertone=predicted_undertone,
             confidence=ml_prediction["confidence"],
             quality_score=quality_result["score"]
         )
     except Exception as e:
-        logger.error("Supabase save_analysis failed: %s", e)
+        logger.error("Supabase async dispatch failed: %s", e)
 
     # Return comprehensive structured response
     return {
@@ -345,12 +506,22 @@ async def analyze_portrait(
             "regions": face_result["regions"],
             "has_landmarks": face_result.get("landmarks") is not None,
             "auto_color_spotted": bool(skin_result.get("spotted", True)),
-            "representative_hex": skin_result.get("representative_hex")
+            "representative_hex": rep_skin_hex
         },
         "gender": sel_gender,
+        "clothing_type": user_clothing_type,
+        "weather": user_weather,
+        "clothing_types": CLOTHING_TYPES,
+        "weather_types": WEATHER_TYPES,
         "skin_analysis": {
             "total_sampled_pixels": skin_result["total_pixels"],
             "region_samples": skin_result["region_samples"],
+            "areas": {
+                "overall": {"hex": rep_skin_hex, "label": "Core Dermis"},
+                "forehead": {"hex": (skin_result.get("region_samples") or {}).get("forehead", {}).get("hex") or rep_skin_hex, "label": "Upper Face"},
+                "cheek": {"hex": (skin_result.get("region_samples") or {}).get("left_cheek", {}).get("hex") or (skin_result.get("region_samples") or {}).get("right_cheek", {}).get("hex") or rep_skin_hex, "label": "Cheek Tone"},
+                "chin": {"hex": (skin_result.get("region_samples") or {}).get("chin", {}).get("hex") or rep_skin_hex, "label": "Lower Face"}
+            },
             "metrics": color_features["display_metrics"]
         },
         "undertone": {
@@ -367,8 +538,62 @@ async def analyze_portrait(
         "less_recommended": recommendations_result["less_recommended"],
         "seasonal_harmony": recommendations_result["seasonal_harmony"],
         "stylist_summary": recommendations_result["stylist_summary"],
-        "foundation_advice": recommendations_result["foundation_advice"]
+        "foundation_advice": recommendations_result["foundation_advice"],
+        "outfits": curated_outfits,
+        "recognition": recognition_info
     }
+
+@app.get("/api/wardrobe-filters")
+async def get_wardrobe_filters():
+    """Returns available clothing types, weather conditions, and styling options."""
+    return {
+        "success": True,
+        "clothing_types": CLOTHING_TYPES,
+        "weather_types": WEATHER_TYPES,
+        "genders": [
+            {"id": "male", "label": "Men's Style", "jewellery_focus": "Rings, Earrings, Watches, Chains"},
+            {"id": "female", "label": "Women's Style", "jewellery_focus": "Necklaces, Earrings, Lip Tints, Rings"},
+            {"id": "all", "label": "All Styles", "jewellery_focus": "Curated Ensemble"}
+        ]
+    }
+
+@app.post("/api/generate-outfits")
+async def generate_outfits_endpoint(payload: GenerateOutfitsRequest):
+    """
+    Dynamically generates 3 to 4 tailored outfit looks for upper, bottom, shoes, jewellery & makeup
+    harmonized with the user's analyzed colour palette, chosen clothing style, weather, and gender.
+    Allows instant filter adjustments without re-uploading the photo.
+    """
+    try:
+        palette = payload.palette or []
+        if not palette:
+            rec = palette_generator.generate_recommendations(
+                undertone=payload.undertone,
+                gender=payload.gender
+            )
+            palette = rec.get("palette", [])
+
+        outfits = generate_curated_outfits(
+            undertone=payload.undertone,
+            palette=palette,
+            clothing_type=payload.clothing_type,
+            weather=payload.weather,
+            gender=payload.gender,
+            skin_hex=payload.skin_hex or "#C68B59"
+        )
+
+        return {
+            "success": True,
+            "clothing_type": payload.clothing_type,
+            "weather": payload.weather,
+            "gender": payload.gender,
+            "clothing_types": CLOTHING_TYPES,
+            "weather_types": WEATHER_TYPES,
+            "outfits": outfits
+        }
+    except Exception as e:
+        logger.error("Dynamic outfit generation failed: %s", e)
+        raise HTTPException(status_code=500, detail=f"Failed to generate outfits: {str(e)}")
 
 @app.post("/api/feedback")
 async def submit_feedback(feedback: FeedbackRequest):
@@ -412,7 +637,19 @@ async def db_status():
     """
     return {
         "supabase_connected": supabase_client.is_available(),
+        "face_memory": face_memory_db.get_stats(),
     }
+
+
+@app.delete("/api/face-profile/{face_id}")
+async def delete_face_profile(face_id: str):
+    """
+    Deletes a stored biometric face profile from the face memory database.
+    """
+    deleted = face_memory_db.delete_profile(face_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Face profile not found.")
+    return {"success": True, "deleted_face_id": face_id}
 
 
 @app.get("/api/palette/{undertone}")

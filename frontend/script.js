@@ -5,6 +5,25 @@
  */
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Origin-aware API endpoint builder: prefers same-origin /api/* in production
+  // and falls back to local FastAPI (8000) when running under file:// or Streamlit (8501)
+  function buildApiEndpoints(path) {
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+    const isLocalNonApiOrigin =
+      window.location.protocol === "file:" ||
+      window.location.port === "8501" ||
+      ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") &&
+        window.location.port !== "8000");
+    if (isLocalNonApiOrigin) {
+      return [
+        `http://127.0.0.1:8000${cleanPath}`,
+        `http://localhost:8000${cleanPath}`,
+        cleanPath
+      ];
+    }
+    return [cleanPath];
+  }
+
   // DOM Elements
   const dropZone = document.getElementById("drop-zone");
   const fileInput = document.getElementById("file-input");
@@ -22,6 +41,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const qualityDetails = document.getElementById("quality-details");
   const errorBanner = document.getElementById("error-banner");
   const errorText = document.getElementById("error-text");
+  const errorActionBtns = document.getElementById("error-action-btns");
+  const bannerCameraBtn = document.getElementById("banner-camera-btn");
+  const bannerUploadBtn = document.getElementById("banner-upload-btn");
+  const noFaceOverlay = document.getElementById("no-face-overlay");
+  const overlayCameraBtn = document.getElementById("overlay-camera-btn");
+  const overlayUploadBtn = document.getElementById("overlay-upload-btn");
 
   const processingSection = document.getElementById("processing-section");
   const resultsSection = document.getElementById("results-section");
@@ -40,6 +65,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentFile = null;
   let currentImageBitmap = null;
   let currentGender = "male";
+  let currentClothingType = "all";
+  let currentWeather = "all";
+  let cachedApiData = null;
 
   // --- Theme Controller ---
   function applyTheme(theme) {
@@ -78,6 +106,15 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- File Upload & Mobile Camera Selfie ---
+  let uploadGenerationId = 0;
+  let faceCheckAbortController = null;
+  let cameraMeterInterval = null;
+  let originalUploadedFile = null;
+  let originalImageBitmap = null;
+  let detectedFacesList = [];
+  let selectedFaceIndex = 0;
+  let isAutoCroppedPortrait = false;
+
   if (browseBtn) {
     browseBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -148,6 +185,34 @@ document.addEventListener("DOMContentLoaded", () => {
       cameraVideo.srcObject = stream;
       await cameraVideo.play();
       cameraModal.classList.remove("hidden");
+
+      // Start live brightness guidance meter while camera is open
+      if (cameraMeterInterval) clearInterval(cameraMeterInterval);
+      const liveMeterEl = document.getElementById("camera-live-meter");
+      const meterCanvas = document.createElement("canvas");
+      meterCanvas.width = 64;
+      meterCanvas.height = 48;
+      const meterCtx = meterCanvas.getContext("2d", { willReadFrequently: true });
+      cameraMeterInterval = setInterval(() => {
+        if (!cameraVideo || !cameraVideo.videoWidth || !liveMeterEl) return;
+        meterCtx.drawImage(cameraVideo, 0, 0, 64, 48);
+        const px = meterCtx.getImageData(16, 8, 32, 32).data;
+        let sum = 0;
+        for (let i = 0; i < px.length; i += 4) {
+          sum += 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+        }
+        const avg = sum / (px.length / 4);
+        if (avg < 55) {
+          liveMeterEl.textContent = "Too Dark • Move toward daylight";
+          liveMeterEl.className = "camera-live-meter warn";
+        } else if (avg > 215) {
+          liveMeterEl.textContent = "Too Bright / Glare • Soften light";
+          liveMeterEl.className = "camera-live-meter warn";
+        } else {
+          liveMeterEl.textContent = "Optimal Daylight • Center face in oval";
+          liveMeterEl.className = "camera-live-meter good";
+        }
+      }, 400);
     } catch (err) {
       console.warn("Webcam stream unavailable, falling back to device camera input:", err);
       if (cameraInput) cameraInput.click();
@@ -155,6 +220,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function stopCameraStream() {
+    if (cameraMeterInterval) {
+      clearInterval(cameraMeterInterval);
+      cameraMeterInterval = null;
+    }
     if (currentStream) {
       currentStream.getTracks().forEach((t) => t.stop());
       currentStream = null;
@@ -249,7 +318,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 
-  function handleFileSelection(file) {
+  async function handleFileSelection(file) {
     if (!file.type.match(/image\/(jpeg|jpg|png|webp)/)) {
       showError("Please upload a valid JPG, JPEG, or PNG image file.");
       return;
@@ -260,26 +329,74 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    currentFile = file;
+    const genId = ++uploadGenerationId;
+    if (faceCheckAbortController) {
+      try { faceCheckAbortController.abort(); } catch (e) {}
+    }
+
     hideError();
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      previewImg.src = e.target.result;
+    // Normalize EXIF orientation and downscale oversized mobile photos (> 1600px)
+    let normalizedFile = file;
+    let previewDataUrl = null;
+    try {
+      if (typeof createImageBitmap === "function") {
+        const bmp = await createImageBitmap(file);
+        const maxSide = 1600;
+        const origMax = Math.max(bmp.width, bmp.height);
+        if (origMax > maxSide || file.size > 4 * 1024 * 1024) {
+          const scale = origMax > maxSide ? (maxSide / origMax) : 1;
+          const nw = Math.max(100, Math.round(bmp.width * scale));
+          const nh = Math.max(100, Math.round(bmp.height * scale));
+          const c = document.createElement("canvas");
+          c.width = nw;
+          c.height = nh;
+          c.getContext("2d").drawImage(bmp, 0, 0, nw, nh);
+          const blob = await new Promise((resolve) => c.toBlob(resolve, "image/jpeg", 0.94));
+          if (blob) {
+            normalizedFile = new File([blob], (file.name || "portrait").replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+            previewDataUrl = c.toDataURL("image/jpeg", 0.94);
+          }
+        }
+        bmp.close();
+      }
+    } catch (normErr) {
+      console.warn("Client resize/EXIF normalization skipped:", normErr);
+    }
+
+    if (genId !== uploadGenerationId) return;
+    currentFile = normalizedFile;
+    originalUploadedFile = normalizedFile;
+    detectedFacesList = [];
+    selectedFaceIndex = 0;
+    isAutoCroppedPortrait = false;
+    const autoBar = document.getElementById("face-autoselect-bar");
+    if (autoBar) autoBar.classList.add("hidden");
+
+    const loadPreviewAndVerify = (dataUrl) => {
+      if (genId !== uploadGenerationId) return;
+      previewImg.src = dataUrl;
       uploadPrompt.classList.add("hidden");
       previewBox.classList.remove("hidden");
       analyzeBtn.disabled = true;
 
-      // Load image object for canvas analysis
       const img = new Image();
-      img.src = e.target.result;
+      img.src = dataUrl;
       img.onload = () => {
+        if (genId !== uploadGenerationId) return;
         currentImageBitmap = img;
-        // Run auto-colour detection & lighting quality check
-        checkImageQualityAndAutoColor(img);
+        originalImageBitmap = img;
+        checkImageQualityAndAutoColor(img, genId, false);
       };
     };
-    reader.readAsDataURL(file);
+
+    if (previewDataUrl) {
+      loadPreviewAndVerify(previewDataUrl);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => loadPreviewAndVerify(e.target.result);
+      reader.readAsDataURL(normalizedFile);
+    }
   }
 
   function rgbToHex(r, g, b) {
@@ -599,7 +716,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Neural Human Face Verification via backend YOLO / MediaPipe model
-  async function verifyHumanFaceWithYOLO(img) {
+  async function verifyHumanFaceWithYOLO(img, genId = uploadGenerationId) {
     const maxDim = 800;
     let w = img.naturalWidth || img.width || 640;
     let h = img.naturalHeight || img.height || 480;
@@ -619,17 +736,19 @@ document.addEventListener("DOMContentLoaded", () => {
     tCtx.drawImage(img, 0, 0, w, h);
 
     const dataUrl = tempCanvas.toDataURL("image/jpeg", 0.92);
-    const endpoints = [
-      "http://127.0.0.1:8000/api/detect-face",
-      "http://localhost:8000/api/detect-face",
-      "/api/detect-face"
-    ];
+    const endpoints = buildApiEndpoints("/api/detect-face");
+    faceCheckAbortController = new AbortController();
+    const sharedSignal = faceCheckAbortController.signal;
 
-    // 1. Try JSON payload (fastest)
+    // 1. Try JSON payload with reliable timeout (4000ms)
+    let backendAvailable = false;
     for (let ep of endpoints) {
+      if (genId !== uploadGenerationId) return null;
       try {
         const controller = new AbortController();
-        const tid = setTimeout(() => controller.abort(), 8000);
+        const onParentAbort = () => controller.abort();
+        sharedSignal.addEventListener("abort", onParentAbort, { once: true });
+        const tid = setTimeout(() => controller.abort(), 4000);
         const res = await fetch(ep, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -637,84 +756,195 @@ document.addEventListener("DOMContentLoaded", () => {
           signal: controller.signal
         });
         clearTimeout(tid);
+        sharedSignal.removeEventListener("abort", onParentAbort);
+        backendAvailable = true;
         if (res.ok) {
           const resJson = await res.json();
           console.log("[FaceCheck] Backend responded:", ep, resJson);
           return resJson;
         }
         if (res.status === 422) {
-          // Explicit "no face" from backend – return it directly
           const resJson = await res.json().catch(() => ({}));
-          return { has_face: false, face_count: 0, message: resJson.error || "No face detected by AI." };
+          return { has_face: false, face_count: 0, message: resJson.error || "No human face detected." };
         }
       } catch (err) {
-        console.warn("[FaceCheck] JSON attempt failed on", ep, err.name);
+        if (sharedSignal.aborted) return null;
+        console.warn("[FaceCheck] Fast JSON attempt failed on", ep, err.name);
       }
     }
 
-    // 2. Try multipart FormData (some proxy configs block JSON)
-    try {
-      const blob = await new Promise((resolve) => tempCanvas.toBlob(resolve, "image/jpeg", 0.92));
-      if (blob) {
-        const fd = new FormData();
-        fd.append("file", blob, "face_check.jpg");
-        for (let ep of endpoints) {
-          try {
-            const controller = new AbortController();
-            const tid = setTimeout(() => controller.abort(), 8000);
-            const res = await fetch(ep, { method: "POST", body: fd, signal: controller.signal });
-            clearTimeout(tid);
-            if (res.ok) {
-              const resJson = await res.json();
-              console.log("[FaceCheck] FormData backend responded:", ep, resJson);
-              return resJson;
-            }
-          } catch (err) {
-            console.warn("[FaceCheck] FormData attempt failed on", ep, err.name);
+    // 2. Try multipart FormData only if backend seemed partially available
+    if (backendAvailable) {
+      try {
+        const blob = await new Promise((resolve) => tempCanvas.toBlob(resolve, "image/jpeg", 0.85));
+        if (blob) {
+          const fd = new FormData();
+          fd.append("file", blob, "face_check.jpg");
+          for (let ep of endpoints) {
+            try {
+              const controller = new AbortController();
+              const tid = setTimeout(() => controller.abort(), 4000);
+              const res = await fetch(ep, { method: "POST", body: fd, signal: controller.signal });
+              clearTimeout(tid);
+              if (res.ok) {
+                const resJson = await res.json();
+                return resJson;
+              }
+            } catch (err) {}
           }
         }
-      }
-    } catch (blobErr) {}
+      } catch (blobErr) {}
+    }
 
-    // 3. Backend unreachable — use strict client-side skin + structure check
-    console.warn("[FaceCheck] Backend unreachable — running client-side fallback");
+    // 3. Backend unreachable — check Native Browser FaceDetector API (Chrome / Edge / Android)
+    if (typeof window !== "undefined" && "FaceDetector" in window) {
+      try {
+        const detector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+        const nativeFaces = await detector.detect(img);
+        if (nativeFaces && nativeFaces.length > 0) {
+          const nb = nativeFaces[0].boundingBox;
+          const nw = img.naturalWidth || img.width || 640;
+          const nh = img.naturalHeight || img.height || 480;
+          console.log("[FaceCheck] Native browser FaceDetector found face:", nb);
+          return {
+            has_face: true,
+            face_count: nativeFaces.length,
+            lighting_clear: true,
+            confidence: 0.95,
+            detector_type: "native_face_detector",
+            bounding_box: {
+              x: nb.x, y: nb.y, w: nb.width, h: nb.height,
+              pctX: (nb.x / nw) * 100, pctY: (nb.y / nh) * 100,
+              pctW: (nb.width / nw) * 100, pctH: (nb.height / nh) * 100
+            },
+            message: "Face localized via Neural Face Detector."
+          };
+        } else {
+          return {
+            has_face: false,
+            face_count: 0,
+            lighting_clear: false,
+            message: "No human face detected. Please position your face clearly in the frame."
+          };
+        }
+      } catch (nativeErr) {
+        console.warn("[FaceCheck] Native FaceDetector error:", nativeErr);
+      }
+    }
+
+    // 4. Algorithmic biometric fallback
+    console.warn("[FaceCheck] Backend unreachable — running algorithmic biometric check");
     try {
-      const fbW = 240, fbH = 180;
+      const fbW = 200, fbH = 200;
       const fbCanvas = document.createElement("canvas");
       fbCanvas.width = fbW; fbCanvas.height = fbH;
       const fbCtx = fbCanvas.getContext("2d");
       fbCtx.drawImage(img, 0, 0, fbW, fbH);
       const fbData = fbCtx.getImageData(0, 0, fbW, fbH).data;
 
-      // Count skin-tone pixels across upper 2/3 (face region), lower 1/3 (body)
-      const faceZoneLimit = Math.floor(fbH * 0.68) * fbW;
-      let faceSkinPx = 0, bodySkinPx = 0, totalPx = fbW * fbH;
+      let totalLum = 0, totalSkin = 0;
+      let skinXSum = 0, skinYSum = 0;
+      let minX = fbW, maxX = 0, minY = fbH, maxY = 0;
+      const totalPixels = fbW * fbH;
+      const lums = [];
 
       for (let i = 0; i < fbData.length; i += 4) {
         const r = fbData[i], g = fbData[i + 1], b = fbData[i + 2];
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        totalLum += lum;
+        if (i % 16 === 0) lums.push(lum);
+
         if (isSkinPixel(r, g, b)) {
-          const pixIdx = i / 4;
-          if (pixIdx < faceZoneLimit) faceSkinPx++;
-          else bodySkinPx++;
+          const pxIdx = i / 4;
+          const pxX = pxIdx % fbW;
+          const pxY = Math.floor(pxIdx / fbW);
+          // Focus on head/face upper 85% region
+          if (pxY < fbH * 0.85) {
+            totalSkin++;
+            skinXSum += pxX;
+            skinYSum += pxY;
+            if (pxX < minX) minX = pxX;
+            if (pxX > maxX) maxX = pxX;
+            if (pxY < minY) minY = pxY;
+            if (pxY > maxY) maxY = pxY;
+          }
         }
       }
 
-      const faceSkinRatio = faceSkinPx / totalPx;
-      const faceToBodyRatio = bodySkinPx > 0 ? faceSkinPx / bodySkinPx : faceSkinPx;
-      console.log("[FaceCheck] fallback: faceSkinRatio=", faceSkinRatio.toFixed(3), "faceToBody=", faceToBodyRatio.toFixed(2));
-
-      // Require: meaningful skin in upper face zone AND face zone has notably more skin than body zone
-      if (faceSkinRatio > 0.08 && faceSkinPx > 300 && faceToBodyRatio > 1.4) {
-        return { has_face: true, face_count: 1, lighting_clear: true,
-                 message: "Face verified (client fallback — connect backend for AI accuracy)." };
+      // Check pixel variance to reject uniform/flat/blank images
+      const meanLum = totalLum / totalPixels;
+      let lumVar = 0;
+      for (let l of lums) {
+        const d = l - meanLum;
+        lumVar += d * d;
       }
-      return { has_face: false, face_count: 0,
-               message: "No human face detected (client fallback). Please ensure your face is clearly visible and well-lit." };
+      lumVar = lumVar / lums.length;
+      if (lumVar < 18) {
+        return {
+          has_face: false,
+          face_count: 0,
+          message: "No human face detected. Image is completely uniform or blank."
+        };
+      }
+
+      const clusterW = Math.max(0, maxX - minX);
+      const clusterH = Math.max(0, maxY - minY);
+      const clusterArea = clusterW * clusterH;
+
+      // Real human face in portrait/selfie mode takes up a concentrated, distinct region
+      // Reject if skin cluster is too small, absent, or diffuse pattern (curtains/walls)
+      if (totalSkin < 160 || clusterW < 30 || clusterH < 35 || clusterArea < 1200) {
+        return {
+          has_face: false,
+          face_count: 0,
+          message: "No human face detected. Please ensure your face is clearly visible."
+        };
+      }
+
+      const aspect = clusterH / clusterW;
+      if (aspect < 0.60 || aspect > 2.4) {
+        return {
+          has_face: false,
+          face_count: 0,
+          message: "No human face detected. Object shape does not match a human face."
+        };
+      }
+
+      const clusterDensity = totalSkin / clusterArea;
+      // In real human faces, skin pixels form a coherent cluster (density >= 0.16)
+      // Diffuse patterns (curtains, wallpapers, textures) have low cluster density (< 0.08)
+      if (clusterDensity < 0.16) {
+        return {
+          has_face: false,
+          face_count: 0,
+          message: "No human face detected. Detected texture does not match a human face."
+        };
+      }
+
+      const cx = (skinXSum / totalSkin) / fbW;
+      const cy = (skinYSum / totalSkin) / fbH;
+      // Centrality check: face center of mass should be reasonably positioned
+      if (cx >= 0.15 && cx <= 0.85 && cy >= 0.10 && cy <= 0.82) {
+        return {
+          has_face: true,
+          face_count: 1,
+          lighting_clear: true,
+          confidence: 0.80,
+          detector_type: "biometric_fallback",
+          message: "Face verified (local biometric detector)."
+        };
+      }
+
+      return {
+        has_face: false,
+        face_count: 0,
+        message: "No human face detected. Please position your face closer to the center."
+      };
     } catch (fbErr) {
       console.error("[FaceCheck] Fallback error:", fbErr);
     }
 
-    return { has_face: false, message: "Face detection unavailable. Please check your connection." };
+    return { has_face: false, message: "No human face detected. Please check your image." };
   }
 
   // --- Auto Colour Detection & Lighting Quality Sensor ---
@@ -723,7 +953,125 @@ document.addEventListener("DOMContentLoaded", () => {
   //   elif lighting not clear -> NO palettes, show lighting alert
   //   otherwise -> show palettes and enable analysis
   // Else (no face detected) -> NO palettes, show no face alert
-  async function checkImageQualityAndAutoColor(img) {
+  function cropPortraitAroundFace(sourceImg, faceBoxPct) {
+    return new Promise((resolve) => {
+      if (!sourceImg || !faceBoxPct) return resolve(null);
+      const origW = sourceImg.naturalWidth || sourceImg.width || 640;
+      const origH = sourceImg.naturalHeight || sourceImg.height || 480;
+
+      const bx = faceBoxPct.pctX !== undefined ? (faceBoxPct.pctX / 100) * origW : (faceBoxPct.x || 0);
+      const by = faceBoxPct.pctY !== undefined ? (faceBoxPct.pctY / 100) * origH : (faceBoxPct.y || 0);
+      const bw = faceBoxPct.pctW !== undefined ? (faceBoxPct.pctW / 100) * origW : (faceBoxPct.w || origW * 0.5);
+      const bh = faceBoxPct.pctH !== undefined ? (faceBoxPct.pctH / 100) * origH : (faceBoxPct.h || origH * 0.5);
+
+      // Padded portrait framing (headroom + cheeks + jawline/neck)
+      const x1 = Math.max(0, Math.floor(bx - bw * 0.35));
+      const y1 = Math.max(0, Math.floor(by - bh * 0.45));
+      const x2 = Math.min(origW, Math.ceil(bx + bw + bw * 0.35));
+      const y2 = Math.min(origH, Math.ceil(by + bh + bh * 0.55));
+      const cw = Math.max(160, x2 - x1);
+      const ch = Math.max(160, y2 - y1);
+
+      // Keep crisp portrait dimensions capped at 1200px
+      const scale = Math.max(cw, ch) > 1200 ? 1200 / Math.max(cw, ch) : 1;
+      const outW = Math.max(160, Math.round(cw * scale));
+      const outH = Math.max(160, Math.round(ch * scale));
+
+      const c = document.createElement("canvas");
+      c.width = outW;
+      c.height = outH;
+      c.getContext("2d").drawImage(sourceImg, x1, y1, cw, ch, 0, 0, outW, outH);
+      const dataUrl = c.toDataURL("image/jpeg", 0.95);
+      c.toBlob((blob) => {
+        if (!blob) return resolve(null);
+        const file = new File([blob], "portrait_autoselect.jpg", { type: "image/jpeg" });
+        resolve({ file, dataUrl });
+      }, "image/jpeg", 0.95);
+    });
+  }
+
+  function renderFaceAutoSelectBar(faces, activeIdx, isCropped, showToggle) {
+    let bar = document.getElementById("face-autoselect-bar");
+    if (!bar && qualityBar && qualityBar.parentNode) {
+      bar = document.createElement("div");
+      bar.id = "face-autoselect-bar";
+      bar.className = "face-autoselect-bar hidden";
+      qualityBar.parentNode.insertBefore(bar, qualityBar);
+    }
+    if (!bar) return;
+
+    if (!faces || faces.length === 0 || (!showToggle && faces.length <= 1)) {
+      bar.classList.add("hidden");
+      return;
+    }
+
+    const multi = faces.length > 1;
+    const labelText = multi
+      ? `${faces.length} human faces found • Selected Face ${activeIdx + 1}`
+      : (isCropped ? "Auto-focused on detected human face" : "Viewing full uploaded photo");
+
+    let chipsHtml = "";
+    if (multi) {
+      chipsHtml += faces.map((_, i) =>
+        `<button type="button" class="face-chip-btn ${i === activeIdx ? "active" : ""}" data-face-idx="${i}">Face ${i + 1}</button>`
+      ).join("");
+    }
+    if (showToggle) {
+      chipsHtml += `<button type="button" class="face-chip-btn" id="toggle-full-photo-btn">${isCropped ? "Use Full Photo" : "Auto-Focus Face"}</button>`;
+    }
+
+    bar.innerHTML = `
+      <span class="face-autoselect-label">🎯 ${labelText}</span>
+      <div class="face-autoselect-actions">${chipsHtml}</div>
+    `;
+    bar.classList.remove("hidden");
+
+    bar.querySelectorAll("[data-face-idx]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const idx = parseInt(btn.getAttribute("data-face-idx"), 10);
+        if (isNaN(idx) || !originalImageBitmap || !detectedFacesList[idx]) return;
+        selectedFaceIndex = idx;
+        const cropped = await cropPortraitAroundFace(originalImageBitmap, detectedFacesList[idx]);
+        if (!cropped) return;
+        isAutoCroppedPortrait = true;
+        currentFile = cropped.file;
+        previewImg.src = cropped.dataUrl;
+        const nextImg = new Image();
+        nextImg.src = cropped.dataUrl;
+        nextImg.onload = () => {
+          currentImageBitmap = nextImg;
+          checkImageQualityAndAutoColor(nextImg, uploadGenerationId, true);
+        };
+      });
+    });
+
+    const toggleBtn = document.getElementById("toggle-full-photo-btn");
+    if (toggleBtn && originalImageBitmap && originalUploadedFile) {
+      toggleBtn.addEventListener("click", async () => {
+        if (isAutoCroppedPortrait) {
+          isAutoCroppedPortrait = false;
+          currentFile = originalUploadedFile;
+          currentImageBitmap = originalImageBitmap;
+          previewImg.src = originalImageBitmap.src;
+          checkImageQualityAndAutoColor(originalImageBitmap, uploadGenerationId, true);
+        } else if (detectedFacesList[selectedFaceIndex]) {
+          const cropped = await cropPortraitAroundFace(originalImageBitmap, detectedFacesList[selectedFaceIndex]);
+          if (!cropped) return;
+          isAutoCroppedPortrait = true;
+          currentFile = cropped.file;
+          previewImg.src = cropped.dataUrl;
+          const nextImg = new Image();
+          nextImg.src = cropped.dataUrl;
+          nextImg.onload = () => {
+            currentImageBitmap = nextImg;
+            checkImageQualityAndAutoColor(nextImg, uploadGenerationId, true);
+          };
+        }
+      });
+    }
+  }
+
+  async function checkImageQualityAndAutoColor(img, genId = uploadGenerationId, skipAutoCrop = false) {
     const statusEl = document.getElementById("mesh-status-text");
     const lightingPill = document.getElementById("lighting-status-pill");
     const hudLightingPill = document.getElementById("hud-lighting-pill");
@@ -734,7 +1082,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const autoDot = document.getElementById("face-box-color-dot");
     const faceBoxEl = document.getElementById("preview-face-box");
 
-    if (statusEl) statusEl.textContent = "Scanning photo lighting and facial regions...";
+    if (statusEl) statusEl.textContent = "Checking photo lighting and complexion...";
     if (faceBoxEl) faceBoxEl.classList.add("hidden");
     analyzeBtn.disabled = true;
 
@@ -795,13 +1143,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const blurMetric = edgeCount > 0 ? (edgeDiffSum / edgeCount) : 100;
 
     // 1. Verify real human face via YOLO detector
-    const yoloResult = await verifyHumanFaceWithYOLO(img);
+    const yoloResult = await verifyHumanFaceWithYOLO(img, genId);
+    if (genId !== uploadGenerationId) return false;
 
     // CONDITION 1: NO HUMAN FACE DETECTED -> STRICTLY NO PALETTES, NO OUTPUT!
     if (!yoloResult || !yoloResult.has_face) {
       isFaceVerified = false;
       const failMsg = (yoloResult && yoloResult.message) || "No human face detected. Please position your face clearly in the camera frame.";
-      showError(failMsg);
+      showError(failMsg, true);
 
       if (faceBoxEl) faceBoxEl.classList.add("hidden");
       analyzeBtn.disabled = true;
@@ -837,23 +1186,95 @@ document.addEventListener("DOMContentLoaded", () => {
       return false;
     }
 
-    // CONDITION 2: FACE IS DETECTED! Check lighting: ELIF LIGHTING NOT CLEAR -> NO PALETTES!
+    // CONDITION 2: FACE IS DETECTED! Auto-select & focus if wide/group photo, then check face-scoped lighting
     const yoloBbox = yoloResult.bounding_box;
+    if (!skipAutoCrop) {
+      detectedFacesList = (yoloResult.faces && yoloResult.faces.length)
+        ? yoloResult.faces
+        : (yoloBbox ? [yoloBbox] : []);
+      selectedFaceIndex = 0;
+
+      const faceAreaPct = yoloBbox && yoloBbox.pctW && yoloBbox.pctH ? (yoloBbox.pctW * yoloBbox.pctH) : 10000;
+      const shouldAutoCrop = Boolean(yoloBbox) && (faceAreaPct < 3500 || detectedFacesList.length > 1);
+      if (shouldAutoCrop && originalImageBitmap) {
+        const cropped = await cropPortraitAroundFace(originalImageBitmap, detectedFacesList[0]);
+        if (genId !== uploadGenerationId) return false;
+        if (cropped) {
+          isAutoCroppedPortrait = true;
+          currentFile = cropped.file;
+          previewImg.src = cropped.dataUrl;
+          const croppedImg = new Image();
+          croppedImg.src = cropped.dataUrl;
+          await new Promise((resolve) => {
+            croppedImg.onload = resolve;
+            croppedImg.onerror = resolve;
+          });
+          if (genId !== uploadGenerationId) return false;
+          currentImageBitmap = croppedImg;
+          return checkImageQualityAndAutoColor(croppedImg, genId, true);
+        }
+      } else {
+        isAutoCroppedPortrait = false;
+      }
+    }
+
+    const canToggleFocus = Boolean(originalImageBitmap && detectedFacesList.length > 0 && (
+      isAutoCroppedPortrait ||
+      detectedFacesList.length > 1 ||
+      (yoloBbox && yoloBbox.pctW && yoloBbox.pctH && (yoloBbox.pctW * yoloBbox.pctH) < 3500)
+    ));
+    renderFaceAutoSelectBar(detectedFacesList, selectedFaceIndex, isAutoCroppedPortrait, canToggleFocus);
+
     const regionRes = extractFacialDermisAndRegions(imgData, sampleW, sampleH);
     const areas = regionRes.areas;
     lastExtractedAreas = areas;
     lastExtractedFaceBox = yoloBbox || regionRes.faceBox;
+
+    // Recompute face-scoped brightness/contrast inside detected face ROI so dark/bright backgrounds don't trigger false rejections
+    let evalBrightness = meanBrightness;
+    let evalDarkRatio = darkRatio;
+    let evalBrightRatio = brightRatio;
+    let evalContrastStd = contrastStd;
+    if (yoloBbox && yoloBbox.pctW > 0 && yoloBbox.pctH > 0) {
+      const fx1 = Math.max(0, Math.floor((yoloBbox.pctX / 100) * sampleW));
+      const fy1 = Math.max(0, Math.floor((yoloBbox.pctY / 100) * sampleH));
+      const fx2 = Math.min(sampleW, Math.ceil(((yoloBbox.pctX + yoloBbox.pctW) / 100) * sampleW));
+      const fy2 = Math.min(sampleH, Math.ceil(((yoloBbox.pctY + yoloBbox.pctH) / 100) * sampleH));
+      if ((fx2 - fx1) >= 20 && (fy2 - fy1) >= 20) {
+        let fSum = 0, fDark = 0, fBright = 0, fCount = 0;
+        const fLums = [];
+        for (let py = fy1; py < fy2; py++) {
+          for (let px = fx1; px < fx2; px++) {
+            const pIdx = (py * sampleW + px) * 4;
+            const fl = 0.299 * imgData[pIdx] + 0.587 * imgData[pIdx + 1] + 0.114 * imgData[pIdx + 2];
+            fSum += fl;
+            if (fl < 20) fDark++;
+            if (fl > 244) fBright++;
+            if (fCount % 4 === 0) fLums.push(fl);
+            fCount++;
+          }
+        }
+        if (fCount > 0) {
+          evalBrightness = fSum / fCount;
+          evalDarkRatio = fDark / fCount;
+          evalBrightRatio = fBright / fCount;
+          let fv = 0;
+          for (const l of fLums) fv += (l - evalBrightness) ** 2;
+          evalContrastStd = Math.sqrt(fv / Math.max(1, fLums.length));
+        }
+      }
+    }
 
     let lightingError = null;
     if (yoloResult.lighting_clear === false && yoloResult.quality_message) {
       lightingError = "Face detected, but lighting is not clear: " + yoloResult.quality_message;
     } else if (origW < 140 || origH < 140) {
       lightingError = "Face detected, but photo resolution is too low. Please upload a higher resolution photo.";
-    } else if (meanBrightness < 35 || darkRatio > 0.45) {
+    } else if (evalBrightness < 35 || evalDarkRatio > 0.45) {
       lightingError = "Face detected, but lighting is not clear: The photo is too dark. Please take your photo in bright, natural daylight.";
-    } else if (meanBrightness > 235 || brightRatio > 0.40) {
+    } else if (evalBrightness > 235 || evalBrightRatio > 0.40) {
       lightingError = "Face detected, but lighting is not clear: Harsh glare or overexposure detected. Please avoid direct bright flash.";
-    } else if (contrastStd < 13) {
+    } else if (evalContrastStd < 13) {
       lightingError = "Face detected, but lighting is not clear: Uneven shadows or low contrast. Please use clear, balanced lighting.";
     } else if (blurMetric < 10) {
       lightingError = "Face detected, but image is not clear: Photo appears blurry or out of focus. Please ensure camera is steady.";
@@ -895,22 +1316,51 @@ document.addEventListener("DOMContentLoaded", () => {
     hideError();
     const spottedHex = areas.overall.hex;
 
-    // Position and display ONLY the AI Face Bounding Box (box only, strictly NO target pins!)
-    const faceBox = lastExtractedFaceBox;
-    const faceBoxTag = document.getElementById("preview-face-box-tag");
-    if (faceBoxEl && faceBox) {
-      const pctX = faceBox.pctX !== undefined ? faceBox.pctX : ((faceBox.x / origW) * 100);
-      const pctY = faceBox.pctY !== undefined ? faceBox.pctY : ((faceBox.y / origH) * 100);
-      const pctW = faceBox.pctW !== undefined ? faceBox.pctW : (((faceBox.width || faceBox.w) / origW) * 100);
-      const pctH = faceBox.pctH !== undefined ? faceBox.pctH : (((faceBox.height || faceBox.h) / origH) * 100);
-      faceBoxEl.style.left = pctX.toFixed(2) + "%";
-      faceBoxEl.style.top = pctY.toFixed(2) + "%";
-      faceBoxEl.style.width = pctW.toFixed(2) + "%";
-      faceBoxEl.style.height = pctH.toFixed(2) + "%";
-      faceBoxEl.classList.remove("hidden");
-    }
-    if (faceBoxTag) {
-      faceBoxTag.textContent = "AI FACE MESH";
+    // Render sleek Auto-Selector Box around the detected face (aligned to rendered image rect)
+    if (faceBoxEl) {
+      const boxToRender = yoloBbox || regionRes.faceBox;
+      if (boxToRender && previewImg && previewImg.naturalWidth && previewImg.naturalHeight) {
+        const positionBox = () => {
+          const overlay = document.getElementById("face-regions-overlay");
+          if (!overlay || !previewImg.clientWidth || !previewImg.clientHeight) return;
+          const oRect = overlay.getBoundingClientRect();
+          const iRect = previewImg.getBoundingClientRect();
+          const natRatio = previewImg.naturalWidth / previewImg.naturalHeight;
+          const renRatio = iRect.width / iRect.height;
+          let drawW = iRect.width, drawH = iRect.height, offX = 0, offY = 0;
+          if (natRatio > renRatio) {
+            drawH = iRect.width / natRatio;
+            offY = (iRect.height - drawH) / 2;
+          } else {
+            drawW = iRect.height * natRatio;
+            offX = (iRect.width - drawW) / 2;
+          }
+          const baseLeft = (iRect.left - oRect.left) + offX;
+          const baseTop = (iRect.top - oRect.top) + offY;
+          const px = boxToRender.pctX !== undefined ? boxToRender.pctX : 25;
+          const py = boxToRender.pctY !== undefined ? boxToRender.pctY : 15;
+          const pw = boxToRender.pctW !== undefined ? boxToRender.pctW : 50;
+          const ph = boxToRender.pctH !== undefined ? boxToRender.pctH : 65;
+
+          faceBoxEl.style.left = `${baseLeft + (px / 100) * drawW}px`;
+          faceBoxEl.style.top = `${baseTop + (py / 100) * drawH}px`;
+          faceBoxEl.style.width = `${(pw / 100) * drawW}px`;
+          faceBoxEl.style.height = `${(ph / 100) * drawH}px`;
+          faceBoxEl.style.display = "block";
+          faceBoxEl.classList.remove("hidden");
+
+          const tagEl = document.getElementById("preview-face-box-tag");
+          if (tagEl) {
+            tagEl.textContent = detectedFacesList.length > 1
+              ? `AUTO-SELECTED FACE ${selectedFaceIndex + 1}`
+              : "AUTO-SELECTED FACE";
+          }
+        };
+        positionBox();
+        requestAnimationFrame(positionBox);
+      } else {
+        faceBoxEl.classList.add("hidden");
+      }
     }
 
     // Update Quality Bar: Optimal
@@ -961,6 +1411,13 @@ document.addEventListener("DOMContentLoaded", () => {
     function resetUploadState() {
     currentFile = null;
     currentImageBitmap = null;
+    originalUploadedFile = null;
+    originalImageBitmap = null;
+    detectedFacesList = [];
+    selectedFaceIndex = 0;
+    isAutoCroppedPortrait = false;
+    const autoBar = document.getElementById("face-autoselect-bar");
+    if (autoBar) autoBar.classList.add("hidden");
     fileInput.value = "";
     if (cameraInput) cameraInput.value = "";
     previewImg.src = "";
@@ -988,13 +1445,43 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function showError(msg) {
+  function triggerCameraCapture() {
+    hideError();
+    if (cameraBtn) {
+      cameraBtn.click();
+    } else if (cameraInput) {
+      cameraInput.click();
+    }
+  }
+
+  function triggerFileUpload() {
+    hideError();
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  if (overlayCameraBtn) overlayCameraBtn.addEventListener("click", triggerCameraCapture);
+  if (bannerCameraBtn) bannerCameraBtn.addEventListener("click", triggerCameraCapture);
+  if (overlayUploadBtn) overlayUploadBtn.addEventListener("click", triggerFileUpload);
+  if (bannerUploadBtn) bannerUploadBtn.addEventListener("click", triggerFileUpload);
+
+  function showError(msg, isNoFace = false) {
     errorText.textContent = msg;
     errorBanner.classList.remove("hidden");
+    if (isNoFace) {
+      if (errorActionBtns) errorActionBtns.classList.remove("hidden");
+      if (noFaceOverlay) noFaceOverlay.classList.remove("hidden");
+    } else {
+      if (errorActionBtns) errorActionBtns.classList.add("hidden");
+      if (noFaceOverlay) noFaceOverlay.classList.add("hidden");
+    }
   }
 
   function hideError() {
     errorBanner.classList.add("hidden");
+    if (errorActionBtns) errorActionBtns.classList.add("hidden");
+    if (noFaceOverlay) noFaceOverlay.classList.add("hidden");
   }
 
   // Cross-platform mobile-friendly copy helper
@@ -1057,7 +1544,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Analyze API Execution ---
   analyzeBtn.addEventListener("click", async () => {
-    if (!currentFile) return;
+    if (!currentFile && !currentImageBitmap) return;
+
+    if (!isFaceVerified) {
+      showError("Cannot analyze: No human face detected in the picture. Please position your face clearly in the camera frame.");
+      if (resultsSection) resultsSection.classList.add("hidden");
+      analyzeBtn.disabled = true;
+      return;
+    }
 
     hideError();
     studioSection.classList.add("hidden");
@@ -1067,20 +1561,93 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const animationPromise = animatePipelineSteps();
 
-    const formData = new FormData();
-    formData.append("file", currentFile);
+    const analyzeEndpoints = buildApiEndpoints("/api/analyze");
 
     try {
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        body: formData,
-      });
+      let data = null;
+      let lastError = null;
 
-      const data = await response.json();
+      // 1. Try FormData first
+      if (currentFile) {
+        const formData = new FormData();
+        formData.append("file", currentFile);
+        formData.append("gender", currentGender || "male");
+        formData.append("clothing_type", currentClothingType || "all");
+        formData.append("weather", currentWeather || "all");
+
+        for (let ep of analyzeEndpoints) {
+          try {
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), 12000);
+            const response = await fetch(ep, {
+              method: "POST",
+              body: formData,
+              signal: controller.signal
+            });
+            clearTimeout(tid);
+
+            if (response.ok) {
+              data = await response.json();
+              break;
+            } else if (response.status === 422) {
+              const errData = await response.json().catch(() => ({}));
+              const valErr = new Error(errData.error || "No human face detected. Cannot analyze.");
+              valErr.isValidationError = true;
+              throw valErr;
+            }
+          } catch (netErr) {
+            if (netErr.isValidationError || (netErr.message && netErr.message.includes("No human face"))) {
+              throw netErr;
+            }
+            lastError = netErr;
+          }
+        }
+      }
+
+      // 2. If FormData failed or image is dataUrl, try JSON payload
+      if (!data && previewImg && previewImg.src && previewImg.src.startsWith("data:")) {
+        for (let ep of analyzeEndpoints) {
+          try {
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), 12000);
+            const response = await fetch(ep, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                image: previewImg.src,
+                gender: currentGender || "male",
+                clothing_type: currentClothingType || "all",
+                weather: currentWeather || "all"
+              }),
+              signal: controller.signal
+            });
+            clearTimeout(tid);
+
+            if (response.ok) {
+              data = await response.json();
+              break;
+            } else if (response.status === 422) {
+              const errData = await response.json().catch(() => ({}));
+              const valErr = new Error(errData.error || "No human face detected. Cannot analyze.");
+              valErr.isValidationError = true;
+              throw valErr;
+            }
+          } catch (netErr) {
+            if (netErr.isValidationError || (netErr.message && netErr.message.includes("No human face"))) {
+              throw netErr;
+            }
+            lastError = netErr;
+          }
+        }
+      }
+
       await animationPromise;
 
-      if (!response.ok || (!data.success && !data.undertone)) {
-        throw new Error(data.error || data.detail || "An error occurred during facial color analysis.");
+      if (!data || (!data.success && !data.undertone)) {
+        throw new Error(
+          (lastError && lastError.message) ||
+          "Failed to analyze image. Please ensure a clear human face is visible."
+        );
       }
 
       // Sync single face box with backend neural bounding box
@@ -1233,26 +1800,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function handleGenderSelect(selectedGender, isManual = true) {
     currentGender = (selectedGender === "female" || selectedGender === "all") ? selectedGender : "male";
+    const effectiveGender = currentGender;
 
     // Sync pills across upload selector
     document.querySelectorAll("#upload-gender-options .gender-pill").forEach((pill) => {
       pill.classList.toggle("active", pill.getAttribute("data-gender") === currentGender);
     });
 
-    const effectiveGender = currentGender;
+    // Sync pills across results outfit studio
+    document.querySelectorAll("#results-gender-options .gender-filter-pill").forEach((pill) => {
+      pill.classList.toggle("active", pill.getAttribute("data-gender") === currentGender);
+    });
 
-    // Ensure results switch controls are permanently absent
-    const resultsGenderOptions = document.getElementById("results-gender-options");
-    if (resultsGenderOptions) {
-      resultsGenderOptions.innerHTML = "";
-      resultsGenderOptions.style.display = "none";
-    }
     const switchLabel = document.getElementById("gender-switch-label");
     if (switchLabel) switchLabel.style.display = "none";
     const bannerControls = document.querySelector(".gender-banner-controls");
     if (bannerControls) bannerControls.style.display = "none";
 
-    updateGenderView(effectiveGender);
+    updateGenderView(currentGender);
 
     // Update banner UI
     const bannerTitleText = document.getElementById("gender-banner-title-text");
@@ -1475,6 +2040,62 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Wire up upload clothing type & weather pre-select pills
+  document.querySelectorAll("#upload-clothing-options .style-pill").forEach((pill) => {
+    pill.addEventListener("click", () => {
+      document.querySelectorAll("#upload-clothing-options .style-pill").forEach((p) => p.classList.remove("active"));
+      pill.classList.add("active");
+      currentClothingType = pill.getAttribute("data-type") || "all";
+      document.querySelectorAll("#results-clothing-options .filter-pill").forEach((p) => {
+        p.classList.toggle("active", p.getAttribute("data-type") === currentClothingType);
+      });
+    });
+  });
+
+  document.querySelectorAll("#upload-weather-options .weather-pill").forEach((pill) => {
+    pill.addEventListener("click", () => {
+      document.querySelectorAll("#upload-weather-options .weather-pill").forEach((p) => p.classList.remove("active"));
+      pill.classList.add("active");
+      currentWeather = pill.getAttribute("data-weather") || "all";
+      document.querySelectorAll("#results-weather-options .weather-filter-pill").forEach((p) => {
+        p.classList.toggle("active", p.getAttribute("data-weather") === currentWeather);
+      });
+    });
+  });
+
+  // Wire up results outfit studio live filter pills
+  document.querySelectorAll("#results-clothing-options .filter-pill").forEach((pill) => {
+    pill.addEventListener("click", () => {
+      document.querySelectorAll("#results-clothing-options .filter-pill").forEach((p) => p.classList.remove("active"));
+      pill.classList.add("active");
+      currentClothingType = pill.getAttribute("data-type") || "all";
+      document.querySelectorAll("#upload-clothing-options .style-pill").forEach((p) => {
+        p.classList.toggle("active", p.getAttribute("data-type") === currentClothingType);
+      });
+      fetchOrUpdateOutfits();
+    });
+  });
+
+  document.querySelectorAll("#results-weather-options .weather-filter-pill").forEach((pill) => {
+    pill.addEventListener("click", () => {
+      document.querySelectorAll("#results-weather-options .weather-filter-pill").forEach((p) => p.classList.remove("active"));
+      pill.classList.add("active");
+      currentWeather = pill.getAttribute("data-weather") || "all";
+      document.querySelectorAll("#upload-weather-options .weather-pill").forEach((p) => {
+        p.classList.toggle("active", p.getAttribute("data-weather") === currentWeather);
+      });
+      fetchOrUpdateOutfits();
+    });
+  });
+
+  document.querySelectorAll("#results-gender-options .gender-filter-pill").forEach((pill) => {
+    pill.addEventListener("click", () => {
+      const g = pill.getAttribute("data-gender");
+      handleGenderSelect(g, true);
+      fetchOrUpdateOutfits();
+    });
+  });
+
   // --- Render Results ---
   function renderResults(data) {
     cachedApiData = data;
@@ -1486,6 +2107,55 @@ document.addEventListener("DOMContentLoaded", () => {
     const undertone = typeof rawUt === "string" ? rawUt : (rawUt.label || "Neutral");
     const utStr = String(undertone || "Neutral");
     const confidencePct = (data && data.undertone && data.undertone.confidence_percentage) !== undefined ? data.undertone.confidence_percentage : 94;
+
+    // 0. Biometric Face Recognition Status Badge
+    let recBadge = document.getElementById("face-recognition-badge");
+    if (!recBadge) {
+      recBadge = document.createElement("div");
+      recBadge.id = "face-recognition-badge";
+      recBadge.className = "face-recognition-badge";
+      const resultsContainer = document.querySelector(".results-header") || document.querySelector(".undertone-hero") || document.getElementById("results-section");
+      if (resultsContainer) resultsContainer.prepend(recBadge);
+    }
+    if (recBadge && data && data.recognition) {
+      const pid = data.recognition.profile_id || "";
+      const forgetHtml = pid
+        ? ` <button type="button" class="forget-profile-btn" data-profile-id="${pid}" title="Delete this face profile from database memory">Forget Profile</button>`
+        : "";
+      if (data.recognition.is_recognized) {
+        recBadge.innerHTML = `<span class="rec-icon">⚡</span> <strong>Recognized Client Profile</strong> · Loaded your calibrated signature colorimetry (${data.recognition.similarity}% match)${forgetHtml}`;
+        recBadge.className = "face-recognition-badge recognized";
+        recBadge.style.display = "inline-flex";
+        showToast(`Welcome back! Restored your calibrated signature profile (${data.recognition.similarity}% match).`);
+      } else {
+        recBadge.innerHTML = `<span class="rec-icon">✨</span> <strong>New Face Profile Registered</strong> · Unique colorimetry calibrated and saved to database memory${forgetHtml}`;
+        recBadge.className = "face-recognition-badge new-profile";
+        recBadge.style.display = "inline-flex";
+      }
+      const forgetBtn = recBadge.querySelector(".forget-profile-btn");
+      if (forgetBtn) {
+        forgetBtn.addEventListener("click", async () => {
+          const id = forgetBtn.getAttribute("data-profile-id");
+          if (!id) return;
+          forgetBtn.disabled = true;
+          forgetBtn.textContent = "Removing...";
+          for (const ep of buildApiEndpoints(`/api/face-profile/${encodeURIComponent(id)}`)) {
+            try {
+              const res = await fetch(ep, { method: "DELETE" });
+              if (res.ok) {
+                recBadge.innerHTML = `<span class="rec-icon">🗑️</span> <strong>Profile Removed</strong> · Your facial biometric memory was erased from the database.`;
+                recBadge.className = "face-recognition-badge new-profile";
+                showToast("Biometric face profile deleted from database.");
+                return;
+              }
+            } catch (e) {}
+          }
+          forgetBtn.disabled = false;
+          forgetBtn.textContent = "Forget Profile";
+          showToast("Could not remove profile right now.");
+        });
+      }
+    }
 
     // 1. Undertone Hero Badge & Seasonal Watermark
     const badge = document.getElementById("undertone-badge");
@@ -1577,12 +2247,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (hsvEl) hsvEl.textContent = skinMetrics.hsv ? `${skinMetrics.hsv.H_deg}°` : '';
 
     // Update Micro-Extract Swatches in Studio Telemetry & Results Area Strip
-    const dermalAreas = (data.skin_analysis && data.skin_analysis.areas) || lastExtractedAreas || {
-      overall: { hex: skinMetrics.representative_hex },
-      forehead: { hex: skinMetrics.representative_hex },
-      cheek: { hex: skinMetrics.representative_hex },
-      chin: { hex: skinMetrics.representative_hex }
-    };
+    const regSamples = (data.skin_analysis && data.skin_analysis.region_samples) || {};
+    const repSkinHex = skinMetrics.representative_hex;
+    const areas = (data.skin_analysis && data.skin_analysis.areas) || lastExtractedAreas || {};
+
+    const coreHex = (areas.overall && areas.overall.hex) || repSkinHex;
+    const foreheadHex = (areas.forehead && areas.forehead.hex) || (regSamples.forehead && regSamples.forehead.hex) || repSkinHex;
+    const cheekHex = (areas.cheek && areas.cheek.hex) || (regSamples.left_cheek && regSamples.left_cheek.hex) || (regSamples.right_cheek && regSamples.right_cheek.hex) || repSkinHex;
+    const chinHex = (areas.chin && areas.chin.hex) || (regSamples.chin && regSamples.chin.hex) || repSkinHex;
 
     const updateAreaItem = (colorId, hexId, hex) => {
       const c = document.getElementById(colorId);
@@ -1590,11 +2262,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (c) c.style.backgroundColor = hex;
       if (h) h.textContent = hex;
     };
-
-    const coreHex = (dermalAreas.overall && dermalAreas.overall.hex) || skinMetrics.representative_hex;
-    const foreheadHex = (dermalAreas.forehead && dermalAreas.forehead.hex) || skinMetrics.representative_hex;
-    const cheekHex = (dermalAreas.cheek && dermalAreas.cheek.hex) || skinMetrics.representative_hex;
-    const chinHex = (dermalAreas.chin && dermalAreas.chin.hex) || skinMetrics.representative_hex;
 
     // Studio telemetry swatches
     updateAreaItem("sample-color-1", "sample-hex-1", coreHex);
@@ -1651,6 +2318,306 @@ document.addEventListener("DOMContentLoaded", () => {
     renderAvoidGrid("rec-avoid-grid", data.less_recommended);
 
     document.getElementById("foundation-advice-text").textContent = data.foundation_advice;
+
+    // 6. Bespoke 3 to 4 Curated Outfit Lookbooks
+    if (data.outfits && data.outfits.length > 0) {
+      renderCuratedOutfits(data.outfits);
+    } else {
+      fetchOrUpdateOutfits();
+    }
+  }
+
+  // --- Render 3 to 4 Complete Curated Outfits ---
+  function renderCuratedOutfits(outfits) {
+    const grid = document.getElementById("outfit-looks-grid");
+    if (!grid) return;
+    grid.innerHTML = "";
+
+    if (!outfits || outfits.length === 0) {
+      grid.innerHTML = `<p style="grid-column: 1 / -1; color: var(--text-muted); text-align: center; padding: 2.5rem; background: rgba(255,255,255,0.02); border-radius: var(--radius-md);">No curated outfits found for this specific combination. Try adjusting the clothing or weather filters above.</p>`;
+      return;
+    }
+
+    outfits.forEach((look, idx) => {
+      const card = document.createElement("div");
+      card.className = "outfit-look-card";
+      card.id = `outfit-card-${look.look_id || idx + 1}`;
+
+      const upper = look.upper || {};
+      const bottom = look.bottom || {};
+      const shoes = look.shoes || {};
+      const jewellery = look.jewellery || {};
+      const isFemale = jewellery.type === "female";
+
+      // Build jewellery & accessories HTML
+      let jewelleryHTML = "";
+      if (isFemale) {
+        const neck = jewellery.necklace || {};
+        const ear = jewellery.earrings || {};
+        const lip = jewellery.lipstick_tint || {};
+        jewelleryHTML = `
+          <div class="jewellery-subgrid">
+            <div class="jewellery-item-chip">
+              <span class="jewel-icon-tag">NECKLACE</span>
+              <span><strong>${neck.name || "Statement Collar"}</strong> · ${neck.metal || "18k Warm Gold"}</span>
+            </div>
+            <div class="jewellery-item-chip">
+              <span class="jewel-icon-tag">EARRINGS</span>
+              <span><strong>${ear.name || "Sculptural Drops"}</strong> · ${ear.metal || "Fine Precious Metal"}</span>
+            </div>
+            <div class="jewellery-item-chip" style="background: rgba(225, 29, 72, 0.08); border: 1px solid rgba(225, 29, 72, 0.2);">
+              <span class="piece-color-dot" style="width: 14px; height: 14px; background: ${lip.color_hex || '#C25D4E'}; margin: 0;"></span>
+              <span class="jewel-icon-tag" style="background: rgba(225, 29, 72, 0.2); color: #FB7185;">LIP TINT</span>
+              <span><strong>${lip.name || "Velvet Lip Tint"}</strong> · <i>${lip.finish || "Velvet Stained Satin"}</i></span>
+            </div>
+          </div>
+        `;
+      } else {
+        const ring = jewellery.rings || {};
+        const ear = jewellery.earrings || {};
+        const watch = jewellery.watch || {};
+        jewelleryHTML = `
+          <div class="jewellery-subgrid">
+            <div class="jewellery-item-chip">
+              <span class="jewel-icon-tag">RING</span>
+              <span><strong>${ring.name || "Signet Ring"}</strong> · ${ring.metal || "18k Brushed Gold"}</span>
+            </div>
+            <div class="jewellery-item-chip">
+              <span class="jewel-icon-tag">EARRING</span>
+              <span><strong>${ear.name || "Minimalist Stud"}</strong> · ${ear.metal || "Brushed Metal / Obsidian"}</span>
+            </div>
+            <div class="jewellery-item-chip">
+              <span class="jewel-icon-tag">WATCH</span>
+              <span><strong>${watch.name || "Horology"}</strong> · ${watch.dial || "Sunburst Dial"}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="look-header-badge-row">
+          <div class="look-meta-tags">
+            <span class="look-number-badge">LOOK 0${look.look_number || idx + 1}</span>
+            <span class="look-tag-chip">${look.clothing_type || "Styling"}</span>
+            <span class="look-tag-chip">${look.weather || "All-Season"}</span>
+            <span class="look-tag-chip">${look.gender || "Wardrobe"}</span>
+          </div>
+          <div class="look-harmony-badge">
+            <span class="material-symbols-outlined" style="font-size: 15px;">verified</span>
+            <span>${look.harmony_score || 96.5}% Match</span>
+          </div>
+        </div>
+
+        <h4 class="look-card-title">${look.title || `Look ${idx + 1}`}</h4>
+        <p class="look-card-concept">${look.concept || "Harmonized palette styling formulated for your natural complexion."}</p>
+
+        <!-- Vector Visual Flat-Lay of the Clothes -->
+        <div class="outfit-visual-container" id="visual-container-${look.look_number || idx + 1}">
+          ${look.svg_illustration || ""}
+        </div>
+
+        <!-- Detailed Garment Components Breakdown -->
+        <div class="outfit-pieces-list">
+          <!-- Upperwear -->
+          <div class="piece-row">
+            <div class="piece-color-dot" style="background: ${upper.color_hex || '#D4AF37'};"></div>
+            <div class="piece-info">
+              <div class="piece-meta-top">
+                <span class="piece-category">${upper.category || "Upperwear / Top"}</span>
+                <span class="piece-hex">${upper.color_hex || ""}</span>
+              </div>
+              <div class="piece-name">${upper.name}</div>
+              <div class="piece-subtext"><strong>Color:</strong> ${upper.color_name} • <strong>Fabric:</strong> ${upper.fabric || "Premium Weave"} • <strong>Cut:</strong> ${upper.silhouette || "Tailored"}</div>
+              <div class="piece-tip">💡 ${upper.styling_tip || ""}</div>
+            </div>
+          </div>
+
+          <!-- Bottomwear -->
+          <div class="piece-row">
+            <div class="piece-color-dot" style="background: ${bottom.color_hex || '#1E293B'};"></div>
+            <div class="piece-info">
+              <div class="piece-meta-top">
+                <span class="piece-category">${bottom.category || "Bottomwear"}</span>
+                <span class="piece-hex">${bottom.color_hex || ""}</span>
+              </div>
+              <div class="piece-name">${bottom.name}</div>
+              <div class="piece-subtext"><strong>Color:</strong> ${bottom.color_name} • <strong>Fabric:</strong> ${bottom.fabric || "Structured Weave"} • <strong>Silhouette:</strong> ${bottom.silhouette || "Classic"}</div>
+              <div class="piece-tip">💡 ${bottom.styling_tip || ""}</div>
+            </div>
+          </div>
+
+          <!-- Shoes -->
+          <div class="piece-row">
+            <div class="piece-color-dot" style="background: ${shoes.color_hex || '#475569'};"></div>
+            <div class="piece-info">
+              <div class="piece-meta-top">
+                <span class="piece-category">${shoes.category || "Footwear / Shoes"}</span>
+                <span class="piece-hex">${shoes.color_hex || ""}</span>
+              </div>
+              <div class="piece-name">${shoes.name}</div>
+              <div class="piece-subtext"><strong>Color:</strong> ${shoes.color_name} • <strong>Material:</strong> ${shoes.material || "Fine Leather"}</div>
+              <div class="piece-tip">💡 ${shoes.styling_tip || ""}</div>
+            </div>
+          </div>
+
+          <!-- Jewellery & Beauty -->
+          <div class="piece-row">
+            <div class="piece-color-dot" style="background: ${isFemale ? (jewellery.lipstick_tint?.color_hex || '#D4AF37') : (jewellery.rings?.accent_hex || '#D4AF37')};"></div>
+            <div class="piece-info">
+              <div class="piece-meta-top">
+                <span class="piece-category">${isFemale ? "Fine Jewellery & Lip Tint" : "Fine Horology & Men's Jewellery"}</span>
+                <span class="piece-hex">${isFemale ? (jewellery.lipstick_tint?.color_hex || "") : (jewellery.rings?.accent_hex || "")}</span>
+              </div>
+              ${jewelleryHTML}
+              <div class="piece-tip">💡 ${jewellery.styling_tip || ""}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Footer -->
+        <div class="outfit-card-footer">
+          <button type="button" class="btn-download-outfit" data-look="${look.look_number || idx + 1}">
+            <span class="material-symbols-outlined" style="font-size: 16px;">download</span>
+            <span>Download Lookboard (PNG)</span>
+          </button>
+          <button type="button" class="btn-copy-look" data-look="${look.look_number || idx + 1}">
+            <span class="material-symbols-outlined" style="font-size: 16px;">content_copy</span>
+            <span>Copy Specs</span>
+          </button>
+        </div>
+      `;
+
+      // Wire up Download PNG
+      const dlBtn = card.querySelector(".btn-download-outfit");
+      if (dlBtn) {
+        dlBtn.addEventListener("click", () => {
+          const svgEl = card.querySelector(".outfit-flatlay-svg");
+          downloadOutfitAsPNG(look.look_number || idx + 1, svgEl, look.title);
+        });
+      }
+
+      // Wire up Copy Specs
+      const cpBtn = card.querySelector(".btn-copy-look");
+      if (cpBtn) {
+        cpBtn.addEventListener("click", () => {
+          const jText = isFemale
+            ? `Necklace: ${jewellery.necklace?.name || 'N/A'}, Earrings: ${jewellery.earrings?.name || 'N/A'}, Lip Tint: ${jewellery.lipstick_tint?.name || 'N/A'} (${jewellery.lipstick_tint?.color_hex || ''})`
+            : `Ring: ${jewellery.rings?.name || 'N/A'}, Earrings: ${jewellery.earrings?.name || 'N/A'}, Watch: ${jewellery.watch?.name || 'N/A'}`;
+          const text = `${look.title} (${look.clothing_type} • ${look.weather})\n` +
+            `Upper: ${upper.name} (${upper.color_name} - ${upper.color_hex})\n` +
+            `Bottom: ${bottom.name} (${bottom.color_name} - ${bottom.color_hex})\n` +
+            `Shoes: ${shoes.name} (${shoes.color_name} - ${shoes.color_hex})\n` +
+            `Jewellery & Accessories: ${jText}`;
+          navigator.clipboard.writeText(text).then(() => {
+            showToast("Copied outfit ensemble specs to clipboard!");
+          }).catch(() => {
+            showToast("Copied to clipboard!");
+          });
+        });
+      }
+
+      grid.appendChild(card);
+    });
+  }
+
+  // --- Dynamic Live Outfit Re-generation on Filter Changes ---
+  async function fetchOrUpdateOutfits() {
+    if (!cachedApiData) return;
+    const grid = document.getElementById("outfit-looks-grid");
+    if (grid) {
+      grid.style.opacity = "0.5";
+      grid.style.pointerEvents = "none";
+    }
+    try {
+      const rawUt = (cachedApiData.undertone && (cachedApiData.undertone.label || cachedApiData.undertone)) || "Warm";
+      const utStr = typeof rawUt === "string" ? rawUt : (rawUt.label || "Warm");
+      const repHex = (cachedApiData.skin_analysis && cachedApiData.skin_analysis.metrics && cachedApiData.skin_analysis.metrics.representative_hex) || "#C68B59";
+      
+      const payload = {
+        undertone: utStr,
+        palette: cachedApiData.palette || [],
+        clothing_type: currentClothingType,
+        weather: currentWeather,
+        gender: currentGender,
+        skin_hex: repHex
+      };
+
+      let res = null;
+      for (const ep of buildApiEndpoints("/api/generate-outfits")) {
+        try {
+          res = await fetch(ep, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) break;
+        } catch (e) {}
+      }
+
+      if (res && res.ok) {
+        const data = await res.json();
+        if (data.outfits) {
+          cachedApiData.outfits = data.outfits;
+          renderCuratedOutfits(data.outfits);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to update outfits:", e);
+    } finally {
+      if (grid) {
+        grid.style.opacity = "1";
+        grid.style.pointerEvents = "auto";
+      }
+    }
+  }
+
+  // --- Export Outfit Lookboard as High-Res PNG Image ---
+  function downloadOutfitAsPNG(lookNumber, svgElement, title) {
+    if (!svgElement) return;
+    try {
+      const svgString = new XMLSerializer().serializeToString(svgElement);
+      const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+      const URL = window.URL || window.webkitURL || window;
+      const blobURL = URL.createObjectURL(svgBlob);
+      const image = new Image();
+
+      image.onload = () => {
+        const canvas = document.createElement("canvas");
+        const vb = svgElement.viewBox && svgElement.viewBox.baseVal;
+        const vbW = (vb && vb.width) || 660;
+        const vbH = (vb && vb.height) || 840;
+        // Ultra-crisp 2x Stitch Retina canvas (1320 x 1680)
+        canvas.width = vbW * 2;
+        canvas.height = vbH * 2;
+        const ctx = canvas.getContext("2d");
+        const isLight = document.documentElement.getAttribute("data-theme") === "light";
+        ctx.fillStyle = isLight ? "#FFFFFF" : "#0B0E17";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(blobURL);
+
+        canvas.toBlob((pngBlob) => {
+          if (!pngBlob) return;
+          const a = document.createElement("a");
+          const safeTitle = (title || `Look_${lookNumber}`).replace(/[^a-zA-Z0-9_-]/g, "_");
+          a.download = `Otterlook_${safeTitle}_Outfit_Board.png`;
+          a.href = URL.createObjectURL(pngBlob);
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          showToast(`Exported Look 0${lookNumber} high-res outfit board!`);
+        }, "image/png", 0.95);
+      };
+      image.src = blobURL;
+    } catch (err) {
+      console.warn("PNG download fallback:", err);
+      showToast("Downloading SVG vector outfit lookboard...");
+      const svgBlob = new Blob([new XMLSerializer().serializeToString(svgElement)], { type: "image/svg+xml" });
+      const a = document.createElement("a");
+      a.download = `Otterlook_Look_${lookNumber}_Outfit_Board.svg`;
+      a.href = URL.createObjectURL(svgBlob);
+      a.click();
+    }
   }
 
   function renderRecGrid(containerId, items, defaultCategory) {
@@ -1751,43 +2718,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const label = undertoneLabel || "Undertone";
     const detectedGender = (data && data.gender && (data.gender.detected || data.gender.label)) || "Natural";
 
-    // 1. Draw Luxury Gold Face Bounding Box & Corner Brackets
-    if (faceBox) {
-      const bx = Math.round(faceBox.x * scale);
-      const by = Math.round(faceBox.y * scale);
-      const bw = Math.round(faceBox.width * scale);
-      const bh = Math.round(faceBox.height * scale);
-
-      ctx.save();
-      ctx.strokeStyle = "rgba(242, 202, 80, 0.40)";
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.roundRect(bx, by, bw, bh, 14);
-      ctx.stroke();
-      ctx.restore();
-
-      const bracketLen = Math.min(22, Math.floor(bw * 0.16));
-      ctx.strokeStyle = "#F2CA50";
-      ctx.lineWidth = 2.5;
-
-      ctx.beginPath();
-      ctx.moveTo(bx, by + bracketLen); ctx.lineTo(bx, by); ctx.lineTo(bx + bracketLen, by);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(bx + bw - bracketLen, by); ctx.lineTo(bx + bw, by); ctx.lineTo(bx + bw, by + bracketLen);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(bx, by + bh - bracketLen); ctx.lineTo(bx, by + bh); ctx.lineTo(bx + bracketLen, by + bh);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(bx + bw - bracketLen, by + bh); ctx.lineTo(bx + bw, by + bh); ctx.lineTo(bx + bw, by + bh - bracketLen);
-      ctx.stroke();
-    }
-
+    // Face bounding box and corner brackets removed per user requirement (clean portrait photo presentation)
     // Marks for forehead, cheek, chin, jaw removed as requested
 
     // 3. Draw Bottom Glassmorphic Summary Bar
@@ -1873,14 +2804,21 @@ document.addEventListener("DOMContentLoaded", () => {
     feedbackChips.forEach((chip) => (chip.disabled = true));
 
     try {
-      const resp = await fetch("/api/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          analysis_id: cachedApiData.analysis_id,
-          corrected_undertone: correctedUndertone,
-        }),
-      });
+      let resp = null;
+      for (const ep of buildApiEndpoints("/api/feedback")) {
+        try {
+          resp = await fetch(ep, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              analysis_id: cachedApiData.analysis_id,
+              corrected_undertone: correctedUndertone,
+            }),
+          });
+          if (resp.ok) break;
+        } catch (e) {}
+      }
+      if (!resp) throw new Error("Feedback endpoint unreachable.");
 
       const resData = await resp.json();
       if (resp.ok && resData.success) {

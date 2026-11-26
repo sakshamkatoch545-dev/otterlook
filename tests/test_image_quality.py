@@ -37,3 +37,18 @@ def test_extreme_brightness():
     result = analyze_image_quality(bright_img)
     assert result["is_valid"] is False
     assert result["status"] == "Poor"
+
+
+def test_face_scoped_quality_ignores_dark_background():
+    """Verify bbox scoping evaluates lighting on the face region rather than a dark background."""
+    img = np.full((400, 400, 3), 5, dtype=np.uint8)  # pitch-black background
+    # Well-lit textured face patch in center [120, 120, 160, 160]
+    face_patch = np.random.randint(95, 195, (160, 160, 3), dtype=np.uint8)
+    img[120:280, 120:280] = face_patch
+
+    full_res = analyze_image_quality(img)
+    scoped_res = analyze_image_quality(img, bbox=[120, 120, 160, 160])
+
+    assert full_res["is_valid"] is False
+    assert scoped_res["is_valid"] is True
+    assert scoped_res["status"] in ["Good", "Acceptable"]

@@ -74,6 +74,42 @@ def test_api_feedback_validation(client):
 
 
 
+def test_api_detect_face_no_face(client):
+    import io, cv2, numpy as np
+    # Image with no face (solid black and solid color)
+    for color in [(0, 0, 0), (34, 139, 34), (255, 255, 255)]:
+        no_face_img = np.zeros((300, 300, 3), dtype=np.uint8)
+        no_face_img[:, :] = color
+        _, encoded = cv2.imencode('.jpg', no_face_img)
+
+        response = client.post(
+            '/api/detect-face',
+            files={'file': ('no_face.jpg', io.BytesIO(encoded.tobytes()), 'image/jpeg')}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data['has_face'] is False
+        assert data['face_count'] == 0
+        assert "No human face detected" in data['message']
+
+    # Test on floral / beige textured curtain fabric pattern (must NOT detect a face)
+    textured_img = np.zeros((400, 400, 3), dtype=np.uint8)
+    textured_img[:, :] = (169, 183, 184)  # Beige background (#B8B7A9)
+    # Add repetitive floral-like circles
+    for cx in range(50, 400, 80):
+        for cy in range(50, 400, 80):
+            cv2.circle(textured_img, (cx, cy), 25, (120, 140, 160), -1)
+            cv2.circle(textured_img, (cx, cy), 10, (80, 100, 120), -1)
+    _, enc_text = cv2.imencode('.jpg', textured_img)
+    resp_text = client.post(
+        '/api/detect-face',
+        files={'file': ('curtain_pattern.jpg', io.BytesIO(enc_text.tobytes()), 'image/jpeg')}
+    )
+    assert resp_text.status_code == 200
+    assert resp_text.json()['has_face'] is False
+    assert resp_text.json()['face_count'] == 0
+
+
 def test_api_analyze_no_face_gives_no_output(client):
     import io, cv2, numpy as np
     # Image with no face
@@ -89,6 +125,7 @@ def test_api_analyze_no_face_gives_no_output(client):
     assert response.status_code == 422
     data = response.json()
     assert data['success'] is False
-    assert data.get('stage') in ('face_detection', 'quality_check')
+    assert data.get('stage') == 'face_detection'
+    assert 'No human face detected' in data.get('error', '')
     assert 'undertone' not in data
     assert 'palette' not in data
