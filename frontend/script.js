@@ -1193,9 +1193,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // CONDITION 2: FACE IS DETECTED! Auto-select & focus if wide/group photo, then check face-scoped lighting
     const yoloBbox = yoloResult.bounding_box;
     if (!skipAutoCrop) {
-      detectedFacesList = (yoloResult.faces && yoloResult.faces.length)
-        ? yoloResult.faces
-        : (yoloBbox ? [yoloBbox] : []);
+      detectedFacesList = yoloBbox ? [yoloBbox] : [];
       selectedFaceIndex = 0;
 
       const faceAreaPct = yoloBbox && yoloBbox.pctW && yoloBbox.pctH ? (yoloBbox.pctW * yoloBbox.pctH) : 10000;

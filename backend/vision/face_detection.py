@@ -280,13 +280,11 @@ class FaceDetector:
         return [item[1] for item in scored]
 
     def _foreground_faces(self, ranked: List[Dict]) -> List[List[int]]:
-        """Keep only the primary foreground face and comparable-size foreground subjects (ignore small/distant bystanders)."""
+        """Return only the single closest, clearest primary foreground face."""
         if not ranked:
             return []
         primary = ranked[0]
-        primary_area = max(1, primary["w"] * primary["h"])
-        fg = [c for c in ranked[:5] if (c["w"] * c["h"]) >= 0.40 * primary_area]
-        return [[c["x"], c["y"], c["w"], c["h"]] for c in fg]
+        return [[primary["x"], primary["y"], primary["w"], primary["h"]]]
 
     def _pick_best_face_bbox(self, candidates: List[Dict], img_w: int, img_h: int, image_bgr: Optional[np.ndarray] = None) -> Optional[Dict]:
         """Score candidates by: largest area × confidence × centrality, return best valid face."""
