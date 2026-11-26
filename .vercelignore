@@ -1,0 +1,33 @@
+# Virtual environments & caches
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.git/
+.gitignore
+.env
+
+# Training datasets, scripts, & reports
+data/raw/
+data/processed/
+data/metadata/
+data/training.csv
+data/*.py
+data/*.md
+data/face_memory.db
+training/
+docs/
+results/
+tests/
+supabase/
+
+# Non-serverless entrypoints & unused heavy model weights
+streamlit_app.py
+app.py
+render.yaml
+Procfile
+backend/vision/models/lbfmodel.yaml
+backend/vision/models/yolov8n-face.pt
+backend/vision/models/blaze_face_short_range.tflite

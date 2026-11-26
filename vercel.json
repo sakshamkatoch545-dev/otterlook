@@ -2,7 +2,9 @@
   "version": 2,
   "functions": {
     "api/index.py": {
-      "memory": 1024
+      "memory": 1024,
+      "maxDuration": 30,
+      "excludeFiles": "{venv/**,data/**,training/**,docs/**,tests/**,results/**,streamlit_app.py,backend/vision/models/lbfmodel.yaml,backend/vision/models/yolov8n-face.pt,backend/vision/models/blaze_face_short_range.tflite}"
     }
   },
   "rewrites": [

@@ -748,7 +748,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const controller = new AbortController();
         const onParentAbort = () => controller.abort();
         sharedSignal.addEventListener("abort", onParentAbort, { once: true });
-        const tid = setTimeout(() => controller.abort(), 4000);
+        const tid = setTimeout(() => controller.abort(), 15000);
         const res = await fetch(ep, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1578,7 +1578,7 @@ document.addEventListener("DOMContentLoaded", () => {
         for (let ep of analyzeEndpoints) {
           try {
             const controller = new AbortController();
-            const tid = setTimeout(() => controller.abort(), 12000);
+            const tid = setTimeout(() => controller.abort(), 28000);
             const response = await fetch(ep, {
               method: "POST",
               body: formData,
@@ -1609,7 +1609,7 @@ document.addEventListener("DOMContentLoaded", () => {
         for (let ep of analyzeEndpoints) {
           try {
             const controller = new AbortController();
-            const tid = setTimeout(() => controller.abort(), 12000);
+            const tid = setTimeout(() => controller.abort(), 28000);
             const response = await fetch(ep, {
               method: "POST",
               headers: { "Content-Type": "application/json" },

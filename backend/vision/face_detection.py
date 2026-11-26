@@ -47,7 +47,10 @@ class FaceDetector:
 
     def _init_detectors(self):
         models_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
-        os.makedirs(models_dir, exist_ok=True)
+        try:
+            os.makedirs(models_dir, exist_ok=True)
+        except OSError:
+            pass
 
         # 1. MediaPipe Tasks Face Detection (mediapipe >= 0.10 / 1.x API)
         try:
