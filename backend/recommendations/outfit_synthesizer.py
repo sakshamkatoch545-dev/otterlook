@@ -1705,19 +1705,21 @@ def _generate_outfit_svg(
     lipstick_name = jewellery_piece.get("lipstick_tint", {}).get("name", "Lip Tint") if is_female else "Chronograph"
     lipstick_finish = jewellery_piece.get("lipstick_tint", {}).get("finish", "Velvet Stain") if is_female else "Sunburst Dial"
 
-    # Clean display labels with elegant capitalization and safe length
-    disp_upper = upper_name.strip()
-    disp_bottom = bottom_name.strip()
-    disp_shoes = shoes_name.strip()
-    disp_lip = lipstick_name.strip()
-    disp_upper_fab = upper_fabric.strip()
-    disp_bottom_fab = bottom_fabric.strip()
-    disp_shoes_mat = shoes_material.strip()
+    # Clean display labels with XML-safe escaping
+    import html as _html
+    disp_upper = _html.escape(upper_name.strip()[:24], quote=False)
+    disp_bottom = _html.escape(bottom_name.strip()[:24], quote=False)
+    disp_shoes = _html.escape(shoes_name.strip()[:22], quote=False)
+    disp_lip = _html.escape(lipstick_name.strip()[:18], quote=False)
+    disp_upper_fab = _html.escape(upper_fabric.strip()[:24], quote=False)
+    disp_bottom_fab = _html.escape(bottom_fabric.strip()[:24], quote=False)
+    disp_shoes_mat = _html.escape(shoes_material.strip()[:22], quote=False)
+    lipstick_finish = _html.escape(lipstick_finish.strip(), quote=False)
 
     # Determine metal tone label
     metal_name = "18k Polished Gold" if any(k in jewel_hex.upper() for k in ["D4", "E8", "C5", "F2", "FFE"]) else "Brushed Sterling / Titanium"
 
-    svg = f"""<svg viewBox="0 0 660 840" xmlns="http://www.w3.org/2000/svg" class="outfit-flatlay-svg">
+    svg = f"""<svg viewBox="0 0 1120 460" xmlns="http://www.w3.org/2000/svg" class="outfit-flatlay-svg">
   <defs>
     <!-- Stitch Adaptive Theme Engine -->
     <style>
@@ -1806,367 +1808,238 @@ def _generate_outfit_svg(
 
     <!-- Soft Drop Shadows -->
     <filter id="softShadow_{look_number}" x="-12%" y="-12%" width="124%" height="124%">
-      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.45" />
+      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000000" flood-opacity="0.40" />
     </filter>
   </defs>
 
-  <!-- 1. BOARD CANVAS FRAME (660 x 840) -->
-  <rect width="660" height="840" rx="20" class="stitch-board-canvas" />
+  <!-- 1. FULL-RECTANGLE BOARD CANVAS (1120 x 460) -->
+  <rect width="1120" height="460" rx="18" class="stitch-board-canvas" />
+  <rect x="0" y="0" width="1120" height="4" fill="url(#goldGrad_{look_number})" />
 
-  <!-- Top Decorative Gold Accent Bar -->
-  <rect x="0" y="0" width="660" height="4" fill="url(#goldGrad_{look_number})" />
-  
-  <!-- Header Bar -->
-  <rect x="18" y="16" width="624" height="46" rx="10" class="stitch-header-pill" />
-  <text x="34" y="44" class="stitch-text-gold" font-size="14" font-weight="700" letter-spacing="0.5">LOOK 0{look_number} • HAUTE ATELIER LOOKBOOK</text>
-  
-  <!-- Mini Palette Swatches in Header -->
-  <g transform="translate(490, 31)">
+  <!-- Top Header Bar -->
+  <rect x="18" y="16" width="1084" height="46" rx="10" class="stitch-header-pill" />
+  <text x="36" y="44" class="stitch-text-gold" font-size="14" font-weight="700" letter-spacing="0.6">LOOK 0{look_number} • HAUTE ATELIER LOOKBOOK</text>
+
+  <!-- Chromatic Dots + Harmony Pill in Header -->
+  <g transform="translate(808, 31)">
     <circle cx="10" cy="8" r="8" fill="{upper_hex}" stroke="#fff" stroke-opacity="0.3" stroke-width="1" />
     <circle cx="34" cy="8" r="8" fill="{bottom_hex}" stroke="#fff" stroke-opacity="0.3" stroke-width="1" />
     <circle cx="58" cy="8" r="8" fill="{shoes_hex}" stroke="#fff" stroke-opacity="0.3" stroke-width="1" />
     <circle cx="82" cy="8" r="8" fill="{jewel_hex}" stroke="url(#goldGrad_{look_number})" stroke-width="1.5" />
     <circle cx="106" cy="8" r="8" fill="{lipstick_hex}" stroke="#fff" stroke-opacity="0.3" stroke-width="1" />
   </g>
-
-  <!-- 2. SARTORIAL CENTER GUIDELINE -->
-  <line x1="300" y1="78" x2="300" y2="540" class="stitch-center-guide" />
-
-  <!-- ==================== LEFT SIDE: STRUCTURED SPEC TABLES WITH POINTER ARROWS ==================== -->
-  
-  <!-- A. UPPERWEAR SPEC TABLE -->
-  <g>
-    <rect x="18" y="88" width="172" height="114" rx="8" class="stitch-spec-card" />
-    <rect x="18" y="88" width="172" height="24" rx="8" class="stitch-spec-hdr" />
-    <text x="28" y="104" class="stitch-text-gold" font-size="9" font-weight="800" letter-spacing="0.5">UPPERWEAR SPEC</text>
-    
-    <text x="28" y="126" class="stitch-text-muted" font-size="7.5" font-weight="700" letter-spacing="0.3">PIECE</text>
-    <text x="68" y="126" class="stitch-text-title" font-size="9" font-weight="700">{disp_upper[:20]}</text>
-    
-    <text x="28" y="148" class="stitch-text-muted" font-size="7.5" font-weight="700" letter-spacing="0.3">FABRIC</text>
-    <text x="68" y="148" class="stitch-text-body" font-size="8.5" font-weight="600">{disp_upper_fab[:20]}</text>
-    
-    <text x="28" y="172" class="stitch-text-muted" font-size="7.5" font-weight="700" letter-spacing="0.3">TONE</text>
-    <circle cx="74" cy="169" r="5" fill="{upper_hex}" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
-    <text x="86" y="172" class="stitch-text-title" font-family="'JetBrains Mono', monospace" font-size="8.5" font-weight="600">{upper_hex.upper()}</text>
-    
-    <!-- Precision Indicator Pointer Arrow (pointing to shirt chest) -->
-    <path d="M 190 144 L 236 144" class="stitch-arrow-line" />
-    <circle cx="190" cy="144" r="3" class="stitch-arrow-head" />
-    <polygon points="236,140 244,144 236,148" class="stitch-arrow-head" />
-  </g>
-
-  <!-- B. BOTTOMWEAR SPEC TABLE -->
-  <g>
-    <rect x="18" y="268" width="172" height="114" rx="8" class="stitch-spec-card" />
-    <rect x="18" y="268" width="172" height="24" rx="8" class="stitch-spec-hdr" />
-    <text x="28" y="284" class="stitch-text-gold" font-size="9" font-weight="800" letter-spacing="0.5">BOTTOMWEAR SPEC</text>
-    
-    <text x="28" y="306" class="stitch-text-muted" font-size="7.5" font-weight="700" letter-spacing="0.3">PIECE</text>
-    <text x="68" y="306" class="stitch-text-title" font-size="9" font-weight="700">{disp_bottom[:20]}</text>
-    
-    <text x="28" y="328" class="stitch-text-muted" font-size="7.5" font-weight="700" letter-spacing="0.3">FABRIC</text>
-    <text x="68" y="328" class="stitch-text-body" font-size="8.5" font-weight="600">{disp_bottom_fab[:20]}</text>
-    
-    <text x="28" y="352" class="stitch-text-muted" font-size="7.5" font-weight="700" letter-spacing="0.3">TONE</text>
-    <circle cx="74" cy="349" r="5" fill="{bottom_hex}" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
-    <text x="86" y="352" class="stitch-text-title" font-family="'JetBrains Mono', monospace" font-size="8.5" font-weight="600">{bottom_hex.upper()}</text>
-    
-    <!-- Precision Indicator Pointer Arrow (pointing to trousers leg) -->
-    <path d="M 190 324 L 244 324" class="stitch-arrow-line" />
-    <circle cx="190" cy="324" r="3" class="stitch-arrow-head" />
-    <polygon points="244,320 252,324 244,328" class="stitch-arrow-head" />
-  </g>
-
-  <!-- C. FOOTWEAR SPEC TABLE -->
-  <g>
-    <rect x="18" y="440" width="172" height="114" rx="8" class="stitch-spec-card" />
-    <rect x="18" y="440" width="172" height="24" rx="8" class="stitch-spec-hdr" />
-    <text x="28" y="456" class="stitch-text-gold" font-size="9" font-weight="800" letter-spacing="0.5">FOOTWEAR SPEC</text>
-    
-    <text x="28" y="478" class="stitch-text-muted" font-size="7.5" font-weight="700" letter-spacing="0.3">PIECE</text>
-    <text x="68" y="478" class="stitch-text-title" font-size="9" font-weight="700">{disp_shoes[:20]}</text>
-    
-    <text x="28" y="500" class="stitch-text-muted" font-size="7.5" font-weight="700" letter-spacing="0.3">MATERIAL</text>
-    <text x="74" y="500" class="stitch-text-body" font-size="8.5" font-weight="600">{disp_shoes_mat[:18]}</text>
-    
-    <text x="28" y="524" class="stitch-text-muted" font-size="7.5" font-weight="700" letter-spacing="0.3">TONE</text>
-    <circle cx="74" cy="521" r="5" fill="{shoes_hex}" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
-    <text x="86" y="524" class="stitch-text-title" font-family="'JetBrains Mono', monospace" font-size="8.5" font-weight="600">{shoes_hex.upper()}</text>
-    
-    <!-- Precision Indicator Pointer Arrow (pointing to shoes) -->
-    <path d="M 190 480 L 236 480" class="stitch-arrow-line" />
-    <circle cx="190" cy="480" r="3" class="stitch-arrow-head" />
-    <polygon points="236,476 244,480 236,484" class="stitch-arrow-head" />
-  </g>
+  <rect x="946" y="25" width="138" height="28" rx="14" fill="rgba(52, 211, 153, 0.14)" stroke="#34D399" stroke-width="1.2" />
+  <text x="962" y="43" fill="#34D399" font-family="'Plus Jakarta Sans', system-ui" font-size="10.5" font-weight="800">★ 96.8% HARMONY</text>
 
 
-  <!-- ==================== CENTER STUDIO: GARMENTS WITH GENEROUS PHYSICAL SPACING ==================== -->
+  <!-- ==================== 4 SEPARATE COLUMNS ACROSS FULL RECTANGLE ==================== -->
 
-  <!-- 1. UPPERWEAR SHIRT (y: 88 to 220) -->
-  <g filter="url(#softShadow_{look_number})">
-    <!-- Tailored Upper Silhouette with Notched Collar & Drape -->
-    <path d="M 250 88 L 279 107 L 321 107 L 350 88 L 388 124 L 362 152 L 344 142 L 344 220 L 256 220 L 256 142 L 238 152 L 212 124 Z" 
-          fill="url(#upperGrad_{look_number})" stroke="rgba(255,255,255,0.22)" stroke-width="1.2" />
-    
-    <!-- Lapel / V-Neckfold -->
-    <path d="M 279 107 L 300 144 L 321 107 Z" fill="rgba(0,0,0,0.22)" />
-    <path d="M 300 107 L 300 144" stroke="rgba(255,255,255,0.25)" stroke-width="1" />
-    
-    <!-- Sartorial Buttons & Placket -->
-    <line x1="300" y1="144" x2="300" y2="220" stroke="rgba(255,255,255,0.22)" stroke-width="1.2" stroke-dasharray="4,2" />
-    <circle cx="300" cy="162" r="2.8" fill="url(#goldGrad_{look_number})" />
-    <circle cx="300" cy="186" r="2.8" fill="url(#goldGrad_{look_number})" />
-    <circle cx="300" cy="210" r="2.8" fill="url(#goldGrad_{look_number})" />
-    
-    <!-- Pocket Accent Detail -->
-    <path d="M 264 172 L 286 172" stroke="rgba(255,255,255,0.22)" stroke-width="1.5" />
-  </g>
+  <!-- COLUMN 1: 01 • UPPERWEAR / SHIRT (x: 18, w: 259, y: 76, h: 318) -->
+  <g transform="translate(18, 76)">
+    <rect width="259" height="318" rx="12" class="stitch-spec-card" />
+    <rect width="259" height="32" rx="12" class="stitch-spec-hdr" />
+    <rect x="0" y="18" width="259" height="14" class="stitch-spec-hdr" />
+    <text x="16" y="21" class="stitch-text-gold" font-size="10" font-weight="800" letter-spacing="0.7">01 • UPPERWEAR / SHIRT</text>
 
-  <!-- *** GENEROUS PHYSICAL GAP 1: 35px empty breathing room between shirt (y:220) and trousers (y:255) *** -->
-
-  <!-- 2. BOTTOMWEAR TROUSERS (y: 255 to 415) -->
-  <g filter="url(#softShadow_{look_number})">
-    <!-- Contoured Waistband & Belt Loops -->
-    <rect x="254" y="255" width="92" height="15" rx="2" fill="url(#bottomGrad_{look_number})" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
-    <line x1="274" y1="255" x2="274" y2="270" stroke="rgba(255,255,255,0.25)" stroke-width="1.2" />
-    <line x1="300" y1="255" x2="300" y2="270" stroke="url(#goldGrad_{look_number})" stroke-width="1.5" />
-    <line x1="326" y1="255" x2="326" y2="270" stroke="rgba(255,255,255,0.25)" stroke-width="1.2" />
-
-    <!-- Tailored Trouser Legs -->
-    <path d="M 254 270 L 244 415 L 292 415 L 300 315 L 308 415 L 356 415 L 346 270 Z" 
-          fill="url(#bottomGrad_{look_number})" stroke="rgba(255,255,255,0.2)" stroke-width="1.2" />
-
-    <!-- Pressed Center Crease Lines -->
-    <line x1="268" y1="274" x2="268" y2="410" stroke="rgba(255,255,255,0.18)" stroke-width="1.2" />
-    <line x1="332" y1="274" x2="332" y2="410" stroke="rgba(255,255,255,0.18)" stroke-width="1.2" />
-    
-    <!-- Turn-up Hem Cuffs -->
-    <rect x="243" y="407" width="50" height="8" rx="1.5" fill="rgba(0,0,0,0.2)" stroke="rgba(255,255,255,0.15)" />
-    <rect x="307" y="407" width="50" height="8" rx="1.5" fill="rgba(0,0,0,0.2)" stroke="rgba(255,255,255,0.15)" />
-  </g>
-
-  <!-- *** GENEROUS PHYSICAL GAP 2: 32px empty breathing room between trousers (y:415) and shoes (y:448) *** -->
-
-  <!-- 3. FOOTWEAR ENSEMBLE (Sartorial Loafer/Sneaker Silhouette with 20px Center Separation) -->
-  <g filter="url(#softShadow_{look_number})">
-    <!-- Soft Contact Shadows Underneath -->
-    <ellipse cx="268" cy="508" rx="22" ry="3.5" fill="#000000" fill-opacity="0.45" />
-    <ellipse cx="332" cy="508" rx="22" ry="3.5" fill="#000000" fill-opacity="0.45" />
-
-    <!-- === LEFT SHOE (Centered at x = 268 beneath left trouser leg, width: 44px, x: 246 to 290) === -->
-    <g id="leftShoe_{look_number}">
-      <!-- Outsole Base (Stacked leather/rubber welt) -->
-      <path d="M 252 454 C 244 466, 244 488, 252 502 C 258 508, 276 509, 284 502 C 291 494, 287 472, 283 454 C 281 450, 255 450, 252 454 Z" 
-            fill="#0C1017" stroke="rgba(255,255,255,0.18)" stroke-width="1.2" />
-      
-      <!-- Contrast Welt Stitched Edge -->
-      <path d="M 251 458 C 245 470, 245 488, 253 501 C 258 506, 275 507, 283 501 C 289 493, 286 474, 282 458 Z" 
-            fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="0.8" stroke-dasharray="2,1.5" />
-      
-      <!-- Upper Leather Body -->
-      <path d="M 253 456 C 246 468, 246 488, 254 500 C 259 505, 274 506, 282 500 C 288 492, 285 474, 281 456 C 279 452, 255 452, 253 456 Z" 
-            fill="url(#shoeGrad_{look_number})" stroke="rgba(255,255,255,0.32)" stroke-width="1" />
-      
-      <!-- Stitched Apron / Toe Box Contour -->
-      <path d="M 255 488 C 259 496, 277 496, 281 488" 
-            fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1" stroke-dasharray="2.5,1.5" />
-      
-      <!-- Instep Saddle Strap -->
-      <path d="M 248 474 C 267 476, 269 476, 288 474 L 287 482 C 269 484, 267 484, 249 482 Z" 
-            fill="url(#shoeGrad_{look_number})" stroke="rgba(255,255,255,0.38)" stroke-width="0.8" />
-      <rect x="262" y="476" width="12" height="3.5" rx="1.5" fill="#0C1017" stroke="url(#goldGrad_{look_number})" stroke-width="0.8" />
-      
-      <!-- Foot Entry Collar & Insole Depth -->
-      <ellipse cx="267" cy="462" rx="9" ry="6" fill="#0E121A" stroke="rgba(255,255,255,0.22)" stroke-width="1" />
-      <ellipse cx="267" cy="464" rx="6" ry="3.5" fill="#182030" />
-      <circle cx="267" cy="459" r="1.6" fill="url(#goldGrad_{look_number})" />
+    <!-- Tailored Shirt Illustration centered at x=129 -->
+    <g filter="url(#softShadow_{look_number})" transform="translate(-171, -40)">
+      <path d="M 250 88 L 279 107 L 321 107 L 350 88 L 388 124 L 362 152 L 344 142 L 344 220 L 256 220 L 256 142 L 238 152 L 212 124 Z"
+            fill="url(#upperGrad_{look_number})" stroke="rgba(255,255,255,0.22)" stroke-width="1.2" />
+      <path d="M 279 107 L 300 144 L 321 107 Z" fill="rgba(0,0,0,0.22)" />
+      <path d="M 300 107 L 300 144" stroke="rgba(255,255,255,0.25)" stroke-width="1" />
+      <line x1="300" y1="144" x2="300" y2="220" stroke="rgba(255,255,255,0.22)" stroke-width="1.2" stroke-dasharray="4,2" />
+      <circle cx="300" cy="162" r="2.8" fill="url(#goldGrad_{look_number})" />
+      <circle cx="300" cy="186" r="2.8" fill="url(#goldGrad_{look_number})" />
+      <circle cx="300" cy="210" r="2.8" fill="url(#goldGrad_{look_number})" />
+      <path d="M 264 172 L 286 172" stroke="rgba(255,255,255,0.22)" stroke-width="1.5" />
     </g>
 
-    <!-- *** 20px LATERAL SEPARATION GAP: Left shoe ends at x=290, Right shoe starts at x=310 across center guide x=300 *** -->
+    <!-- Spec Footer inside Panel 1 -->
+    <line x1="16" y1="210" x2="243" y2="210" class="stitch-divider" />
+    <text x="16" y="232" class="stitch-text-muted" font-size="8.5" font-weight="700">PIECE</text>
+    <text x="72" y="232" class="stitch-text-title" font-size="10.5" font-weight="700">{disp_upper}</text>
 
-    <!-- === RIGHT SHOE (Centered at x = 332 beneath right trouser leg, width: 44px, x: 310 to 354) === -->
-    <g id="rightShoe_{look_number}">
-      <!-- Outsole Base (Stacked leather/rubber welt) -->
-      <path d="M 317 454 C 313 472, 309 494, 316 502 C 324 509, 342 508, 348 502 C 356 488, 356 466, 348 454 C 345 450, 319 450, 317 454 Z" 
-            fill="#0C1017" stroke="rgba(255,255,255,0.18)" stroke-width="1.2" />
-      
-      <!-- Contrast Welt Stitched Edge -->
-      <path d="M 318 458 C 314 474, 311 493, 317 501 C 325 507, 342 506, 347 501 C 355 488, 355 470, 349 458 Z" 
-            fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="0.8" stroke-dasharray="2,1.5" />
-      
-      <!-- Upper Leather Body -->
-      <path d="M 319 456 C 315 474, 312 492, 318 500 C 326 506, 341 505, 346 500 C 354 488, 354 468, 347 456 C 345 452, 321 452, 319 456 Z" 
-            fill="url(#shoeGrad_{look_number})" stroke="rgba(255,255,255,0.32)" stroke-width="1" />
-      
-      <!-- Stitched Apron / Toe Box Contour -->
-      <path d="M 319 488 C 323 496, 341 496, 345 488" 
-            fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1" stroke-dasharray="2.5,1.5" />
-      
-      <!-- Instep Saddle Strap -->
-      <path d="M 312 474 C 331 476, 333 476, 352 474 L 351 482 C 333 484, 331 484, 313 482 Z" 
-            fill="url(#shoeGrad_{look_number})" stroke="rgba(255,255,255,0.38)" stroke-width="0.8" />
-      <rect x="326" y="476" width="12" height="3.5" rx="1.5" fill="#0C1017" stroke="url(#goldGrad_{look_number})" stroke-width="0.8" />
-      
-      <!-- Foot Entry Collar & Insole Depth -->
-      <ellipse cx="333" cy="462" rx="9" ry="6" fill="#0E121A" stroke="rgba(255,255,255,0.22)" stroke-width="1" />
-      <ellipse cx="333" cy="464" rx="6" ry="3.5" fill="#182030" />
-      <circle cx="333" cy="459" r="1.6" fill="url(#goldGrad_{look_number})" />
-    </g>
+    <text x="16" y="256" class="stitch-text-muted" font-size="8.5" font-weight="700">FABRIC</text>
+    <text x="72" y="256" class="stitch-text-body" font-size="9.5" font-weight="600">{disp_upper_fab}</text>
+
+    <text x="16" y="284" class="stitch-text-muted" font-size="8.5" font-weight="700">TONE</text>
+    <circle cx="80" cy="280" r="7" fill="{upper_hex}" stroke="rgba(255,255,255,0.4)" stroke-width="1.2" />
+    <text x="94" y="284" class="stitch-text-title" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700">{upper_hex.upper()}</text>
   </g>
 
 
-  <!-- ==================== 3. RIGHT STUDIO VAULT: HAUTE JEWELLERY & BEAUTY ==================== -->
-  <g>
-    <!-- Showcase Vault Panel -->
-    <rect x="390" y="88" width="252" height="466" rx="14" class="stitch-vault-panel" />
-    <rect x="390" y="88" width="252" height="34" rx="14" class="stitch-header-pill" />
-    <rect x="390" y="108" width="252" height="14" class="stitch-header-pill" />
-    
-    <!-- Vault Badge Header -->
-    <text x="404" y="110" class="stitch-text-gold" font-size="10" font-weight="800" letter-spacing="0.8">
-      {"HAUTE JEWELLERY & BEAUTY" if is_female else "HAUTE HOROLOGY & JEWELLERY"}
+  <!-- COLUMN 2: 02 • BOTTOMWEAR / TROUSER (x: 293, w: 259, y: 76, h: 318) -->
+  <g transform="translate(293, 76)">
+    <rect width="259" height="318" rx="12" class="stitch-spec-card" />
+    <rect width="259" height="32" rx="12" class="stitch-spec-hdr" />
+    <rect x="0" y="18" width="259" height="14" class="stitch-spec-hdr" />
+    <text x="16" y="21" class="stitch-text-gold" font-size="10" font-weight="800" letter-spacing="0.7">02 • BOTTOMWEAR / TROUSER</text>
+
+    <!-- Tailored Trouser Illustration centered at x=129 -->
+    <g filter="url(#softShadow_{look_number})" transform="translate(-171, -212)">
+      <rect x="254" y="255" width="92" height="15" rx="2" fill="url(#bottomGrad_{look_number})" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+      <line x1="274" y1="255" x2="274" y2="270" stroke="rgba(255,255,255,0.25)" stroke-width="1.2" />
+      <line x1="300" y1="255" x2="300" y2="270" stroke="url(#goldGrad_{look_number})" stroke-width="1.5" />
+      <line x1="326" y1="255" x2="326" y2="270" stroke="rgba(255,255,255,0.25)" stroke-width="1.2" />
+      <path d="M 254 270 L 244 410 L 292 410 L 300 315 L 308 410 L 356 410 L 346 270 Z"
+            fill="url(#bottomGrad_{look_number})" stroke="rgba(255,255,255,0.2)" stroke-width="1.2" />
+      <line x1="268" y1="274" x2="268" y2="405" stroke="rgba(255,255,255,0.18)" stroke-width="1.2" />
+      <line x1="332" y1="274" x2="332" y2="405" stroke="rgba(255,255,255,0.18)" stroke-width="1.2" />
+      <rect x="243" y="402" width="50" height="8" rx="1.5" fill="rgba(0,0,0,0.2)" stroke="rgba(255,255,255,0.15)" />
+      <rect x="307" y="402" width="50" height="8" rx="1.5" fill="rgba(0,0,0,0.2)" stroke="rgba(255,255,255,0.15)" />
+    </g>
+
+    <!-- Spec Footer inside Panel 2 -->
+    <line x1="16" y1="210" x2="243" y2="210" class="stitch-divider" />
+    <text x="16" y="232" class="stitch-text-muted" font-size="8.5" font-weight="700">PIECE</text>
+    <text x="72" y="232" class="stitch-text-title" font-size="10.5" font-weight="700">{disp_bottom}</text>
+
+    <text x="16" y="256" class="stitch-text-muted" font-size="8.5" font-weight="700">FABRIC</text>
+    <text x="72" y="256" class="stitch-text-body" font-size="9.5" font-weight="600">{disp_bottom_fab}</text>
+
+    <text x="16" y="284" class="stitch-text-muted" font-size="8.5" font-weight="700">TONE</text>
+    <circle cx="80" cy="280" r="7" fill="{bottom_hex}" stroke="rgba(255,255,255,0.4)" stroke-width="1.2" />
+    <text x="94" y="284" class="stitch-text-title" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700">{bottom_hex.upper()}</text>
+  </g>
+
+
+  <!-- COLUMN 3: 03 • FOOTWEAR / SHOES (x: 568, w: 259, y: 76, h: 318) -->
+  <g transform="translate(568, 76)">
+    <rect width="259" height="318" rx="12" class="stitch-spec-card" />
+    <rect width="259" height="32" rx="12" class="stitch-spec-hdr" />
+    <rect x="0" y="18" width="259" height="14" class="stitch-spec-hdr" />
+    <text x="16" y="21" class="stitch-text-gold" font-size="10" font-weight="800" letter-spacing="0.7">03 • FOOTWEAR / SHOES</text>
+
+    <!-- Separated Left & Right Shoes scaled crisply & centered at x=129 -->
+    <g filter="url(#softShadow_{look_number})" transform="translate(-259, -460) scale(1.30)">
+      <ellipse cx="268" cy="508" rx="22" ry="3.5" fill="#000000" fill-opacity="0.40" />
+      <ellipse cx="332" cy="508" rx="22" ry="3.5" fill="#000000" fill-opacity="0.40" />
+      <!-- Left Shoe -->
+      <g>
+        <path d="M 252 454 C 244 466, 244 488, 252 502 C 258 508, 276 509, 284 502 C 291 494, 287 472, 283 454 C 281 450, 255 450, 252 454 Z"
+              fill="#0C1017" stroke="rgba(255,255,255,0.18)" stroke-width="1.2" />
+        <path d="M 251 458 C 245 470, 245 488, 253 501 C 258 506, 275 507, 283 501 C 289 493, 286 474, 282 458 Z"
+              fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="0.8" stroke-dasharray="2,1.5" />
+        <path d="M 253 456 C 246 468, 246 488, 254 500 C 259 505, 274 506, 282 500 C 288 492, 285 474, 281 456 C 279 452, 255 452, 253 456 Z"
+              fill="url(#shoeGrad_{look_number})" stroke="rgba(255,255,255,0.32)" stroke-width="1" />
+        <path d="M 255 488 C 259 496, 277 496, 281 488"
+              fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1" stroke-dasharray="2.5,1.5" />
+        <path d="M 248 474 C 267 476, 269 476, 288 474 L 287 482 C 269 484, 267 484, 249 482 Z"
+              fill="url(#shoeGrad_{look_number})" stroke="rgba(255,255,255,0.38)" stroke-width="0.8" />
+        <rect x="262" y="476" width="12" height="3.5" rx="1.5" fill="#0C1017" stroke="url(#goldGrad_{look_number})" stroke-width="0.8" />
+        <ellipse cx="267" cy="462" rx="9" ry="6" fill="#0E121A" stroke="rgba(255,255,255,0.22)" stroke-width="1" />
+        <ellipse cx="267" cy="464" rx="6" ry="3.5" fill="#182030" />
+        <circle cx="267" cy="459" r="1.6" fill="url(#goldGrad_{look_number})" />
+      </g>
+      <!-- Right Shoe -->
+      <g>
+        <path d="M 317 454 C 313 472, 309 494, 316 502 C 324 509, 342 508, 348 502 C 356 488, 356 466, 348 454 C 345 450, 319 450, 317 454 Z"
+              fill="#0C1017" stroke="rgba(255,255,255,0.18)" stroke-width="1.2" />
+        <path d="M 318 458 C 314 474, 311 493, 317 501 C 325 507, 342 506, 347 501 C 355 488, 355 470, 349 458 Z"
+              fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="0.8" stroke-dasharray="2,1.5" />
+        <path d="M 319 456 C 315 474, 312 492, 318 500 C 326 506, 341 505, 346 500 C 354 488, 354 468, 347 456 C 345 452, 321 452, 319 456 Z"
+              fill="url(#shoeGrad_{look_number})" stroke="rgba(255,255,255,0.32)" stroke-width="1" />
+        <path d="M 319 488 C 323 496, 341 496, 345 488"
+              fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1" stroke-dasharray="2.5,1.5" />
+        <path d="M 312 474 C 331 476, 333 476, 352 474 L 351 482 C 333 484, 331 484, 313 482 Z"
+              fill="url(#shoeGrad_{look_number})" stroke="rgba(255,255,255,0.38)" stroke-width="0.8" />
+        <rect x="326" y="476" width="12" height="3.5" rx="1.5" fill="#0C1017" stroke="url(#goldGrad_{look_number})" stroke-width="0.8" />
+        <ellipse cx="333" cy="462" rx="9" ry="6" fill="#0E121A" stroke="rgba(255,255,255,0.22)" stroke-width="1" />
+        <ellipse cx="333" cy="464" rx="6" ry="3.5" fill="#182030" />
+        <circle cx="333" cy="459" r="1.6" fill="url(#goldGrad_{look_number})" />
+      </g>
+    </g>
+
+    <!-- Spec Footer inside Panel 3 -->
+    <line x1="16" y1="210" x2="243" y2="210" class="stitch-divider" />
+    <text x="16" y="232" class="stitch-text-muted" font-size="8.5" font-weight="700">PIECE</text>
+    <text x="76" y="232" class="stitch-text-title" font-size="10.5" font-weight="700">{disp_shoes}</text>
+
+    <text x="16" y="256" class="stitch-text-muted" font-size="8.5" font-weight="700">MATERIAL</text>
+    <text x="76" y="256" class="stitch-text-body" font-size="9.5" font-weight="600">{disp_shoes_mat}</text>
+
+    <text x="16" y="284" class="stitch-text-muted" font-size="8.5" font-weight="700">TONE</text>
+    <circle cx="82" cy="280" r="7" fill="{shoes_hex}" stroke="rgba(255,255,255,0.4)" stroke-width="1.2" />
+    <text x="96" y="284" class="stitch-text-title" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700">{shoes_hex.upper()}</text>
+  </g>
+
+
+  <!-- COLUMN 4: 04 • JEWELLERY & HOROLOGY / BEAUTY (x: 843, w: 259, y: 76, h: 318) -->
+  <g transform="translate(843, 76)">
+    <rect width="259" height="318" rx="12" class="stitch-vault-panel" />
+    <rect width="259" height="32" rx="12" class="stitch-header-pill" />
+    <rect x="0" y="18" width="259" height="14" class="stitch-header-pill" />
+    <text x="14" y="21" class="stitch-text-gold" font-size="9.5" font-weight="800" letter-spacing="0.6">
+      {"04 • JEWELLERY &amp; BEAUTY" if is_female else "04 • JEWELLERY &amp; HOROLOGY"}
     </text>
 
-    <!-- ITEM 1: RINGS (MALE) OR NECKLACE (FEMALE) -->
-    <g transform="translate(402, 134)">
-      <rect width="228" height="98" rx="9" class="stitch-item-tray" />
-      
-      {f'''<!-- Female Necklace Showcase -->
-      <path d="M 28 20 C 28 52, 68 52, 68 20" fill="none" stroke="url(#goldGrad_{look_number})" stroke-width="2.5" />
-      <path d="M 34 22 C 34 48, 62 48, 62 22" fill="none" stroke="{jewel_hex}" stroke-width="1.5" stroke-dasharray="3,2" />
-      <circle cx="48" cy="50" r="5" fill="#FFFFFF" stroke="url(#goldGrad_{look_number})" stroke-width="1.5" />
-      <text x="86" y="32" class="stitch-text-title" font-size="10.5" font-weight="700">Choker / Fine Chain</text>
-      <text x="86" y="48" class="stitch-text-gold" font-size="9.5" font-weight="600">{metal_name}</text>
-      <text x="86" y="66" class="stitch-text-muted" font-size="8.5">Luminescent Neckline Anchor</text>
-      ''' if is_female else f'''<!-- Male Signet Ring Showcase -->
-      <circle cx="44" cy="48" r="18" fill="none" stroke="url(#goldGrad_{look_number})" stroke-width="4.5" />
-      <rect x="36" y="36" width="16" height="12" rx="2" fill="{jewel_hex}" stroke="#FFF" stroke-width="0.8" />
-      <circle cx="44" cy="42" r="2.2" fill="#FFFFFF" />
-      <text x="84" y="32" class="stitch-text-title" font-size="10.5" font-weight="700">Artisan Signet Ring</text>
-      <text x="84" y="48" class="stitch-text-gold" font-size="9.5" font-weight="600">{metal_name}</text>
-      <text x="84" y="66" class="stitch-text-muted" font-size="8.5">Hammered Edge / Signet Band</text>
-      '''}
+    <!-- ITEM 1 -->
+    <g transform="translate(12, 44)">
+      <rect width="235" height="78" rx="8" class="stitch-item-tray" />
+      {f'''<path d="M 24 16 C 24 44, 58 44, 58 16" fill="none" stroke="url(#goldGrad_{look_number})" stroke-width="2.5" />
+      <circle cx="41" cy="42" r="4.5" fill="#FFFFFF" stroke="url(#goldGrad_{look_number})" stroke-width="1.5" />
+      <text x="76" y="28" class="stitch-text-title" font-size="10" font-weight="700">Choker / Fine Chain</text>
+      <text x="76" y="44" class="stitch-text-gold" font-size="9" font-weight="600">{metal_name}</text>
+      <text x="76" y="60" class="stitch-text-muted" font-size="8">Neckline Anchor</text>''' if is_female else f'''<circle cx="38" cy="39" r="15" fill="none" stroke="url(#goldGrad_{look_number})" stroke-width="4" />
+      <rect x="31" y="29" width="14" height="10" rx="2" fill="{jewel_hex}" stroke="#FFF" stroke-width="0.8" />
+      <circle cx="38" cy="34" r="2" fill="#FFFFFF" />
+      <text x="74" y="28" class="stitch-text-title" font-size="10" font-weight="700">Artisan Signet Ring</text>
+      <text x="74" y="44" class="stitch-text-gold" font-size="9" font-weight="600">{metal_name}</text>
+      <text x="74" y="60" class="stitch-text-muted" font-size="8">Hammered Signet Band</text>'''}
     </g>
 
-    <!-- ITEM 2: EARRINGS (MALE: HUGGIE / OBSIDIAN; FEMALE: DROP PEARL) -->
-    <g transform="translate(402, 244)">
-      <rect width="228" height="98" rx="9" class="stitch-item-tray" />
-      
-      {f'''<!-- Female Sculptural Drop Earrings -->
-      <circle cx="36" cy="30" r="3" fill="url(#goldGrad_{look_number})" />
-      <line x1="36" y1="33" x2="36" y2="52" stroke="url(#goldGrad_{look_number})" stroke-width="1.5" />
-      <circle cx="36" cy="58" r="6.5" fill="#FFFFFF" stroke="{jewel_hex}" stroke-width="1.2" />
-      
-      <circle cx="56" cy="30" r="3" fill="url(#goldGrad_{look_number})" />
-      <line x1="56" y1="33" x2="56" y2="52" stroke="url(#goldGrad_{look_number})" stroke-width="1.5" />
-      <circle cx="56" cy="58" r="6.5" fill="#FFFFFF" stroke="{jewel_hex}" stroke-width="1.2" />
-
-      <text x="84" y="32" class="stitch-text-title" font-size="10.5" font-weight="700">Sculptural Drops</text>
-      <text x="84" y="48" class="stitch-text-gold" font-size="9.5" font-weight="600">Freshwater Pearl &amp; Gold</text>
-      <text x="84" y="66" class="stitch-text-muted" font-size="8.5">Face-Framing Dermal Radiance</text>
-      ''' if is_female else f'''<!-- Male Minimalist Huggie Earring -->
-      <circle cx="36" cy="48" r="11" fill="none" stroke="url(#goldGrad_{look_number})" stroke-width="2.8" stroke-dasharray="16,4" />
-      <circle cx="56" cy="48" r="11" fill="none" stroke="#222" stroke-width="3" />
-      <circle cx="56" cy="48" r="9" fill="#0A0A0A" />
-
-      <text x="84" y="32" class="stitch-text-title" font-size="10.5" font-weight="700">Minimalist Huggies</text>
-      <text x="84" y="48" class="stitch-text-gold" font-size="9.5" font-weight="600">Titanium &amp; Black Obsidian</text>
-      <text x="84" y="66" class="stitch-text-muted" font-size="8.5">Understated Ear Profile</text>
-      '''}
+    <!-- ITEM 2 -->
+    <g transform="translate(12, 132)">
+      <rect width="235" height="78" rx="8" class="stitch-item-tray" />
+      {f'''<circle cx="30" cy="24" r="3" fill="url(#goldGrad_{look_number})" />
+      <line x1="30" y1="27" x2="30" y2="44" stroke="url(#goldGrad_{look_number})" stroke-width="1.5" />
+      <circle cx="30" cy="50" r="6" fill="#FFFFFF" stroke="{jewel_hex}" stroke-width="1.2" />
+      <circle cx="48" cy="24" r="3" fill="url(#goldGrad_{look_number})" />
+      <line x1="48" y1="27" x2="48" y2="44" stroke="url(#goldGrad_{look_number})" stroke-width="1.5" />
+      <circle cx="48" cy="50" r="6" fill="#FFFFFF" stroke="{jewel_hex}" stroke-width="1.2" />
+      <text x="74" y="28" class="stitch-text-title" font-size="10" font-weight="700">Sculptural Drops</text>
+      <text x="74" y="44" class="stitch-text-gold" font-size="9" font-weight="600">Freshwater Pearl &amp; Gold</text>
+      <text x="74" y="60" class="stitch-text-muted" font-size="8">Face-Framing Radiance</text>''' if is_female else f'''<circle cx="30" cy="39" r="10" fill="none" stroke="url(#goldGrad_{look_number})" stroke-width="2.5" stroke-dasharray="15,4" />
+      <circle cx="48" cy="39" r="10" fill="none" stroke="#222" stroke-width="2.8" />
+      <circle cx="48" cy="39" r="8" fill="#0A0A0A" />
+      <text x="74" y="28" class="stitch-text-title" font-size="10" font-weight="700">Minimalist Huggies</text>
+      <text x="74" y="44" class="stitch-text-gold" font-size="9" font-weight="600">Titanium &amp; Obsidian</text>
+      <text x="74" y="60" class="stitch-text-muted" font-size="8">Understated Ear Profile</text>'''}
     </g>
 
-    <!-- ITEM 3: LIPSTICK TINT (FEMALE) OR LUXURY HOROLOGY (MALE) -->
-    <g transform="translate(402, 354)">
-      <rect width="228" height="184" rx="9" class="stitch-item-tray" />
-      
-      {f'''<!-- Female Luxury Lip Tint Showcase -->
-      <g transform="translate(24, 24)">
-        <rect x="0" y="24" width="22" height="50" rx="4" fill="url(#lipGrad_{look_number})" stroke="rgba(255,255,255,0.3)" stroke-width="1.2" />
-        <rect x="2" y="2" width="18" height="24" rx="2" fill="#0C0E14" stroke="url(#goldGrad_{look_number})" stroke-width="1.5" />
-        <line x1="2" y1="12" x2="20" y2="12" stroke="url(#goldGrad_{look_number})" stroke-width="1" />
-        <ellipse cx="44" cy="50" rx="14" ry="7.5" fill="{lipstick_hex}" stroke="#FFFFFF" stroke-width="1.2" />
+    <!-- ITEM 3 -->
+    <g transform="translate(12, 220)">
+      <rect width="235" height="84" rx="8" class="stitch-item-tray" />
+      {f'''<g transform="translate(18, 12)">
+        <rect x="0" y="16" width="18" height="40" rx="3" fill="url(#lipGrad_{look_number})" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+        <rect x="2" y="0" width="14" height="18" rx="2" fill="#0C0E14" stroke="url(#goldGrad_{look_number})" stroke-width="1.2" />
+        <ellipse cx="34" cy="38" rx="11" ry="6" fill="{lipstick_hex}" stroke="#FFFFFF" stroke-width="1" />
       </g>
-      <text x="80" y="34" class="stitch-text-title" font-size="10.5" font-weight="700">Signature Lip Tint</text>
-      <text x="80" y="52" fill="{lipstick_hex}" font-family="'Plus Jakarta Sans', system-ui" font-size="10" font-weight="700">{disp_lip[:20]}</text>
-      <text x="80" y="70" class="stitch-text-gold" font-size="9" font-weight="600">{lipstick_finish}</text>
-      <rect x="80" y="94" width="138" height="24" rx="5" class="stitch-header-pill" />
-      <text x="86" y="110" fill="#34D399" font-family="'Plus Jakarta Sans', system-ui" font-size="8.5" font-weight="700">✓ Dermal Undertone Match</text>
-      ''' if is_female else f'''<!-- Male Chronograph Horology Showcase -->
-      <g transform="translate(20, 24)">
-        <rect x="18" y="2" width="18" height="82" rx="2" fill="{shoes_hex}" stroke="#000" stroke-width="1" />
-        <circle cx="27" cy="42" r="22" fill="#0D111A" stroke="url(#goldGrad_{look_number})" stroke-width="3" />
-        <circle cx="27" cy="42" r="17" fill="#141B26" />
-        <circle cx="27" cy="35" r="3.5" fill="none" stroke="#F2CA50" stroke-width="0.8" />
-        <line x1="27" y1="42" x2="27" y2="30" stroke="#FFFFFF" stroke-width="1.5" />
-        <line x1="27" y1="42" x2="36" y2="42" stroke="url(#goldGrad_{look_number})" stroke-width="1.5" />
+      <text x="74" y="26" class="stitch-text-title" font-size="10" font-weight="700">Signature Lip Tint</text>
+      <text x="74" y="42" fill="{lipstick_hex}" font-family="'Plus Jakarta Sans', system-ui" font-size="9.5" font-weight="700">{disp_lip}</text>
+      <text x="74" y="58" class="stitch-text-gold" font-size="8.5" font-weight="600">{lipstick_finish}</text>
+      <text x="74" y="73" fill="#34D399" font-family="'Plus Jakarta Sans', system-ui" font-size="8" font-weight="700">✓ Dermal Match</text>''' if is_female else f'''<g transform="translate(16, 12)">
+        <rect x="14" y="0" width="14" height="60" rx="2" fill="{shoes_hex}" stroke="#000" stroke-width="0.8" />
+        <circle cx="21" cy="30" r="17" fill="#0D111A" stroke="url(#goldGrad_{look_number})" stroke-width="2.5" />
+        <circle cx="21" cy="30" r="13" fill="#141B26" />
+        <line x1="21" y1="30" x2="21" y2="21" stroke="#FFFFFF" stroke-width="1.4" />
+        <line x1="21" y1="30" x2="28" y2="30" stroke="url(#goldGrad_{look_number})" stroke-width="1.4" />
       </g>
-      <text x="76" y="34" class="stitch-text-title" font-size="10.5" font-weight="700">Chronograph Watch</text>
-      <text x="76" y="52" class="stitch-text-gold" font-size="10" font-weight="700">{disp_lip[:20]}</text>
-      <text x="76" y="70" class="stitch-text-muted" font-size="9" font-weight="600">Bezel: {metal_name}</text>
-      <rect x="76" y="94" width="142" height="24" rx="5" class="stitch-header-pill" />
-      <text x="82" y="110" fill="#34D399" font-family="'Plus Jakarta Sans', system-ui" font-size="8.5" font-weight="700">✓ Horology In Harmony</text>
-      '''}
+      <text x="74" y="26" class="stitch-text-title" font-size="10" font-weight="700">Chronograph Watch</text>
+      <text x="74" y="42" class="stitch-text-gold" font-size="9" font-weight="700">{disp_lip}</text>
+      <text x="74" y="58" class="stitch-text-muted" font-size="8">Bezel: {metal_name[:18]}</text>
+      <text x="74" y="73" fill="#34D399" font-family="'Plus Jakarta Sans', system-ui" font-size="8" font-weight="700">✓ Horology In Harmony</text>'''}
     </g>
   </g>
 
 
-  <!-- ==================== 4. BOTTOM ATELIER HARMONY BAR & CERTIFICATE ==================== -->
-  <g transform="translate(18, 568)">
-    <rect width="624" height="254" rx="14" class="stitch-formula-panel" />
-    
-    <!-- Title and Harmony Percentage -->
-    <text x="24" y="34" class="stitch-text-gold" font-size="13" font-weight="700" letter-spacing="0.5">ATELIER CHROMATIC FORMULA</text>
-    <rect x="472" y="16" width="128" height="26" rx="13" fill="rgba(52, 211, 153, 0.15)" stroke="#34D399" stroke-width="1.2" />
-    <text x="488" y="33" fill="#34D399" font-family="'Plus Jakarta Sans', system-ui" font-size="10" font-weight="800">★ 96.8% HARMONY</text>
-
-    <!-- 4 Structured Formula Spec Cards (Spaced with 144px width each) -->
-    <!-- Column 1: Upperwear -->
-    <g transform="translate(20, 56)">
-      <rect width="136" height="106" rx="8" class="stitch-item-tray" />
-      <circle cx="26" cy="28" r="14" fill="{upper_hex}" stroke="#FFF" stroke-opacity="0.3" stroke-width="1.5" />
-      <text x="48" y="24" class="stitch-text-title" font-size="10" font-weight="700">Upperwear</text>
-      <text x="48" y="38" class="stitch-text-muted" font-family="'JetBrains Mono', monospace" font-size="8.5">{upper_hex.upper()}</text>
-      <text x="14" y="64" class="stitch-text-body" font-size="8.5" font-weight="600">{disp_upper[:20]}</text>
-      <text x="14" y="82" class="stitch-text-muted" font-size="8">{disp_upper_fab[:20]}</text>
-    </g>
-
-    <!-- Column 2: Bottomwear -->
-    <g transform="translate(168, 56)">
-      <rect width="136" height="106" rx="8" class="stitch-item-tray" />
-      <circle cx="26" cy="28" r="14" fill="{bottom_hex}" stroke="#FFF" stroke-opacity="0.3" stroke-width="1.5" />
-      <text x="48" y="24" class="stitch-text-title" font-size="10" font-weight="700">Bottomwear</text>
-      <text x="48" y="38" class="stitch-text-muted" font-family="'JetBrains Mono', monospace" font-size="8.5">{bottom_hex.upper()}</text>
-      <text x="14" y="64" class="stitch-text-body" font-size="8.5" font-weight="600">{disp_bottom[:20]}</text>
-      <text x="14" y="82" class="stitch-text-muted" font-size="8">{disp_bottom_fab[:20]}</text>
-    </g>
-
-    <!-- Column 3: Footwear -->
-    <g transform="translate(316, 56)">
-      <rect width="136" height="106" rx="8" class="stitch-item-tray" />
-      <circle cx="26" cy="28" r="14" fill="{shoes_hex}" stroke="#FFF" stroke-opacity="0.3" stroke-width="1.5" />
-      <text x="48" y="24" class="stitch-text-title" font-size="10" font-weight="700">Footwear</text>
-      <text x="48" y="38" class="stitch-text-muted" font-family="'JetBrains Mono', monospace" font-size="8.5">{shoes_hex.upper()}</text>
-      <text x="14" y="64" class="stitch-text-body" font-size="8.5" font-weight="600">{disp_shoes[:20]}</text>
-      <text x="14" y="82" class="stitch-text-muted" font-size="8">{disp_shoes_mat[:20]}</text>
-    </g>
-
-    <!-- Column 4: Accent & Jewellery -->
-    <g transform="translate(464, 56)">
-      <rect width="140" height="106" rx="8" class="stitch-item-tray" />
-      <circle cx="26" cy="28" r="14" fill="{jewel_hex}" stroke="url(#goldGrad_{look_number})" stroke-width="1.5" />
-      <text x="48" y="24" class="stitch-text-title" font-size="9.5" font-weight="700">{"Jewellery/Lip" if is_female else "Jewellery/Dial"}</text>
-      <text x="48" y="38" class="stitch-text-gold" font-family="'JetBrains Mono', monospace" font-size="8.5">{jewel_hex.upper()}</text>
-      <text x="14" y="64" class="stitch-text-body" font-size="8.5" font-weight="600">{metal_name[:18]}</text>
-      <text x="14" y="82" class="stitch-text-muted" font-size="8">{"Dermal Luster Accent" if is_female else "Horology Finish"}</text>
-    </g>
-
-    <!-- Subtle Certification Watermark -->
-    <line x1="20" y1="186" x2="604" y2="186" class="stitch-divider" />
-    <text x="24" y="214" class="stitch-watermark" font-size="9" font-weight="600" letter-spacing="0.5">
+  <!-- BOTTOM FOOTER BAR -->
+  <g transform="translate(18, 408)">
+    <rect width="1084" height="36" rx="9" class="stitch-formula-panel" />
+    <text x="20" y="22" class="stitch-watermark" font-size="9.5" font-weight="600" letter-spacing="0.6">
       CALIBRATED BY OTTERLOOK AI • HAUTE COUTURE COLORIMETRY ATELIER
     </text>
-    <text x="496" y="214" class="stitch-text-gold" font-size="9.5" font-weight="700">
+    <text x="968" y="22" class="stitch-text-gold" font-size="10" font-weight="700">
       ★ CERTIFIED LOOK
     </text>
   </g>
