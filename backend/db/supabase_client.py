@@ -72,7 +72,8 @@ def save_analysis(
     features: Dict[str, float],
     predicted_undertone: str,
     confidence: float,
-    quality_score: int
+    quality_score: int,
+    analysis_id: Optional[str] = None
 ) -> Optional[str]:
     """
     Saves an analysis result to the `analyses` table.
@@ -82,6 +83,7 @@ def save_analysis(
         predicted_undertone: "Warm", "Cool", or "Neutral".
         confidence: Model confidence (0.0–1.0).
         quality_score: Image quality score (0–100).
+        analysis_id: Optional pre-generated UUID for async background persistence.
 
     Returns:
         The UUID of the inserted row, or None if Supabase is unavailable.
@@ -98,6 +100,8 @@ def save_analysis(
             "confidence": confidence,
             "quality_score": quality_score,
         }
+        if analysis_id:
+            row["id"] = analysis_id
         result = client.table("analyses").insert(row).execute()
 
         if result.data and len(result.data) > 0:

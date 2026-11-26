@@ -479,14 +479,16 @@ async def analyze_portrait(
     }
 
     # Persist analysis to Supabase asynchronously via BackgroundTasks so it NEVER blocks user response
-    analysis_id = None
+    import uuid as _uuid
+    analysis_id = str(_uuid.uuid4())
     try:
         background_tasks.add_task(
             supabase_client.save_analysis,
             features=color_features["ml_features"],
             predicted_undertone=predicted_undertone,
             confidence=ml_prediction["confidence"],
-            quality_score=quality_result["score"]
+            quality_score=quality_result["score"],
+            analysis_id=analysis_id
         )
     except Exception as e:
         logger.error("Supabase async dispatch failed: %s", e)
