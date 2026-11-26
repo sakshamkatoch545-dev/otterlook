@@ -1193,11 +1193,13 @@ document.addEventListener("DOMContentLoaded", () => {
     // CONDITION 2: FACE IS DETECTED! Auto-select & focus if wide/group photo, then check face-scoped lighting
     const yoloBbox = yoloResult.bounding_box;
     if (!skipAutoCrop) {
-      detectedFacesList = yoloBbox ? [yoloBbox] : [];
+      detectedFacesList = (yoloResult.faces && yoloResult.faces.length)
+        ? yoloResult.faces
+        : (yoloBbox ? [yoloBbox] : []);
       selectedFaceIndex = 0;
 
       const faceAreaPct = yoloBbox && yoloBbox.pctW && yoloBbox.pctH ? (yoloBbox.pctW * yoloBbox.pctH) : 10000;
-      const shouldAutoCrop = Boolean(yoloBbox) && (faceAreaPct < 300 || detectedFacesList.length > 1);
+      const shouldAutoCrop = Boolean(yoloBbox) && (faceAreaPct < 3500 || detectedFacesList.length > 1);
       if (shouldAutoCrop && originalImageBitmap) {
         const cropped = await cropPortraitAroundFace(originalImageBitmap, detectedFacesList[0]);
         if (genId !== uploadGenerationId) return false;
@@ -1802,7 +1804,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleGenderSelect(selectedGender, isManual = true) {
-    currentGender = (selectedGender === "female" || selectedGender === "all") ? selectedGender : "male";
+    let wasAutoDetected = !isManual;
+    let resolvedGender = (selectedGender === "female" || selectedGender === "all") ? selectedGender : "male";
+
+    if (
+      resolvedGender === "all" &&
+      cachedApiData &&
+      cachedApiData.detected_gender &&
+      (cachedApiData.detected_gender.gender === "male" || cachedApiData.detected_gender.gender === "female")
+    ) {
+      resolvedGender = cachedApiData.detected_gender.gender;
+      wasAutoDetected = true;
+    }
+
+    currentGender = resolvedGender;
     const effectiveGender = currentGender;
 
     // Sync pills across upload selector
@@ -1830,12 +1845,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const bannerLabel = document.getElementById("gender-banner-label");
     const bannerBadge = document.getElementById("gender-banner-badge");
     const bannerDesc = document.getElementById("gender-banner-desc");
+    const autoConf = cachedApiData && cachedApiData.detected_gender && cachedApiData.detected_gender.confidence_percentage;
+    const badgeText = wasAutoDetected
+      ? (autoConf ? `Auto-Detected · ${autoConf}%` : "Auto-Detected")
+      : "Selected Profile";
 
     if (effectiveGender === "female") {
       if (bannerIcon) bannerIcon.textContent = "👗";
       if (bannerLabel) bannerLabel.textContent = "Women's Style";
       if (bannerBadge) {
-        bannerBadge.textContent = "Selected Profile";
+        bannerBadge.textContent = badgeText;
         bannerBadge.className = "gender-banner-badge auto-badge";
       }
       if (bannerDesc) {
@@ -1845,7 +1864,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (bannerIcon) bannerIcon.textContent = "👔";
       if (bannerLabel) bannerLabel.textContent = "Men's Style";
       if (bannerBadge) {
-        bannerBadge.textContent = "Selected Profile";
+        bannerBadge.textContent = badgeText;
         bannerBadge.className = "gender-banner-badge auto-badge";
       }
       if (bannerDesc) {
@@ -2104,8 +2123,14 @@ document.addEventListener("DOMContentLoaded", () => {
     cachedApiData = data;
     resetFeedbackWidget(data);
 
-    // Auto-detect gender from API response and apply styling profile
-    handleGenderSelect(currentGender, false);
+    // Auto-detect gender from API response when "All Styles" was chosen, otherwise apply selected profile
+    const wasAllSelected = currentGender === "all" || (data && data.requested_gender === "all");
+    const detectedG = data && data.detected_gender && data.detected_gender.gender;
+    if (wasAllSelected && (detectedG === "male" || detectedG === "female")) {
+      handleGenderSelect(detectedG, false);
+    } else {
+      handleGenderSelect((data && data.gender) || currentGender, !wasAllSelected);
+    }
     const rawUt = (data && data.undertone && (data.undertone.label || data.undertone)) || "Neutral";
     const undertone = typeof rawUt === "string" ? rawUt : (rawUt.label || "Neutral");
     const utStr = String(undertone || "Neutral");

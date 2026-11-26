@@ -33,6 +33,7 @@ from typing import Dict, Any, Optional, List
 
 from backend.utils.image_quality import analyze_image_quality
 from backend.vision.face_detection import FaceDetector
+from backend.vision.gender_detection import GenderDetector
 from backend.vision.skin_detection import SkinExtractor
 from backend.vision.colour_extraction import ColourFeatureExtractor
 from backend.ml.predictor import UndertonePredictor
@@ -101,6 +102,7 @@ async def add_pna_and_cors_headers(request: Request, call_next):
 
 # Initialize core pipeline singletons
 face_detector = FaceDetector()
+gender_detector = GenderDetector()
 skin_extractor = SkinExtractor()
 feature_extractor = ColourFeatureExtractor()
 undertone_predictor = UndertonePredictor()
@@ -379,6 +381,9 @@ async def analyze_portrait(
     if sel_gender not in ("male", "female", "all"):
         sel_gender = "all"
 
+    detected_gender_info = gender_detector.detect_gender(image_bgr, bbox)
+    effective_gender = detected_gender_info["gender"] if sel_gender == "all" else sel_gender
+
     if recognized_profile is not None:
         # Recognized returning face: retrieve the exact same calibrated signature palette and answers!
         predicted_undertone = recognized_profile["undertone"]
@@ -404,7 +409,7 @@ async def analyze_portrait(
         recommendations_result = palette_generator.generate_recommendations(
             undertone=predicted_undertone,
             skin_metrics=color_features["display_metrics"],
-            gender=sel_gender,
+            gender=effective_gender,
             face_embedding=face_embedding
         )
         if recognized_profile.get("palette"):
@@ -415,7 +420,12 @@ async def analyze_portrait(
         rep_skin_hex = recognized_profile.get("skin_hex") or color_features["display_metrics"].get("representative_hex") or "#C68B59"
 
         saved_outfits = recognized_profile.get("curated_outfits")
-        if saved_outfits and user_clothing_type == "all" and user_weather == "all":
+        if (
+            saved_outfits
+            and user_clothing_type == "all"
+            and user_weather == "all"
+            and recognized_profile.get("gender") == effective_gender
+        ):
             curated_outfits = saved_outfits
         else:
             curated_outfits = generate_curated_outfits(
@@ -423,7 +433,7 @@ async def analyze_portrait(
                 palette=recommendations_result.get("palette", []),
                 clothing_type=user_clothing_type,
                 weather=user_weather,
-                gender=sel_gender,
+                gender=effective_gender,
                 skin_hex=rep_skin_hex
             )
     else:
@@ -435,7 +445,7 @@ async def analyze_portrait(
         recommendations_result = palette_generator.generate_recommendations(
             undertone=predicted_undertone,
             skin_metrics=color_features["display_metrics"],
-            gender=sel_gender,
+            gender=effective_gender,
             face_embedding=face_embedding
         )
 
@@ -446,7 +456,7 @@ async def analyze_portrait(
             palette=recommendations_result.get("palette", []),
             clothing_type=user_clothing_type,
             weather=user_weather,
-            gender=sel_gender,
+            gender=effective_gender,
             skin_hex=rep_skin_hex
         )
 
@@ -457,7 +467,7 @@ async def analyze_portrait(
             confidence=ml_prediction["confidence"],
             palette=recommendations_result.get("palette", []),
             skin_metrics=color_features["display_metrics"],
-            gender=sel_gender,
+            gender=effective_gender,
             skin_hex=rep_skin_hex,
             skin_harmonies=recommendations_result.get("skin_harmonies", []),
             curated_outfits=curated_outfits,
@@ -512,7 +522,9 @@ async def analyze_portrait(
             "auto_color_spotted": bool(skin_result.get("spotted", True)),
             "representative_hex": rep_skin_hex
         },
-        "gender": sel_gender,
+        "gender": effective_gender,
+        "requested_gender": sel_gender,
+        "detected_gender": detected_gender_info,
         "clothing_type": user_clothing_type,
         "weather": user_weather,
         "clothing_types": CLOTHING_TYPES,
