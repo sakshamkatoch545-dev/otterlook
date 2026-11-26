@@ -478,20 +478,22 @@ async def analyze_portrait(
         )
     }
 
-    # Persist analysis to Supabase asynchronously via BackgroundTasks so it NEVER blocks user response
+    # Persist analysis to Supabase synchronously so the row exists before feedback is submitted
     import uuid as _uuid
     analysis_id = str(_uuid.uuid4())
-    try:
-        background_tasks.add_task(
-            supabase_client.save_analysis,
-            features=color_features["ml_features"],
-            predicted_undertone=predicted_undertone,
-            confidence=ml_prediction["confidence"],
-            quality_score=quality_result["score"],
-            analysis_id=analysis_id
-        )
-    except Exception as e:
-        logger.error("Supabase async dispatch failed: %s", e)
+    if supabase_client.is_available():
+        try:
+            saved_id = supabase_client.save_analysis(
+                features=color_features["ml_features"],
+                predicted_undertone=predicted_undertone,
+                confidence=ml_prediction["confidence"],
+                quality_score=quality_result["score"],
+                analysis_id=analysis_id
+            )
+            if saved_id:
+                analysis_id = saved_id
+        except Exception as e:
+            logger.error("Supabase save_analysis failed: %s", e)
 
     # Return comprehensive structured response
     return {
