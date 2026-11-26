@@ -1199,7 +1199,7 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedFaceIndex = 0;
 
       const faceAreaPct = yoloBbox && yoloBbox.pctW && yoloBbox.pctH ? (yoloBbox.pctW * yoloBbox.pctH) : 10000;
-      const shouldAutoCrop = Boolean(yoloBbox) && (faceAreaPct < 3500 || detectedFacesList.length > 1);
+      const shouldAutoCrop = Boolean(yoloBbox) && (faceAreaPct < 300 || detectedFacesList.length > 1);
       if (shouldAutoCrop && originalImageBitmap) {
         const cropped = await cropPortraitAroundFace(originalImageBitmap, detectedFacesList[0]);
         if (genId !== uploadGenerationId) return false;

@@ -237,7 +237,7 @@ class FaceDetector:
         return True
 
     def _rank_face_candidates(self, candidates: List[Dict], img_w: int, img_h: int, image_bgr: Optional[np.ndarray] = None) -> List[Dict]:
-        """Validate and sort face candidates by area^0.75 * confidence * centrality descending."""
+        """Validate and sort face candidates favoring closer, sharper, central foreground subjects."""
         if not candidates:
             return []
 
@@ -260,11 +260,33 @@ class FaceDetector:
             cx, cy = x + w / 2.0, y + h / 2.0
             dist = (((cx - center_x) / img_w) ** 2 + ((cy - center_y) / img_h) ** 2) ** 0.5
             centrality = max(0.4, 1.0 - dist)
-            score = (area ** 0.75) * conf * centrality
+
+            # Measure local sharpness (Laplacian variance) when image_bgr is available
+            sharpness_boost = 1.0
+            if image_bgr is not None:
+                try:
+                    crop = image_bgr[max(0, y):min(img_h, y + h), max(0, x):min(img_w, x + w)]
+                    if crop.size > 0:
+                        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+                        lap_var = float(cv2.Laplacian(gray, cv2.CV_64F).var())
+                        sharpness_boost = min(1.5, max(0.6, 0.6 + (lap_var / 150.0) * 0.9))
+                except Exception:
+                    pass
+
+            score = (area ** 1.15) * conf * centrality * sharpness_boost
             scored.append((score, c))
 
         scored.sort(key=lambda item: item[0], reverse=True)
         return [item[1] for item in scored]
+
+    def _foreground_faces(self, ranked: List[Dict]) -> List[List[int]]:
+        """Keep only the primary foreground face and comparable-size foreground subjects (ignore small/distant bystanders)."""
+        if not ranked:
+            return []
+        primary = ranked[0]
+        primary_area = max(1, primary["w"] * primary["h"])
+        fg = [c for c in ranked[:5] if (c["w"] * c["h"]) >= 0.40 * primary_area]
+        return [[c["x"], c["y"], c["w"], c["h"]] for c in fg]
 
     def _pick_best_face_bbox(self, candidates: List[Dict], img_w: int, img_h: int, image_bgr: Optional[np.ndarray] = None) -> Optional[Dict]:
         """Score candidates by: largest area × confidence × centrality, return best valid face."""
@@ -319,7 +341,7 @@ class FaceDetector:
                         best = ranked[0]
                         return {
                             "bounding_box": [best["x"], best["y"], best["w"], best["h"]],
-                            "all_faces": [[c["x"], c["y"], c["w"], c["h"]] for c in ranked[:5]],
+                            "all_faces": self._foreground_faces(ranked),
                             "confidence": best["conf"],
                             "detector_type": "mediapipe",
                         }
@@ -346,7 +368,7 @@ class FaceDetector:
                         best = ranked[0]
                         return {
                             "bounding_box": [best["x"], best["y"], best["w"], best["h"]],
-                            "all_faces": [[c["x"], c["y"], c["w"], c["h"]] for c in ranked[:5]],
+                            "all_faces": self._foreground_faces(ranked),
                             "confidence": best["conf"],
                             "detector_type": "mediapipe",
                         }
@@ -379,7 +401,7 @@ class FaceDetector:
                             best = ranked[0]
                             return {
                                 "bounding_box": [best["x"], best["y"], best["w"], best["h"]],
-                                "all_faces": [[c["x"], c["y"], c["w"], c["h"]] for c in ranked[:5]],
+                                "all_faces": self._foreground_faces(ranked),
                                 "confidence": best["conf"],
                                 "detector_type": "opencv_yunet",
                             }
@@ -409,7 +431,7 @@ class FaceDetector:
                         best = ranked[0]
                         return {
                             "bounding_box": [best["x"], best["y"], best["w"], best["h"]],
-                            "all_faces": [[c["x"], c["y"], c["w"], c["h"]] for c in ranked[:5]],
+                            "all_faces": self._foreground_faces(ranked),
                             "confidence": best["conf"],
                             "detector_type": "yolo_face",
                         }
