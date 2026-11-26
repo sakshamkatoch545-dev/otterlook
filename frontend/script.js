@@ -973,10 +973,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const cw = Math.max(160, x2 - x1);
       const ch = Math.max(160, y2 - y1);
 
-      // Keep crisp portrait dimensions capped at 1200px
-      const scale = Math.max(cw, ch) > 1200 ? 1200 / Math.max(cw, ch) : 1;
-      const outW = Math.max(160, Math.round(cw * scale));
-      const outH = Math.max(160, Math.round(ch * scale));
+      // Keep crisp portrait dimensions between 520px and 1200px so HUD overlays never overlap
+      const maxDim = Math.max(cw, ch);
+      const scale = maxDim > 1200 ? (1200 / maxDim) : (maxDim < 520 ? (520 / maxDim) : 1);
+      const outW = Math.max(240, Math.round(cw * scale));
+      const outH = Math.max(240, Math.round(ch * scale));
 
       const c = document.createElement("canvas");
       c.width = outW;
