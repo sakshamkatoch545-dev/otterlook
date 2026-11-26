@@ -1738,31 +1738,34 @@ body, button, input, select, textarea,
 /* Auto Colour Detection Overlay & Badge */
 .auto-color-badge-container {
   position: absolute;
-  top: 18px;
+  top: 48px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
   pointer-events: none;
-  width: auto;
-  max-width: 90%;
+  width: max-content;
+  max-width: calc(100% - 24px);
 }
 
 .auto-color-badge {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: rgba(15, 19, 28, 0.94);
   backdrop-filter: blur(14px);
   border: 1.5px solid var(--border-gold, #D4AF37);
   border-radius: 999px;
-  padding: 6px 16px 6px 8px;
+  padding: 5px 12px 5px 7px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.25);
   transition: all 0.3s ease;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .auto-color-swatch-circle {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   border: 2px solid #FFFFFF;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
@@ -1773,37 +1776,42 @@ body, button, input, select, textarea,
 .auto-color-badge-info {
   display: flex;
   flex-direction: column;
-  line-height: 1.2;
+  line-height: 1.15;
+  min-width: 0;
 }
 
 .auto-color-badge-title {
   font-family: var(--font-sans);
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   font-weight: 700;
   color: var(--text-muted, #94A3B8);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .auto-color-badge-hex {
   font-family: var(--font-mono);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: var(--accent-gold, #F2CA50);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .auto-color-status-tag {
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 3px 7px;
+  border-radius: 999px;
   background: rgba(212, 175, 55, 0.15);
   color: var(--accent-gold, #F2CA50);
   border: 1px solid rgba(212, 175, 55, 0.35);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .auto-color-status-tag.error {
