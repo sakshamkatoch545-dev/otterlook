@@ -66,6 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentFile = null;
   let currentImageBitmap = null;
   let currentGender = "male";
+  let selectedGenderMode = "male";
   let currentClothingType = "all";
   let currentWeather = "all";
   let cachedApiData = null;
@@ -1576,7 +1577,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (currentFile) {
         const formData = new FormData();
         formData.append("file", currentFile);
-        formData.append("gender", currentGender || "male");
+        formData.append("gender", selectedGenderMode || currentGender || "all");
         formData.append("clothing_type", currentClothingType || "all");
         formData.append("weather", currentWeather || "all");
 
@@ -1620,7 +1621,7 @@ document.addEventListener("DOMContentLoaded", () => {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 image: previewImg.src,
-                gender: currentGender || "male",
+                gender: selectedGenderMode || currentGender || "all",
                 clothing_type: currentClothingType || "all",
                 weather: currentWeather || "all"
               }),
@@ -1804,30 +1805,34 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleGenderSelect(selectedGender, isManual = true) {
-    let wasAutoDetected = !isManual;
-    let resolvedGender = (selectedGender === "female" || selectedGender === "all") ? selectedGender : "male";
+    const rawMode = (selectedGender === "female" || selectedGender === "all") ? selectedGender : "male";
+    if (isManual) {
+      selectedGenderMode = rawMode;
+    }
+
+    let wasAutoDetected = !isManual || rawMode === "all";
+    let effectiveGender = rawMode;
 
     if (
-      resolvedGender === "all" &&
+      rawMode === "all" &&
       cachedApiData &&
       cachedApiData.detected_gender &&
       (cachedApiData.detected_gender.gender === "male" || cachedApiData.detected_gender.gender === "female")
     ) {
-      resolvedGender = cachedApiData.detected_gender.gender;
+      effectiveGender = cachedApiData.detected_gender.gender;
       wasAutoDetected = true;
     }
 
-    currentGender = resolvedGender;
-    const effectiveGender = currentGender;
+    currentGender = effectiveGender;
 
-    // Sync pills across upload selector
+    // Sync pills across upload selector using the user-chosen mode (so "All Styles" stays selected)
     document.querySelectorAll("#upload-gender-options .gender-pill").forEach((pill) => {
-      pill.classList.toggle("active", pill.getAttribute("data-gender") === currentGender);
+      pill.classList.toggle("active", pill.getAttribute("data-gender") === selectedGenderMode);
     });
 
     // Sync pills across results outfit studio
     document.querySelectorAll("#results-gender-options .gender-filter-pill").forEach((pill) => {
-      pill.classList.toggle("active", pill.getAttribute("data-gender") === currentGender);
+      pill.classList.toggle("active", pill.getAttribute("data-gender") === selectedGenderMode);
     });
 
     const switchLabel = document.getElementById("gender-switch-label");
@@ -1835,7 +1840,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const bannerControls = document.querySelector(".gender-banner-controls");
     if (bannerControls) bannerControls.style.display = "none";
 
-    updateGenderView(currentGender);
+    updateGenderView(effectiveGender);
 
     // Update banner UI
     const bannerTitleText = document.getElementById("gender-banner-title-text");
@@ -2124,12 +2129,14 @@ document.addEventListener("DOMContentLoaded", () => {
     resetFeedbackWidget(data);
 
     // Auto-detect gender from API response when "All Styles" was chosen, otherwise apply selected profile
-    const wasAllSelected = currentGender === "all" || (data && data.requested_gender === "all");
-    const detectedG = data && data.detected_gender && data.detected_gender.gender;
-    if (wasAllSelected && (detectedG === "male" || detectedG === "female")) {
-      handleGenderSelect(detectedG, false);
+    const wasAllSelected = selectedGenderMode === "all" || (data && data.requested_gender === "all");
+    if (wasAllSelected) {
+      selectedGenderMode = "all";
+      handleGenderSelect("all", false);
     } else {
-      handleGenderSelect((data && data.gender) || currentGender, !wasAllSelected);
+      const targetG = (data && data.gender) || selectedGenderMode;
+      selectedGenderMode = (targetG === "female" || targetG === "all") ? targetG : "male";
+      handleGenderSelect(selectedGenderMode, true);
     }
     const rawUt = (data && data.undertone && (data.undertone.label || data.undertone)) || "Neutral";
     const undertone = typeof rawUt === "string" ? rawUt : (rawUt.label || "Neutral");
