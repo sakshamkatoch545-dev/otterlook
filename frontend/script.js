@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const cleanPath = path.startsWith("/") ? path : `/${path}`;
     const isLocalNonApiOrigin =
       window.location.protocol === "file:" ||
+      window.location.protocol === "about:" ||
       window.location.port === "8501" ||
       ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") &&
         window.location.port !== "8000");
