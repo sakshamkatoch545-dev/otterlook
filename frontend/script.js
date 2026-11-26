@@ -1186,6 +1186,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return false;
     }
 
+    isFaceVerified = true;
+
     // CONDITION 2: FACE IS DETECTED! Auto-select & focus if wide/group photo, then check face-scoped lighting
     const yoloBbox = yoloResult.bounding_box;
     if (!skipAutoCrop) {
@@ -1409,6 +1411,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
     function resetUploadState() {
+    isFaceVerified = false;
     currentFile = null;
     currentImageBitmap = null;
     originalUploadedFile = null;
