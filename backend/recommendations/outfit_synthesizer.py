@@ -1834,14 +1834,24 @@ def _generate_outfit_svg(
 
   <!-- ==================== 4 SEPARATE COLUMNS ACROSS FULL RECTANGLE ==================== -->
 
-  <!-- COLUMN 1: 01 • UPPERWEAR / SHIRT (x: 18, w: 259, y: 76, h: 318) -->
+  <!-- COLUMN 1: 01 • UPPERWEAR (x: 18, w: 259, y: 76, h: 318) -->
   <g transform="translate(18, 76)">
     <rect width="259" height="318" rx="12" class="stitch-spec-card" />
     <rect width="259" height="32" rx="12" class="stitch-spec-hdr" />
     <rect x="0" y="18" width="259" height="14" class="stitch-spec-hdr" />
-    <text x="16" y="21" class="stitch-text-gold" font-size="10" font-weight="800" letter-spacing="0.7">01 • UPPERWEAR / SHIRT</text>
+    <text x="16" y="21" class="stitch-text-gold" font-size="10" font-weight="800" letter-spacing="0.7">{"01 • UPPERWEAR / BLOUSE" if is_female else "01 • UPPERWEAR / SHIRT"}</text>
 
-    <!-- Tailored Shirt Illustration centered at x=129 -->
+    {f'''<!-- Feminine V-Neck Draped Blouse Illustration centered at x=129 -->
+    <g filter="url(#softShadow_{look_number})" transform="translate(-171, -40)">
+      <path d="M 262 90 L 284 106 L 316 106 L 338 90 L 386 122 L 368 156 L 344 140 C 338 168, 336 188, 344 218 C 316 224, 284 224, 256 218 C 264 188, 262 168, 256 140 L 232 156 L 214 122 Z"
+            fill="url(#upperGrad_{look_number})" stroke="rgba(255,255,255,0.24)" stroke-width="1.2" />
+      <path d="M 284 106 L 300 148 L 316 106 Z" fill="rgba(0,0,0,0.22)" />
+      <path d="M 284 106 L 300 148 L 316 106" fill="none" stroke="url(#goldGrad_{look_number})" stroke-width="1.2" />
+      <path d="M 260 176 Q 300 183 340 176" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="3,2" />
+      <circle cx="300" cy="160" r="2.6" fill="#FFF8E7" stroke="url(#goldGrad_{look_number})" stroke-width="0.9" />
+      <circle cx="300" cy="182" r="2.6" fill="#FFF8E7" stroke="url(#goldGrad_{look_number})" stroke-width="0.9" />
+      <circle cx="300" cy="204" r="2.6" fill="#FFF8E7" stroke="url(#goldGrad_{look_number})" stroke-width="0.9" />
+    </g>''' if is_female else f'''<!-- Tailored Shirt Illustration centered at x=129 -->
     <g filter="url(#softShadow_{look_number})" transform="translate(-171, -40)">
       <path d="M 250 88 L 279 107 L 321 107 L 350 88 L 388 124 L 362 152 L 344 142 L 344 220 L 256 220 L 256 142 L 238 152 L 212 124 Z"
             fill="url(#upperGrad_{look_number})" stroke="rgba(255,255,255,0.22)" stroke-width="1.2" />
@@ -1852,7 +1862,7 @@ def _generate_outfit_svg(
       <circle cx="300" cy="186" r="2.8" fill="url(#goldGrad_{look_number})" />
       <circle cx="300" cy="210" r="2.8" fill="url(#goldGrad_{look_number})" />
       <path d="M 264 172 L 286 172" stroke="rgba(255,255,255,0.22)" stroke-width="1.5" />
-    </g>
+    </g>'''}
 
     <!-- Spec Footer inside Panel 1 -->
     <line x1="16" y1="210" x2="243" y2="210" class="stitch-divider" />
@@ -1868,14 +1878,24 @@ def _generate_outfit_svg(
   </g>
 
 
-  <!-- COLUMN 2: 02 • BOTTOMWEAR / TROUSER (x: 293, w: 259, y: 76, h: 318) -->
+  <!-- COLUMN 2: 02 • BOTTOMWEAR (x: 293, w: 259, y: 76, h: 318) -->
   <g transform="translate(293, 76)">
     <rect width="259" height="318" rx="12" class="stitch-spec-card" />
     <rect width="259" height="32" rx="12" class="stitch-spec-hdr" />
     <rect x="0" y="18" width="259" height="14" class="stitch-spec-hdr" />
-    <text x="16" y="21" class="stitch-text-gold" font-size="10" font-weight="800" letter-spacing="0.7">02 • BOTTOMWEAR / TROUSER</text>
+    <text x="16" y="21" class="stitch-text-gold" font-size="10" font-weight="800" letter-spacing="0.7">{"02 • BOTTOMWEAR / SKIRT" if is_female else "02 • BOTTOMWEAR / TROUSER"}</text>
 
-    <!-- Tailored Trouser Illustration centered at x=129 -->
+    {f'''<!-- Feminine Pleated A-Line Midi Skirt centered at x=129 -->
+    <g filter="url(#softShadow_{look_number})" transform="translate(-171, -212)">
+      <rect x="262" y="255" width="76" height="14" rx="3" fill="url(#bottomGrad_{look_number})" stroke="rgba(255,255,255,0.25)" stroke-width="1" />
+      <rect x="293" y="257" width="14" height="10" rx="2" fill="none" stroke="url(#goldGrad_{look_number})" stroke-width="1.5" />
+      <path d="M 262 269 C 254 316, 236 368, 228 408 Q 300 418 372 408 C 364 368, 346 316, 338 269 Z"
+            fill="url(#bottomGrad_{look_number})" stroke="rgba(255,255,255,0.22)" stroke-width="1.2" />
+      <line x1="278" y1="271" x2="254" y2="410" stroke="rgba(255,255,255,0.18)" stroke-width="1.1" />
+      <line x1="292" y1="271" x2="282" y2="412" stroke="rgba(255,255,255,0.18)" stroke-width="1.1" />
+      <line x1="308" y1="271" x2="318" y2="412" stroke="rgba(255,255,255,0.18)" stroke-width="1.1" />
+      <line x1="322" y1="271" x2="346" y2="410" stroke="rgba(255,255,255,0.18)" stroke-width="1.1" />
+    </g>''' if is_female else f'''<!-- Tailored Trouser Illustration centered at x=129 -->
     <g filter="url(#softShadow_{look_number})" transform="translate(-171, -212)">
       <rect x="254" y="255" width="92" height="15" rx="2" fill="url(#bottomGrad_{look_number})" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
       <line x1="274" y1="255" x2="274" y2="270" stroke="rgba(255,255,255,0.25)" stroke-width="1.2" />
@@ -1887,7 +1907,7 @@ def _generate_outfit_svg(
       <line x1="332" y1="274" x2="332" y2="405" stroke="rgba(255,255,255,0.18)" stroke-width="1.2" />
       <rect x="243" y="402" width="50" height="8" rx="1.5" fill="rgba(0,0,0,0.2)" stroke="rgba(255,255,255,0.15)" />
       <rect x="307" y="402" width="50" height="8" rx="1.5" fill="rgba(0,0,0,0.2)" stroke="rgba(255,255,255,0.15)" />
-    </g>
+    </g>'''}
 
     <!-- Spec Footer inside Panel 2 -->
     <line x1="16" y1="210" x2="243" y2="210" class="stitch-divider" />
@@ -1903,14 +1923,40 @@ def _generate_outfit_svg(
   </g>
 
 
-  <!-- COLUMN 3: 03 • FOOTWEAR / SHOES (x: 568, w: 259, y: 76, h: 318) -->
+  <!-- COLUMN 3: 03 • FOOTWEAR (x: 568, w: 259, y: 76, h: 318) -->
   <g transform="translate(568, 76)">
     <rect width="259" height="318" rx="12" class="stitch-spec-card" />
     <rect width="259" height="32" rx="12" class="stitch-spec-hdr" />
     <rect x="0" y="18" width="259" height="14" class="stitch-spec-hdr" />
-    <text x="16" y="21" class="stitch-text-gold" font-size="10" font-weight="800" letter-spacing="0.7">03 • FOOTWEAR / SHOES</text>
+    <text x="16" y="21" class="stitch-text-gold" font-size="10" font-weight="800" letter-spacing="0.7">{"03 • FOOTWEAR / HEELS" if is_female else "03 • FOOTWEAR / SHOES"}</text>
 
-    <!-- Separated Left & Right Shoes scaled crisply & centered at x=129 -->
+    {f'''<!-- Separated Left & Right Strappy Pointed-Toe Heels centered at x=129 -->
+    <g filter="url(#softShadow_{look_number})" transform="translate(-259, -460) scale(1.30)">
+      <ellipse cx="268" cy="510" rx="19" ry="3.2" fill="#000000" fill-opacity="0.38" />
+      <ellipse cx="332" cy="510" rx="19" ry="3.2" fill="#000000" fill-opacity="0.38" />
+      <!-- Left Heel / Sandal -->
+      <g>
+        <path d="M 256 452 C 250 470, 249 494, 268 509 C 287 494, 286 470, 280 452 C 276 449, 260 449, 256 452 Z"
+              fill="#0C1017" stroke="rgba(255,255,255,0.20)" stroke-width="1" />
+        <path d="M 258 454 C 252 470, 252 492, 268 506 C 284 492, 284 470, 278 454 Z"
+              fill="url(#shoeGrad_{look_number})" stroke="rgba(255,255,255,0.32)" stroke-width="1" />
+        <ellipse cx="268" cy="468" rx="8" ry="13" fill="#182030" stroke="rgba(255,255,255,0.22)" stroke-width="0.9" />
+        <path d="M 254 480 Q 268 485 282 480 L 281 486 Q 268 491 255 486 Z" fill="url(#shoeGrad_{look_number})" stroke="rgba(255,255,255,0.35)" stroke-width="0.8" />
+        <path d="M 256 460 Q 268 464 280 460" fill="none" stroke="url(#goldGrad_{look_number})" stroke-width="2.2" />
+        <circle cx="255" cy="460" r="2" fill="url(#goldGrad_{look_number})" />
+      </g>
+      <!-- Right Heel / Sandal -->
+      <g>
+        <path d="M 320 452 C 314 470, 313 494, 332 509 C 351 494, 350 470, 344 452 C 340 449, 324 449, 320 452 Z"
+              fill="#0C1017" stroke="rgba(255,255,255,0.20)" stroke-width="1" />
+        <path d="M 322 454 C 316 470, 316 492, 332 506 C 348 492, 348 470, 342 454 Z"
+              fill="url(#shoeGrad_{look_number})" stroke="rgba(255,255,255,0.32)" stroke-width="1" />
+        <ellipse cx="332" cy="468" rx="8" ry="13" fill="#182030" stroke="rgba(255,255,255,0.22)" stroke-width="0.9" />
+        <path d="M 318 480 Q 332 485 346 480 L 345 486 Q 332 491 319 486 Z" fill="url(#shoeGrad_{look_number})" stroke="rgba(255,255,255,0.35)" stroke-width="0.8" />
+        <path d="M 320 460 Q 332 464 344 460" fill="none" stroke="url(#goldGrad_{look_number})" stroke-width="2.2" />
+        <circle cx="345" cy="460" r="2" fill="url(#goldGrad_{look_number})" />
+      </g>
+    </g>''' if is_female else f'''<!-- Separated Left & Right Shoes scaled crisply & centered at x=129 -->
     <g filter="url(#softShadow_{look_number})" transform="translate(-259, -460) scale(1.30)">
       <ellipse cx="268" cy="508" rx="22" ry="3.5" fill="#000000" fill-opacity="0.40" />
       <ellipse cx="332" cy="508" rx="22" ry="3.5" fill="#000000" fill-opacity="0.40" />
@@ -1948,7 +1994,7 @@ def _generate_outfit_svg(
         <ellipse cx="333" cy="464" rx="6" ry="3.5" fill="#182030" />
         <circle cx="333" cy="459" r="1.6" fill="url(#goldGrad_{look_number})" />
       </g>
-    </g>
+    </g>'''}
 
     <!-- Spec Footer inside Panel 3 -->
     <line x1="16" y1="210" x2="243" y2="210" class="stitch-divider" />
