@@ -33,6 +33,7 @@ supabase/.temp/
 
 # Large dataset archives and raw images (reproducible via scripts in data/)
 data/raw/
+data/face_memory.db
 data/*.zip
 data/*.tar.gz
 data/*.tar
