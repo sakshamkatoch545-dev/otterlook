@@ -925,18 +925,15 @@ body, button, input, select, textarea,
 }
 
 .brand-monogram {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, rgba(242, 202, 80, 0.2), var(--bg-container));
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(242, 202, 80, 0.16), var(--bg-container));
   border: 1px solid var(--border-gold);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent-gold);
-  font-family: var(--font-serif);
-  font-weight: 700;
-  font-size: 1.25rem;
+  padding: 4px;
   box-shadow: var(--shadow-sm);
   flex-shrink: 0;
 }

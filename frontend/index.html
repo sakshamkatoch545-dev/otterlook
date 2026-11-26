@@ -8,6 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>OTTERLOOK AI — Atelier de Colorimétrie & Haute Vision</title>
   <meta name="description" content="Obsidian Haute Colorimetry & Biometric Skin Undertone Analysis Studio.">
+  <link rel="icon" type="image/svg+xml" href="/static/assets/otterlook-logo.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Roboto+Flex:wght@300;400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
@@ -26,7 +27,26 @@
   <header class="site-header">
     <div class="header-container">
       <div class="brand">
-        <div class="brand-monogram">Ω</div>
+        <div class="brand-monogram" aria-label="Otterlook AI Logo">
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+            <defs>
+              <linearGradient id="brandGold" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#FFF2B2" />
+                <stop offset="45%" stop-color="#F2CA50" />
+                <stop offset="100%" stop-color="#B88A00" />
+              </linearGradient>
+              <linearGradient id="brandChroma" x1="16" y1="16" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#34D399" />
+                <stop offset="50%" stop-color="#F2CA50" />
+                <stop offset="100%" stop-color="#E07A5F" />
+              </linearGradient>
+            </defs>
+            <circle cx="32" cy="32" r="21" stroke="url(#brandGold)" stroke-width="3" />
+            <circle cx="32" cy="32" r="13.5" stroke="url(#brandChroma)" stroke-width="2.4" stroke-dasharray="16 5" />
+            <circle cx="32" cy="32" r="5.5" fill="url(#brandGold)" />
+            <circle cx="51" cy="13" r="3.2" fill="#34D399" />
+          </svg>
+        </div>
         <div class="brand-info">
           <h1 class="brand-title">OTTER<span>LOOK</span> AI</h1>
           <span class="brand-sub">Personal Color & Style Analysis</span>

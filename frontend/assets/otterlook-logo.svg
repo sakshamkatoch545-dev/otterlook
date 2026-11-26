@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="otterGold" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF2B2" />
+      <stop offset="45%" stop-color="#F2CA50" />
+      <stop offset="100%" stop-color="#B88A00" />
+    </linearGradient>
+    <linearGradient id="otterChroma" x1="16" y1="16" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34D399" />
+      <stop offset="50%" stop-color="#F2CA50" />
+      <stop offset="100%" stop-color="#E07A5F" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="#0F131C" stroke="url(#otterGold)" stroke-width="2.5" />
+  <circle cx="32" cy="32" r="18" stroke="url(#otterGold)" stroke-width="2.5" />
+  <circle cx="32" cy="32" r="11.5" stroke="url(#otterChroma)" stroke-width="2" stroke-dasharray="14 4" />
+  <circle cx="32" cy="32" r="5" fill="url(#otterGold)" />
+  <circle cx="48" cy="16" r="2.8" fill="#34D399" />
+</svg>
