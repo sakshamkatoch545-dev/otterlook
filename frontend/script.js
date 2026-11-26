@@ -2117,8 +2117,12 @@ document.addEventListener("DOMContentLoaded", () => {
       recBadge = document.createElement("div");
       recBadge.id = "face-recognition-badge";
       recBadge.className = "face-recognition-badge";
-      const resultsContainer = document.querySelector(".results-header") || document.querySelector(".undertone-hero") || document.getElementById("results-section");
-      if (resultsContainer) resultsContainer.prepend(recBadge);
+      const resultsContainer =
+        document.querySelector("#results-section .results-top-bar") ||
+        document.querySelector(".results-header") ||
+        document.querySelector(".undertone-hero") ||
+        document.getElementById("results-section");
+      if (resultsContainer) resultsContainer.appendChild(recBadge);
     }
     if (recBadge && data && data.recognition) {
       const pid = data.recognition.profile_id || "";
