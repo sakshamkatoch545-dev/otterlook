@@ -106,7 +106,7 @@ class FaceDetector:
                     model=yunet_path,
                     config="",
                     input_size=(320, 320),
-                    score_threshold=0.45,
+                    score_threshold=0.26,
                     nms_threshold=0.3,
                     top_k=5000
                 )
@@ -356,28 +356,33 @@ class FaceDetector:
         # ── Engine 2: OpenCV YuNet (fast ONNX neural detector) ───────────────
         if self.yunet_detector is not None:
             try:
-                self.yunet_detector.setInputSize((img_w, img_h))
-                _, faces = self.yunet_detector.detect(image_bgr)
-                if faces is not None and len(faces) > 0:
-                    candidates = []
-                    for f in faces:
-                        if f[-1] < 0.42:
-                            continue
-                        fx, fy, fw, fh = f[:4]
-                        bx = max(0, int(fx))
-                        by = max(0, int(fy))
-                        bw = max(10, min(int(fw), img_w - bx))
-                        bh = max(10, min(int(fh), img_h - by))
-                        candidates.append({"x": bx, "y": by, "w": bw, "h": bh, "conf": float(f[-1])})
-                    ranked = self._rank_face_candidates(candidates, img_w, img_h, image_bgr)
-                    if ranked:
-                        best = ranked[0]
-                        return {
-                            "bounding_box": [best["x"], best["y"], best["w"], best["h"]],
-                            "all_faces": [[c["x"], c["y"], c["w"], c["h"]] for c in ranked[:5]],
-                            "confidence": best["conf"],
-                            "detector_type": "opencv_yunet",
-                        }
+                for frame_to_try in (image_bgr, None):
+                    if frame_to_try is None:
+                        if enhanced is None:
+                            enhanced = _preprocess_for_detection(image_bgr)
+                        frame_to_try = enhanced
+                    self.yunet_detector.setInputSize((img_w, img_h))
+                    _, faces = self.yunet_detector.detect(frame_to_try)
+                    if faces is not None and len(faces) > 0:
+                        candidates = []
+                        for f in faces:
+                            if f[-1] < 0.26:
+                                continue
+                            fx, fy, fw, fh = f[:4]
+                            bx = max(0, int(fx))
+                            by = max(0, int(fy))
+                            bw = max(10, min(int(fw), img_w - bx))
+                            bh = max(10, min(int(fh), img_h - by))
+                            candidates.append({"x": bx, "y": by, "w": bw, "h": bh, "conf": float(f[-1])})
+                        ranked = self._rank_face_candidates(candidates, img_w, img_h, image_bgr)
+                        if ranked:
+                            best = ranked[0]
+                            return {
+                                "bounding_box": [best["x"], best["y"], best["w"], best["h"]],
+                                "all_faces": [[c["x"], c["y"], c["w"], c["h"]] for c in ranked[:5]],
+                                "confidence": best["conf"],
+                                "detector_type": "opencv_yunet",
+                            }
             except Exception:
                 pass
 
