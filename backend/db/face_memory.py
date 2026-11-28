@@ -16,12 +16,14 @@ from typing import Dict, Any, List, Optional, Tuple
 import numpy as np
 
 from backend.vision.face_biometrics import compute_face_similarity, EMBEDDING_DIM
+from backend.db import neon_client
 
 logger = logging.getLogger("otterlook.face_memory")
 
 
 class FaceMemoryDB:
     def __init__(self, db_path: Optional[str] = None):
+        self._explicit_sqlite = db_path is not None
         if db_path is None:
             base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             data_dir = os.path.join(base_dir, "data")
@@ -45,6 +47,10 @@ class FaceMemoryDB:
             self._mem_conn = sqlite3.connect(":memory:", check_same_thread=False)
             self._mem_conn.row_factory = sqlite3.Row
         self._init_db()
+
+    @property
+    def _use_neon(self) -> bool:
+        return (not self._explicit_sqlite) and neon_client.is_available()
 
     def _get_connection(self) -> sqlite3.Connection:
         if self._mem_conn is not None:
@@ -91,6 +97,16 @@ class FaceMemoryDB:
     def _load_embedding_cache(self):
         """Loads all (face_id, embedding) pairs into memory for fast cosine similarity search."""
         cache: List[Tuple[str, np.ndarray]] = []
+        if self._use_neon:
+            try:
+                for item in neon_client.load_face_embeddings():
+                    emb = np.array(item["embedding"], dtype=np.float32)
+                    if len(emb) == EMBEDDING_DIM:
+                        cache.append((item["face_id"], emb))
+                self._embedding_cache = cache
+                return
+            except Exception as e:
+                logger.error("Failed to warm embedding cache from Neon: %s", e)
         try:
             with self._get_connection() as conn:
                 rows = conn.execute("SELECT face_id, embedding FROM face_profiles ORDER BY last_seen_at DESC").fetchall()
@@ -109,10 +125,13 @@ class FaceMemoryDB:
     ) -> Optional[Tuple[Dict[str, Any], float]]:
         """
         Compares query_embedding against cached face embeddings using cosine similarity,
-        then loads only the matched profile row from SQLite.
+        then loads only the matched profile row from Neon or SQLite.
         """
         if query_embedding is None or len(query_embedding) != EMBEDDING_DIM:
             return None
+
+        if self._use_neon:
+            self._load_embedding_cache()
 
         best_face_id = None
         best_similarity = -1.0
@@ -124,6 +143,14 @@ class FaceMemoryDB:
                 best_face_id = face_id
 
         if best_face_id is not None and best_similarity >= threshold:
+            if self._use_neon:
+                profile_dict = neon_client.get_face_profile(best_face_id)
+                if profile_dict is not None:
+                    logger.info(
+                        "Recognized Neon face profile %s with similarity %.3f (>= %.2f)",
+                        profile_dict["face_id"], best_similarity, threshold
+                    )
+                    return profile_dict, best_similarity
             try:
                 with self._get_connection() as conn:
                     row = conn.execute(
@@ -169,6 +196,22 @@ class FaceMemoryDB:
 
         now = datetime.now(timezone.utc).isoformat()
 
+        if self._use_neon:
+            neon_client.save_face_profile(
+                face_id=face_id,
+                embedding=emb_f32.tolist(),
+                undertone=undertone,
+                confidence=float(confidence),
+                probabilities=probabilities,
+                gender=gender,
+                skin_hex=skin_hex,
+                skin_metrics=skin_metrics,
+                palette=palette,
+                skin_harmonies=skin_harmonies or [],
+            )
+            self._embedding_cache.insert(0, (face_id, emb_f32.copy()))
+            return face_id
+
         try:
             with self._get_connection() as conn:
                 conn.execute("""
@@ -194,6 +237,23 @@ class FaceMemoryDB:
         """
         Updates last_seen timestamp, increments detection count, and blends embedding.
         """
+        if self._use_neon:
+            blended_list: Optional[List[float]] = None
+            if new_embedding is not None and len(new_embedding) == EMBEDDING_DIM:
+                old_emb = next((emb for fid, emb in self._embedding_cache if fid == face_id), None)
+                if old_emb is not None:
+                    blended = (0.85 * old_emb + 0.15 * new_embedding).astype(np.float32)
+                    norm = np.linalg.norm(blended)
+                    if norm > 1e-6:
+                        blended = blended / norm
+                    blended_list = blended.tolist()
+                    self._embedding_cache = [
+                        (fid, blended.copy() if fid == face_id else emb)
+                        for fid, emb in self._embedding_cache
+                    ]
+            neon_client.touch_face_profile(face_id, blended_list)
+            return
+
         now = datetime.now(timezone.utc).isoformat()
         try:
             with self._get_connection() as conn:
@@ -231,6 +291,10 @@ class FaceMemoryDB:
         """Deletes a face profile from the database and in-memory cache."""
         if not face_id:
             return False
+        if self._use_neon:
+            deleted = neon_client.delete_face_profile(face_id)
+            self._embedding_cache = [(fid, emb) for fid, emb in self._embedding_cache if fid != face_id]
+            return deleted
         try:
             with self._get_connection() as conn:
                 cur = conn.execute("DELETE FROM face_profiles WHERE face_id = ?", (face_id,))
@@ -273,6 +337,8 @@ class FaceMemoryDB:
 
     def get_stats(self) -> Dict[str, Any]:
         """Returns diagnostic counts from the face memory store."""
+        if self._use_neon:
+            return neon_client.get_face_stats()
         try:
             with self._get_connection() as conn:
                 cur = conn.execute("SELECT COUNT(*), SUM(detection_count) FROM face_profiles")

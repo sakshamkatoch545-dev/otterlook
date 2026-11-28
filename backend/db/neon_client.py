@@ -102,6 +102,25 @@ def _ensure_schema(conn) -> None:
         )
         """
     )
+    conn.run(
+        """
+        CREATE TABLE IF NOT EXISTS face_profiles (
+            face_id TEXT PRIMARY KEY,
+            embedding JSONB NOT NULL,
+            undertone TEXT NOT NULL,
+            confidence REAL NOT NULL,
+            probabilities JSONB,
+            gender TEXT NOT NULL,
+            skin_hex TEXT NOT NULL,
+            skin_metrics JSONB,
+            palette JSONB NOT NULL,
+            skin_harmonies JSONB,
+            detection_count INT NOT NULL DEFAULT 1,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+        """
+    )
     _schema_initialized = True
 
 
@@ -188,6 +207,223 @@ def save_feedback(
     except Exception as exc:
         logger.error("Failed to save feedback to Neon: %s", exc)
         return None
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+# ---------------------------------------------------------------------------
+# Biometric Face Profiles persistence in Neon Postgres
+# ---------------------------------------------------------------------------
+def load_face_embeddings() -> List[Dict[str, Any]]:
+    """Load all (face_id, embedding) pairs ordered by most recently seen."""
+    conn = _open_connection()
+    if conn is None:
+        return []
+    try:
+        rows = conn.run(
+            "SELECT face_id, embedding FROM face_profiles ORDER BY last_seen_at DESC"
+        )
+        results: List[Dict[str, Any]] = []
+        for face_id, emb in rows:
+            if isinstance(emb, str):
+                emb = json.loads(emb)
+            results.append({"face_id": face_id, "embedding": emb})
+        return results
+    except Exception as exc:
+        logger.error("Failed to load face embeddings from Neon: %s", exc)
+        return []
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def get_face_profile(face_id: str) -> Optional[Dict[str, Any]]:
+    """Fetch a single calibrated face profile from Neon by face_id."""
+    conn = _open_connection()
+    if conn is None:
+        return None
+    try:
+        rows = conn.run(
+            """
+            SELECT face_id, undertone, confidence, probabilities, gender,
+                   skin_hex, skin_metrics, palette, skin_harmonies,
+                   detection_count, created_at, last_seen_at
+            FROM face_profiles
+            WHERE face_id = :face_id
+            """,
+            face_id=face_id,
+        )
+        if not rows:
+            return None
+        r = rows[0]
+
+        def _parse(val, default):
+            if val is None:
+                return default
+            if isinstance(val, str):
+                try:
+                    return json.loads(val)
+                except Exception:
+                    return default
+            return val
+
+        return {
+            "face_id": r[0],
+            "undertone": r[1],
+            "confidence": float(r[2]),
+            "probabilities": _parse(r[3], None),
+            "gender": r[4],
+            "skin_hex": r[5],
+            "skin_metrics": _parse(r[6], {}),
+            "palette": _parse(r[7], []),
+            "skin_harmonies": _parse(r[8], []),
+            "curated_outfits": [],
+            "detection_count": int(r[9]),
+            "created_at": str(r[10]),
+            "last_seen_at": str(r[11]),
+        }
+    except Exception as exc:
+        logger.error("Failed to fetch face profile %s from Neon: %s", face_id, exc)
+        return None
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def save_face_profile(
+    face_id: str,
+    embedding: List[float],
+    undertone: str,
+    confidence: float,
+    probabilities: Optional[Dict[str, float]],
+    gender: str,
+    skin_hex: str,
+    skin_metrics: Dict[str, Any],
+    palette: List[Dict[str, Any]],
+    skin_harmonies: List[Dict[str, Any]],
+) -> bool:
+    """Insert a newly calibrated face profile into Neon Postgres."""
+    conn = _open_connection()
+    if conn is None:
+        return False
+    try:
+        conn.run(
+            """
+            INSERT INTO face_profiles (
+                face_id, embedding, undertone, confidence, probabilities,
+                gender, skin_hex, skin_metrics, palette, skin_harmonies
+            ) VALUES (
+                :face_id, CAST(:embedding AS JSONB), :undertone, :confidence,
+                CAST(:probabilities AS JSONB), :gender, :skin_hex,
+                CAST(:skin_metrics AS JSONB), CAST(:palette AS JSONB),
+                CAST(:skin_harmonies AS JSONB)
+            )
+            ON CONFLICT (face_id) DO NOTHING
+            """,
+            face_id=face_id,
+            embedding=json.dumps(embedding),
+            undertone=undertone,
+            confidence=float(confidence),
+            probabilities=json.dumps(probabilities) if probabilities else None,
+            gender=gender,
+            skin_hex=skin_hex,
+            skin_metrics=json.dumps(skin_metrics),
+            palette=json.dumps(palette),
+            skin_harmonies=json.dumps(skin_harmonies),
+        )
+        logger.info("Saved face profile %s to Neon Postgres.", face_id)
+        return True
+    except Exception as exc:
+        logger.error("Failed to save face profile %s to Neon: %s", face_id, exc)
+        return False
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def touch_face_profile(face_id: str, blended_embedding: Optional[List[float]] = None) -> None:
+    """Update last_seen_at, detection_count, and blended embedding in Neon."""
+    conn = _open_connection()
+    if conn is None:
+        return
+    try:
+        if blended_embedding is not None:
+            conn.run(
+                """
+                UPDATE face_profiles
+                SET last_seen_at = now(),
+                    detection_count = detection_count + 1,
+                    embedding = CAST(:embedding AS JSONB)
+                WHERE face_id = :face_id
+                """,
+                face_id=face_id,
+                embedding=json.dumps(blended_embedding),
+            )
+        else:
+            conn.run(
+                """
+                UPDATE face_profiles
+                SET last_seen_at = now(),
+                    detection_count = detection_count + 1
+                WHERE face_id = :face_id
+                """,
+                face_id=face_id,
+            )
+    except Exception as exc:
+        logger.error("Failed to touch face profile %s in Neon: %s", face_id, exc)
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def delete_face_profile(face_id: str) -> bool:
+    """Delete a face profile from Neon Postgres."""
+    conn = _open_connection()
+    if conn is None:
+        return False
+    try:
+        rows = conn.run(
+            "DELETE FROM face_profiles WHERE face_id = :face_id RETURNING face_id",
+            face_id=face_id,
+        )
+        return len(rows) > 0
+    except Exception as exc:
+        logger.error("Failed to delete face profile %s from Neon: %s", face_id, exc)
+        return False
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def get_face_stats() -> Dict[str, Any]:
+    """Return total registered faces and total recognitions from Neon."""
+    conn = _open_connection()
+    if conn is None:
+        return {"total_registered_faces": 0, "total_recognitions": 0}
+    try:
+        rows = conn.run(
+            "SELECT COUNT(*), COALESCE(SUM(detection_count), 0) FROM face_profiles"
+        )
+        total_faces, total_recognitions = rows[0]
+        return {
+            "total_registered_faces": int(total_faces or 0),
+            "total_recognitions": int(total_recognitions or 0),
+        }
+    except Exception as exc:
+        return {"error": str(exc), "total_registered_faces": 0, "total_recognitions": 0}
     finally:
         try:
             conn.close()
