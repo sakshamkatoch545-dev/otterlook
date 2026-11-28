@@ -1603,6 +1603,10 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (typeof window.__otterlookRequireLoginForResults === "function" && !window.__otterlookRequireLoginForResults()) {
+      return;
+    }
+
     hideError();
     studioSection.classList.add("hidden");
     heroSection.classList.add("hidden");
@@ -2961,6 +2965,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const loginSubEl = document.getElementById("auth-login-sub");
     const googleContainer = document.getElementById("google-signin-container");
     const loginErrorEl = document.getElementById("auth-login-error");
+    const authBackHomeBtn = document.getElementById("auth-back-home-btn");
+    const headerSignInBtn = document.getElementById("header-signin-btn");
     const userChip = document.getElementById("header-user-chip");
     const userNameEl = document.getElementById("header-user-name");
     const userAvatarEl = document.getElementById("header-user-avatar");
@@ -2969,6 +2975,33 @@ document.addEventListener("DOMContentLoaded", () => {
     const LAST_LOGIN_KEY = "otterlook_last_login_v1";
     const PROGRESS_KEY_PREFIX = "otterlook_progress_v1_";
     let activeUser = null;
+    let pendingAnalyzeAfterLogin = false;
+
+    const showLoginPageView = (promptReason) => {
+      updateRememberedSubtitle(promptReason);
+      if (heroSection) heroSection.classList.add("hidden");
+      if (studioSection) studioSection.classList.add("hidden");
+      if (processingSection) processingSection.classList.add("hidden");
+      if (resultsSection) resultsSection.classList.add("hidden");
+      if (loginPage) loginPage.classList.remove("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const showLandingPageView = () => {
+      if (loginPage) loginPage.classList.add("hidden");
+      if (resultsSection) resultsSection.classList.add("hidden");
+      if (processingSection) processingSection.classList.add("hidden");
+      if (heroSection) heroSection.classList.remove("hidden");
+      if (studioSection) studioSection.classList.remove("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    window.__otterlookRequireLoginForResults = () => {
+      if (activeUser && activeUser.name) return true;
+      pendingAnalyzeAfterLogin = true;
+      showLoginPageView("Sign in with Google to view your color analysis results");
+      return false;
+    };
 
     const getProgressKey = (email) => PROGRESS_KEY_PREFIX + String(email || "guest").trim().toLowerCase();
 
@@ -2988,8 +3021,12 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (_) {}
     };
 
-    const updateRememberedSubtitle = () => {
+    const updateRememberedSubtitle = (customMessage = "") => {
       if (!loginSubEl) return;
+      if (customMessage) {
+        loginSubEl.textContent = customMessage;
+        return;
+      }
       try {
         const last = JSON.parse(localStorage.getItem(LAST_LOGIN_KEY) || "null");
         if (last && last.name) {
@@ -3074,10 +3111,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!user || !user.name) {
         activeUser = null;
         updateRememberedSubtitle();
-        if (loginPage) loginPage.classList.remove("hidden");
+        if (loginPage) loginPage.classList.add("hidden");
         if (userChip) userChip.classList.add("hidden");
         if (logoutBtn) logoutBtn.classList.add("hidden");
+        if (headerSignInBtn) headerSignInBtn.classList.remove("hidden");
         if (userAvatarEl) { userAvatarEl.src = ""; userAvatarEl.alt = ""; }
+        if (resultsSection) resultsSection.classList.add("hidden");
+        if (heroSection) heroSection.classList.remove("hidden");
+        if (studioSection) studioSection.classList.remove("hidden");
         return;
       }
       activeUser = user;
@@ -3098,8 +3139,22 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (userChip) userChip.classList.remove("hidden");
       if (logoutBtn) logoutBtn.classList.remove("hidden");
+      if (headerSignInBtn) headerSignInBtn.classList.add("hidden");
       if (loginPage) loginPage.classList.add("hidden");
       showAuthErr("");
+
+      if (pendingAnalyzeAfterLogin) {
+        pendingAnalyzeAfterLogin = false;
+        if (heroSection) heroSection.classList.remove("hidden");
+        if (studioSection) studioSection.classList.remove("hidden");
+        if (analyzeBtn && !analyzeBtn.disabled) {
+          analyzeBtn.click();
+          return;
+        }
+      }
+
+      if (heroSection) heroSection.classList.remove("hidden");
+      if (studioSection) studioSection.classList.remove("hidden");
 
       const localProg = loadLocalProgress(user.email);
       const effectiveProg = (serverProgress && Object.keys(serverProgress).length > 0)
@@ -3133,8 +3188,23 @@ document.addEventListener("DOMContentLoaded", () => {
       applySession(null);
     }
 
+    if (headerSignInBtn) {
+      headerSignInBtn.addEventListener("click", () => {
+        pendingAnalyzeAfterLogin = false;
+        showLoginPageView();
+      });
+    }
+
+    if (authBackHomeBtn) {
+      authBackHomeBtn.addEventListener("click", () => {
+        pendingAnalyzeAfterLogin = false;
+        showLandingPageView();
+      });
+    }
+
     if (logoutBtn) {
       logoutBtn.addEventListener("click", () => {
+        pendingAnalyzeAfterLogin = false;
         try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
         try { window.google?.accounts?.id?.disableAutoSelect?.(); } catch (_) {}
         if (resultsSection) resultsSection.classList.add("hidden");

@@ -24,23 +24,6 @@
     <div class="orb-rose"></div>
   </div>
 
-  <!-- Minimal Google Cloud OAuth, Email/Password & Google Authenticator 2FA Login Page -->
-  <div class="auth-login-page hidden" id="auth-login-page" role="dialog" aria-modal="true" aria-labelledby="login-title">
-    <div class="auth-login-card">
-      <div class="auth-login-logo">
-        <img src="/static/assets/otterlook-logo.svg?v=2" alt="Otterlook AI" width="44" height="44">
-      </div>
-      <h2 id="login-title" class="auth-login-title">OTTER<span>LOOK</span> AI</h2>
-      <p class="auth-login-sub" id="auth-login-sub">Sign in with Google</p>
-
-      <div id="auth-google-section" class="auth-google-section">
-        <div id="google-signin-container" class="google-signin-container"></div>
-      </div>
-
-      <p id="auth-login-error" class="auth-login-error hidden"></p>
-    </div>
-  </div>
-
   <!-- Header Navigation -->
   <header class="site-header">
     <div class="header-container">
@@ -82,6 +65,10 @@
       </div>
 
       <div class="header-actions">
+        <button type="button" id="header-signin-btn" class="btn btn-outline header-signin-btn" title="Sign In with Google">
+          <span class="material-symbols-outlined" style="font-size: 16px;">login</span>
+          <span>Sign In</span>
+        </button>
         <div id="header-user-chip" class="header-user-chip hidden">
           <img id="header-user-avatar" class="header-user-avatar" src="" alt="" referrerpolicy="no-referrer" />
           <span id="header-user-name" class="header-user-name"></span>
@@ -108,6 +95,28 @@
 
   <!-- Main Container -->
   <main class="main-content">
+    <!-- Dedicated Google Sign-In Page Section (Shown only when signing in or before viewing results) -->
+    <section class="auth-login-page hidden" id="auth-login-page" aria-labelledby="login-title">
+      <div class="auth-login-card">
+        <div class="auth-login-logo">
+          <img src="/static/assets/otterlook-logo.svg?v=2" alt="Otterlook AI" width="44" height="44">
+        </div>
+        <h2 id="login-title" class="auth-login-title">OTTER<span>LOOK</span> AI</h2>
+        <p class="auth-login-sub" id="auth-login-sub">Sign in with Google to view your results</p>
+
+        <div id="auth-google-section" class="auth-google-section">
+          <div id="google-signin-container" class="google-signin-container"></div>
+        </div>
+
+        <p id="auth-login-error" class="auth-login-error hidden"></p>
+
+        <button type="button" id="auth-back-home-btn" class="btn btn-outline auth-back-home-btn">
+          <span class="material-symbols-outlined" style="font-size: 16px;">arrow_back</span>
+          <span>Back to Landing Page</span>
+        </button>
+      </div>
+    </section>
+
     <!-- Hero Section -->
     <section class="hero-section">
       <div class="hero-tag">

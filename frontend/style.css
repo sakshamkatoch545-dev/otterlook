@@ -6056,18 +6056,18 @@ button,
    MINIMAL GOOGLE CLOUD OAUTH & LIMITED-CHARACTER LOGIN PAGE
    ========================================================================== */
 .auth-login-page {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.25rem;
-  background: rgba(10, 14, 22, 0.94);
+  min-height: 62vh;
+  padding: 2rem 1.25rem;
 }
 
-[data-theme="light"] .auth-login-page {
-  background: rgba(248, 249, 252, 0.96);
+.auth-back-home-btn {
+  margin-top: 1.15rem;
+  width: 100%;
+  justify-content: center;
+  font-size: 0.8rem;
 }
 
 .auth-login-card {
