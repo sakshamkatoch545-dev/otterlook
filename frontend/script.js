@@ -261,10 +261,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (cameraCaptureBtn) {
     cameraCaptureBtn.addEventListener("click", async () => {
       if (!cameraVideo || !cameraVideo.videoWidth) return;
-      const liveMeterEl = document.getElementById("camera-live-meter");
       const ovalEl = document.querySelector(".camera-face-oval");
 
-      // Compute oval geometry normalized to video frame (0..1)
+      // Compute oval geometry normalized to video frame (0..1) BEFORE closing camera modal
       let ovalCx = 0.5, ovalCy = 0.5, ovalW = 0.56, ovalH = 0.74;
       if (ovalEl) {
         const vRect = cameraVideo.getBoundingClientRect();
@@ -287,76 +286,84 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       snapCtx.drawImage(cameraVideo, 0, 0);
 
-      cameraCaptureBtn.disabled = true;
-      if (liveMeterEl) {
-        liveMeterEl.textContent = "Checking face inside oval...";
-        liveMeterEl.className = "camera-live-meter";
+      // 1. Click/capture the picture first and close the camera modal
+      const snapDataUrl = snapCanvas.toDataURL("image/jpeg", 0.92);
+      stopCameraStream();
+
+      hideError();
+      previewImg.src = snapDataUrl;
+      uploadPrompt.classList.add("hidden");
+      previewBox.classList.remove("hidden");
+      analyzeBtn.disabled = true;
+      currentFile = null;
+
+      if (qualityBar) qualityBar.classList.remove("hidden");
+      if (qualityBadgeText) {
+        qualityBadgeText.textContent = "Checking Oval";
+        qualityBadgeText.className = "badge-status";
+      }
+      if (qualityStatusText) {
+        qualityStatusText.textContent = "Checking if your face is inside the oval...";
       }
 
-      try {
-        const snapDataUrl = snapCanvas.toDataURL("image/jpeg", 0.92);
-        const detRes = await verifyFaceWithYolo(snapDataUrl);
+      // 2. Determine whether a face fits inside the oval
+      const detRes = await verifyFaceWithYolo(snapDataUrl);
+      if (detRes && !detRes.networkError) {
+        const allFaces = (detRes.faces && detRes.faces.length)
+          ? detRes.faces
+          : (detRes.bounding_box ? [detRes.bounding_box] : []);
 
-        if (detRes && !detRes.networkError) {
-          const allFaces = (detRes.faces && detRes.faces.length)
-            ? detRes.faces
-            : (detRes.bounding_box ? [detRes.bounding_box] : []);
+        const inOvalFaces = allFaces
+          .map((f) => {
+            const fcx = (f.pctX + f.pctW / 2) / 100;
+            const fcy = (f.pctY + f.pctH / 2) / 100;
+            const fw = f.pctW / 100;
+            const fh = f.pctH / 100;
+            const rx = Math.max(0.15, ovalW * 0.5);
+            const ry = Math.max(0.15, ovalH * 0.5);
+            const dist2 = Math.pow((fcx - ovalCx) / rx, 2) + Math.pow((fcy - ovalCy) / ry, 2);
+            const fitsSize = fw >= ovalW * 0.25 && fh >= ovalH * 0.22;
+            return { face: f, dist2, inside: dist2 <= 1.1 && fitsSize };
+          })
+          .filter((item) => item.inside)
+          .sort((a, b) => a.dist2 - b.dist2);
 
-          // Filter to only faces positioned inside the oval
-          const inOvalFaces = allFaces
-            .map((f) => {
-              const fcx = (f.pctX + f.pctW / 2) / 100;
-              const fcy = (f.pctY + f.pctH / 2) / 100;
-              const fw = f.pctW / 100;
-              const fh = f.pctH / 100;
-              const rx = Math.max(0.15, ovalW * 0.5);
-              const ry = Math.max(0.15, ovalH * 0.5);
-              const dist2 = Math.pow((fcx - ovalCx) / rx, 2) + Math.pow((fcy - ovalCy) / ry, 2);
-              const fitsSize = fw >= ovalW * 0.25 && fh >= ovalH * 0.22;
-              return { face: f, dist2, inside: dist2 <= 1.1 && fitsSize };
-            })
-            .filter((item) => item.inside)
-            .sort((a, b) => a.dist2 - b.dist2);
-
-          if (inOvalFaces.length === 0) {
-            if (liveMeterEl) {
-              liveMeterEl.textContent = "⚠️ Put your face in the oval";
-              liveMeterEl.className = "camera-live-meter warn";
-            }
-            if (ovalEl) {
-              ovalEl.style.borderColor = "#EF4444";
-              setTimeout(() => { ovalEl.style.borderColor = ""; }, 1600);
-            }
-            return;
+        if (inOvalFaces.length === 0) {
+          analyzeBtn.disabled = true;
+          currentFile = null;
+          if (qualityBadgeText) {
+            qualityBadgeText.textContent = "Not In Oval";
+            qualityBadgeText.className = "badge-status poor";
           }
-
-          // Only keep & crop the single face inside the oval (excludes any other faces outside)
-          const targetFace = inOvalFaces[0].face;
-          const snapImg = new Image();
-          snapImg.src = snapDataUrl;
-          await new Promise((resolve) => {
-            snapImg.onload = resolve;
-            snapImg.onerror = resolve;
-          });
-          const cropped = await cropPortraitAroundFace(snapImg, targetFace);
-          if (cropped && cropped.file) {
-            stopCameraStream();
-            handleFileSelection(cropped.file);
-            return;
+          if (qualityStatusText) {
+            qualityStatusText.textContent = "⚠️ Put your face in the oval and retake the picture.";
           }
+          showError("⚠️ Face is not inside the oval. Please put your face inside the oval and capture again.");
+          return;
         }
 
-        // Offline fallback if /api/detect-face was unreachable
-        snapCanvas.toBlob((blob) => {
-          if (blob) {
-            const file = new File([blob], "selfie.jpg", { type: "image/jpeg" });
-            handleFileSelection(file);
-          }
-        }, "image/jpeg", 0.92);
-        stopCameraStream();
-      } finally {
-        cameraCaptureBtn.disabled = false;
+        // 3. Only keep & analyze the face inside the oval (even when multiple faces appear)
+        const targetFace = inOvalFaces[0].face;
+        const snapImg = new Image();
+        snapImg.src = snapDataUrl;
+        await new Promise((resolve) => {
+          snapImg.onload = resolve;
+          snapImg.onerror = resolve;
+        });
+        const cropped = await cropPortraitAroundFace(snapImg, targetFace);
+        if (cropped && cropped.file) {
+          handleFileSelection(cropped.file);
+          return;
+        }
       }
+
+      // Offline fallback if /api/detect-face was unreachable
+      snapCanvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], "selfie.jpg", { type: "image/jpeg" });
+          handleFileSelection(file);
+        }
+      }, "image/jpeg", 0.92);
     });
   }
 
