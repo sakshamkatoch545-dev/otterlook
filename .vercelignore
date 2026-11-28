@@ -21,13 +21,9 @@ training/
 docs/
 results/
 tests/
-supabase/
 
 # Non-serverless entrypoints & unused heavy model weights
 streamlit_app.py
-app.py
-render.yaml
-Procfile
 backend/vision/models/lbfmodel.yaml
 backend/vision/models/yolov8n-face.pt
 backend/vision/models/blaze_face_short_range.tflite
