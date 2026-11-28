@@ -26,6 +26,7 @@ if root_dir not in sys.path:
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request, Response, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
@@ -82,6 +83,7 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 @app.middleware("http")
 async def add_pna_and_cors_headers(request: Request, call_next):

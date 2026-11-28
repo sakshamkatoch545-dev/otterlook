@@ -344,9 +344,9 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       if (typeof createImageBitmap === "function") {
         const bmp = await createImageBitmap(file);
-        const maxSide = 1600;
+        const maxSide = 1080;
         const origMax = Math.max(bmp.width, bmp.height);
-        if (origMax > maxSide || file.size > 4 * 1024 * 1024) {
+        if (origMax > maxSide || file.size > 1.2 * 1024 * 1024) {
           const scale = origMax > maxSide ? (maxSide / origMax) : 1;
           const nw = Math.max(100, Math.round(bmp.width * scale));
           const nh = Math.max(100, Math.round(bmp.height * scale));
@@ -354,10 +354,10 @@ document.addEventListener("DOMContentLoaded", () => {
           c.width = nw;
           c.height = nh;
           c.getContext("2d").drawImage(bmp, 0, 0, nw, nh);
-          const blob = await new Promise((resolve) => c.toBlob(resolve, "image/jpeg", 0.94));
+          const blob = await new Promise((resolve) => c.toBlob(resolve, "image/jpeg", 0.88));
           if (blob) {
             normalizedFile = new File([blob], (file.name || "portrait").replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
-            previewDataUrl = c.toDataURL("image/jpeg", 0.94);
+            previewDataUrl = c.toDataURL("image/jpeg", 0.88);
           }
         }
         bmp.close();
