@@ -65,6 +65,10 @@ class GenerateOutfitsRequest(BaseModel):
     gender: str = "all"
     skin_hex: Optional[str] = "#C68B59"
 
+
+class GoogleAuthRequest(BaseModel):
+    credential: str
+
 app = FastAPI(
     title="AI-Based Personal Colour Analysis API",
     description="Skin undertone classification & personalized colour palette recommendation engine.",
@@ -670,6 +674,66 @@ async def db_status():
         "database_provider": "neon_postgres",
         "face_memory": face_memory_db.get_stats(),
     }
+
+
+@app.get("/api/auth/config")
+async def auth_config():
+    """
+    Returns public Google Cloud Console OAuth 2.0 Client ID configuration.
+    """
+    client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
+    return {
+        "google_enabled": bool(client_id),
+        "google_client_id": client_id,
+        "max_name_chars": 16,
+    }
+
+
+@app.post("/api/auth/google")
+async def verify_google_login(payload: GoogleAuthRequest):
+    """
+    Verifies a Google Identity Services ID token against Google's tokeninfo endpoint
+    and the configured GOOGLE_CLIENT_ID from Google Cloud Console.
+    """
+    client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
+    if not client_id:
+        raise HTTPException(
+            status_code=503,
+            detail="Google Cloud Console authentication is not configured (missing GOOGLE_CLIENT_ID)."
+        )
+    token = (payload.credential or "").strip()
+    if not token:
+        raise HTTPException(status_code=400, detail="Missing Google ID token.")
+
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            resp = await client.get(
+                "https://oauth2.googleapis.com/tokeninfo",
+                params={"id_token": token},
+            )
+        if resp.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid Google token.")
+        info = resp.json()
+        if info.get("aud") != client_id:
+            raise HTTPException(status_code=401, detail="Google token client mismatch.")
+
+        raw_name = (info.get("name") or info.get("given_name") or info.get("email") or "User").strip()
+        short_name = raw_name[:16]
+        return {
+            "success": True,
+            "user": {
+                "name": short_name,
+                "email": info.get("email", ""),
+                "picture": info.get("picture", ""),
+                "provider": "google",
+            },
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Google token verification failed: %s", exc)
+        raise HTTPException(status_code=401, detail="Google authentication failed.")
 
 
 @app.delete("/api/face-profile/{face_id}")

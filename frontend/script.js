@@ -2937,6 +2937,129 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // --- Google Cloud Console OAuth & Limited-Character Login Gate ---
+  (async function initAuthLogin() {
+    const loginPage = document.getElementById("auth-login-page");
+    const googleContainer = document.getElementById("google-signin-container");
+    const quickForm = document.getElementById("quick-login-form");
+    const nameInput = document.getElementById("login-name-input");
+    const charCountEl = document.getElementById("login-char-count");
+    const loginErrorEl = document.getElementById("auth-login-error");
+    const userChip = document.getElementById("header-user-chip");
+    const userNameEl = document.getElementById("header-user-name");
+    const logoutBtn = document.getElementById("logout-btn");
+    const STORAGE_KEY = "otterlook_user_v1";
+
+    const applySession = (user) => {
+      if (!user || !user.name) {
+        if (loginPage) loginPage.classList.remove("hidden");
+        if (userChip) userChip.classList.add("hidden");
+        return;
+      }
+      const cleanName = String(user.name).trim().slice(0, 16);
+      if (userNameEl) userNameEl.textContent = cleanName;
+      if (userChip) userChip.classList.remove("hidden");
+      if (loginPage) loginPage.classList.add("hidden");
+    };
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      applySession(saved);
+    } catch (_) {
+      applySession(null);
+    }
+
+    if (nameInput && charCountEl) {
+      nameInput.addEventListener("input", () => {
+        if (nameInput.value.length > 16) nameInput.value = nameInput.value.slice(0, 16);
+        charCountEl.textContent = `${nameInput.value.length}/16`;
+      });
+    }
+
+    if (quickForm && nameInput) {
+      quickForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const val = nameInput.value.trim().slice(0, 16);
+        if (val.length < 2) {
+          if (loginErrorEl) {
+            loginErrorEl.textContent = "Enter 2–16 characters.";
+            loginErrorEl.classList.remove("hidden");
+          }
+          return;
+        }
+        const user = { name: val, provider: "name" };
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(user)); } catch (_) {}
+        if (loginErrorEl) loginErrorEl.classList.add("hidden");
+        applySession(user);
+      });
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
+        try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+        if (nameInput) nameInput.value = "";
+        if (charCountEl) charCountEl.textContent = "0/16";
+        applySession(null);
+      });
+    }
+
+    // Load Google Cloud Console OAuth Client ID from backend
+    try {
+      let cfg = null;
+      for (const ep of buildApiEndpoints("/api/auth/config")) {
+        try {
+          const r = await fetch(ep);
+          if (r.ok) { cfg = await r.json(); break; }
+        } catch (_) {}
+      }
+      if (cfg && cfg.google_enabled && cfg.google_client_id && googleContainer) {
+        const renderGsi = () => {
+          if (!window.google || !window.google.accounts || !window.google.accounts.id) return false;
+          window.google.accounts.id.initialize({
+            client_id: cfg.google_client_id,
+            callback: async (response) => {
+              try {
+                let authData = null;
+                for (const ep of buildApiEndpoints("/api/auth/google")) {
+                  try {
+                    const r = await fetch(ep, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ credential: response.credential }),
+                    });
+                    if (r.ok) { authData = await r.json(); break; }
+                  } catch (_) {}
+                }
+                if (authData && authData.success && authData.user) {
+                  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(authData.user)); } catch (_) {}
+                  applySession(authData.user);
+                } else if (loginErrorEl) {
+                  loginErrorEl.textContent = "Google sign-in failed.";
+                  loginErrorEl.classList.remove("hidden");
+                }
+              } catch (_) {}
+            },
+          });
+          window.google.accounts.id.renderButton(googleContainer, {
+            theme: "filled_black",
+            size: "large",
+            shape: "pill",
+            width: 280,
+          });
+          return true;
+        };
+        if (!renderGsi()) {
+          const gsiTimer = setInterval(() => {
+            if (renderGsi()) clearInterval(gsiTimer);
+          }, 250);
+          setTimeout(() => clearInterval(gsiTimer), 6000);
+        }
+      } else if (googleContainer) {
+        googleContainer.style.display = "none";
+      }
+    } catch (_) {}
+  })();
+
   // Global restrictions to disable copy, cut, paste and context menu
   document.addEventListener('copy', (e) => e.preventDefault());
   document.addEventListener('cut', (e) => e.preventDefault());

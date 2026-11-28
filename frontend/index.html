@@ -14,6 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Roboto+Flex:wght@300;400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <!-- Ultra-Fast High-Precision Neural Geometry & Feature Engine -->
   <link rel="stylesheet" href="/static/style.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="bg-atelier-grid">
   <!-- Ambient Luxury Light Orbs -->
@@ -21,6 +22,38 @@
     <div class="orb-gold"></div>
     <div class="orb-ochre"></div>
     <div class="orb-rose"></div>
+  </div>
+
+  <!-- Minimal Google Cloud OAuth & Limited-Character Login Page -->
+  <div class="auth-login-page hidden" id="auth-login-page" role="dialog" aria-modal="true" aria-labelledby="login-title">
+    <div class="auth-login-card">
+      <div class="auth-login-logo">
+        <img src="/static/assets/otterlook-logo.svg?v=2" alt="Otterlook AI" width="44" height="44">
+      </div>
+      <h2 id="login-title" class="auth-login-title">OTTER<span>LOOK</span> AI</h2>
+      <p class="auth-login-sub">Sign in to continue</p>
+
+      <div id="google-signin-container" class="google-signin-container"></div>
+
+      <div class="auth-divider"><span>or</span></div>
+
+      <form id="quick-login-form" class="auth-login-form" autocomplete="off">
+        <div class="auth-input-wrap">
+          <input
+            type="text"
+            id="login-name-input"
+            class="auth-name-input"
+            maxlength="16"
+            minlength="2"
+            placeholder="Name (max 16 chars)"
+            required
+          />
+          <span id="login-char-count" class="auth-char-count">0/16</span>
+        </div>
+        <button type="submit" class="btn btn-primary auth-submit-btn">Continue</button>
+      </form>
+      <p id="auth-login-error" class="auth-login-error hidden"></p>
+    </div>
   </div>
 
   <!-- Header Navigation -->
@@ -64,6 +97,10 @@
       </div>
 
       <div class="header-actions">
+        <div id="header-user-chip" class="header-user-chip hidden">
+          <span id="header-user-name" class="header-user-name"></span>
+          <button type="button" id="logout-btn" class="header-logout-btn" title="Sign Out">Sign Out</button>
+        </div>
         <button id="nav-home-btn" class="btn btn-outline nav-home-btn hidden" title="Back to Home Page">
           <span class="material-symbols-outlined" style="font-size: 16px;">home</span>
           <span>Home Page</span>

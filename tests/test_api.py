@@ -62,6 +62,17 @@ def test_api_db_status(client):
     assert data.get("database_provider") == "neon_postgres"
 
 
+def test_api_auth_config_and_google_validation(client):
+    cfg = client.get("/api/auth/config")
+    assert cfg.status_code == 200
+    cdata = cfg.json()
+    assert "google_enabled" in cdata
+    assert cdata.get("max_name_chars") == 16
+
+    bad = client.post("/api/auth/google", json={"credential": ""})
+    assert bad.status_code in (400, 503)
+
+
 def test_api_feedback_validation(client):
     # Invalid undertone should return 400
     response = client.post("/api/feedback", json={"analysis_id": "test-uuid", "corrected_undertone": "Invalid"})
