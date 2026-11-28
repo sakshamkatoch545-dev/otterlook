@@ -6226,30 +6226,9 @@ button,
   letter-spacing: 0.01em;
 }
 
-.header-logout-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  color: var(--text-muted, #94A3B8);
-  font-size: 0.72rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0.32rem 0.65rem;
-  border-radius: 9999px;
-  transition: var(--transition);
-}
-
 .header-logout-btn:hover {
-  background: rgba(239, 68, 68, 0.18);
-  border-color: rgba(239, 68, 68, 0.45);
+  border-color: rgba(239, 68, 68, 0.55);
   color: #EF4444;
-}
-
-[data-theme="light"] .header-logout-btn {
-  background: rgba(239, 68, 68, 0.06);
-  border-color: rgba(239, 68, 68, 0.15);
 }
 
 @media (max-width: 768px) {
