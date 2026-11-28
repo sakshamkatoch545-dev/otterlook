@@ -479,7 +479,7 @@
 }
 
 .face-autoselect-bar {
-  display: flex;
+  display: none !important;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
