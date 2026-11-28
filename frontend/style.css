@@ -5775,3 +5775,222 @@ body {
   color: #CBD5E1 !important;
 }
 
+/* ==========================================================================
+   MOBILE & TOUCH OPTIMIZATIONS (<= 768px & <= 480px)
+   ========================================================================== */
+html,
+body {
+  overflow-x: clip;
+}
+
+.results-section,
+.another-analysis-card,
+.verdict-card {
+  overflow-x: clip;
+}
+
+button,
+.btn,
+.gender-pill,
+.style-pill,
+.weather-pill,
+.filter-pill,
+.weather-filter-pill,
+.gender-filter-pill,
+.tab-btn,
+.sample-chip-btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.piece-hex,
+.swatch-hex,
+.rec-hex-badge {
+  white-space: nowrap !important;
+  flex-shrink: 0;
+}
+
+.piece-meta-top {
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+}
+
+@media (max-width: 768px) {
+  /* Compact single-row sticky header so mobile viewport isn't crowded */
+  .site-header .header-container {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0.6rem 0.85rem !important;
+    gap: 0.5rem !important;
+    text-align: left !important;
+  }
+
+  .header-container .brand {
+    justify-content: flex-start !important;
+    gap: 0.55rem !important;
+    min-width: 0;
+  }
+
+  .brand-monogram {
+    width: 34px !important;
+    height: 34px !important;
+    flex-shrink: 0;
+  }
+
+  .brand-title {
+    font-size: 1rem !important;
+    white-space: nowrap;
+  }
+
+  .brand-sub {
+    display: none !important;
+  }
+
+  .header-actions {
+    width: auto !important;
+    justify-content: flex-end !important;
+    gap: 0.4rem !important;
+    flex-shrink: 0;
+  }
+
+  .header-actions .btn,
+  .header-actions button {
+    min-height: 36px !important;
+    padding: 0.35rem 0.65rem !important;
+    font-size: 0.72rem !important;
+    white-space: nowrap;
+  }
+
+  .header-actions .theme-toggle-btn {
+    width: 36px !important;
+    padding: 0 !important;
+  }
+
+  /* Maximize usable width on mobile */
+  .main-container {
+    padding: 0.85rem 0.75rem 2.5rem !important;
+  }
+
+  .hero-section {
+    padding: 1.5rem 0.5rem 1rem !important;
+  }
+
+  .hero-headline {
+    font-size: 1.9rem !important;
+    line-height: 1.18 !important;
+  }
+
+  .hero-badges {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.45rem !important;
+  }
+
+  .hero-badge {
+    font-size: 0.72rem !important;
+    padding: 0.35rem 0.7rem !important;
+  }
+
+  /* Gender pill bar fits cleanly on one line */
+  .gender-options {
+    max-width: 100%;
+    padding: 3px !important;
+    gap: 2px !important;
+  }
+
+  .gender-pill {
+    padding: 0.45rem 0.72rem !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap;
+  }
+
+  /* Style & weather preselect pills */
+  .wardrobe-preselect-container {
+    padding: 1rem 0.85rem !important;
+  }
+
+  .style-pills-row,
+  .weather-pills-row {
+    gap: 0.4rem !important;
+  }
+
+  .style-pill,
+  .weather-pill {
+    padding: 0.45rem 0.75rem !important;
+    font-size: 0.76rem !important;
+    min-height: 38px;
+  }
+
+  /* Results cards & spacing */
+  .verdict-card,
+  .colorimetry-card,
+  .palette-showcase-card,
+  .skin-harmonies-card,
+  .outfit-studio-card,
+  .another-analysis-card {
+    padding: 1.1rem 0.9rem !important;
+  }
+
+  .outfit-look-card {
+    padding: 1.1rem 0.85rem !important;
+  }
+
+  .piece-row {
+    padding: 0.75rem 0.75rem !important;
+    gap: 0.65rem !important;
+  }
+
+  /* Smooth horizontal swipe for the 4-column lookboard SVG so garments & labels stay crisp */
+  .outfit-visual-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    justify-content: flex-start !important;
+    scrollbar-width: thin;
+  }
+
+  .outfit-flatlay-svg {
+    min-width: 680px;
+    width: 680px;
+  }
+
+  /* Swatch & recommendation grids */
+  .swatches-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.65rem !important;
+  }
+
+  .tabs-nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    padding-bottom: 0.35rem;
+    scrollbar-width: none;
+  }
+
+  .tabs-nav .tab-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .look-footer-actions {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .look-footer-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 400px) {
+  .gender-pill {
+    padding: 0.42rem 0.55rem !important;
+    font-size: 0.7rem !important;
+  }
+}
+
+
