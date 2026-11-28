@@ -2943,7 +2943,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const loginSubEl = document.getElementById("auth-login-sub");
     const googleContainer = document.getElementById("google-signin-container");
     const googleSection = document.getElementById("auth-google-section");
-    const googleFallbackBtn = document.getElementById("google-fallback-btn");
     const modeTabsWrap = document.getElementById("auth-mode-tabs");
     const emailForm = document.getElementById("email-auth-form");
     const emailInput = document.getElementById("login-email-input");
@@ -3146,12 +3145,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    if (googleFallbackBtn) {
-      googleFallbackBtn.addEventListener("click", () => {
-        showAuthErr("Add GOOGLE_CLIENT_ID in Vercel Environment Variables to enable Google popup.");
-      });
-    }
-
     // Load Google Cloud Console OAuth Client ID from backend
     try {
       let cfg = null;
@@ -3162,7 +3155,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (_) {}
       }
       if (cfg && cfg.google_enabled && cfg.google_client_id && googleContainer) {
-        if (googleFallbackBtn) googleFallbackBtn.classList.add("hidden");
         const renderGsi = () => {
           if (!window.google || !window.google.accounts || !window.google.accounts.id) return false;
           window.google.accounts.id.initialize({
