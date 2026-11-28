@@ -2944,6 +2944,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loginErrorEl = document.getElementById("auth-login-error");
     const userChip = document.getElementById("header-user-chip");
     const userNameEl = document.getElementById("header-user-name");
+    const userAvatarEl = document.getElementById("header-user-avatar");
     const logoutBtn = document.getElementById("logout-btn");
     const STORAGE_KEY = "otterlook_user_v1";
 
@@ -2962,11 +2963,18 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!user || !user.name) {
         if (loginPage) loginPage.classList.remove("hidden");
         if (userChip) userChip.classList.add("hidden");
+        if (logoutBtn) logoutBtn.classList.add("hidden");
+        if (userAvatarEl) { userAvatarEl.src = ""; userAvatarEl.alt = ""; }
         return;
       }
       const cleanName = String(user.name).trim().slice(0, 16);
       if (userNameEl) userNameEl.textContent = cleanName;
+      if (userAvatarEl && user.picture) {
+        userAvatarEl.src = user.picture;
+        userAvatarEl.alt = cleanName;
+      }
       if (userChip) userChip.classList.remove("hidden");
+      if (logoutBtn) logoutBtn.classList.remove("hidden");
       if (loginPage) loginPage.classList.add("hidden");
       showAuthErr("");
     };
