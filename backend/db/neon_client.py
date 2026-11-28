@@ -27,6 +27,8 @@ def _get_connection_url() -> str:
     return (
         os.environ.get("DATABASE_URL", "").strip()
         or os.environ.get("POSTGRES_URL", "").strip()
+        or os.environ.get("STORAGE_URL", "").strip()
+        or os.environ.get("STORAGE_POSTGRES_URL", "").strip()
     )
 
 
