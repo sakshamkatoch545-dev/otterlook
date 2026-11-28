@@ -31,68 +31,10 @@
         <img src="/static/assets/otterlook-logo.svg?v=2" alt="Otterlook AI" width="44" height="44">
       </div>
       <h2 id="login-title" class="auth-login-title">OTTER<span>LOOK</span> AI</h2>
-      <p class="auth-login-sub" id="auth-login-sub">Sign in to continue</p>
-
-      <div class="auth-mode-tabs" id="auth-mode-tabs">
-        <button type="button" class="auth-mode-tab active" data-auth-mode="login">Sign In</button>
-        <button type="button" class="auth-mode-tab" data-auth-mode="register">Create Account</button>
-      </div>
-
-      <form id="email-auth-form" class="auth-login-form" autocomplete="off">
-        <div class="auth-input-wrap">
-          <input
-            type="email"
-            id="login-email-input"
-            class="auth-name-input"
-            maxlength="50"
-            placeholder="Email (max 50 chars)"
-            required
-          />
-          <span id="login-email-count" class="auth-char-count">0/50</span>
-        </div>
-        <div class="auth-input-wrap">
-          <input
-            type="password"
-            id="login-password-input"
-            class="auth-name-input"
-            minlength="6"
-            maxlength="16"
-            placeholder="Password (6-16 chars)"
-            required
-          />
-          <span id="login-pw-count" class="auth-char-count">0/16</span>
-        </div>
-        <button type="submit" id="email-auth-submit-btn" class="btn btn-primary auth-submit-btn">Sign In</button>
-      </form>
+      <p class="auth-login-sub" id="auth-login-sub">Sign in with Google</p>
 
       <div id="auth-google-section" class="auth-google-section">
-        <div class="auth-divider"><span>or</span></div>
         <div id="google-signin-container" class="google-signin-container"></div>
-      </div>
-
-      <!-- Google Authenticator 2-Step Verification Panel -->
-      <div id="auth-2fa-panel" class="auth-2fa-panel hidden">
-        <div id="auth-2fa-qr-wrap" class="auth-2fa-qr-wrap hidden">
-          <img id="auth-2fa-qr-img" class="auth-2fa-qr-img" alt="Google Authenticator QR" width="140" height="140" />
-          <p class="auth-2fa-secret">Key: <code id="auth-2fa-secret-text"></code></p>
-        </div>
-        <form id="auth-2fa-form" class="auth-login-form" autocomplete="off">
-          <div class="auth-input-wrap">
-            <input
-              type="text"
-              id="login-totp-input"
-              class="auth-name-input auth-totp-input"
-              inputmode="numeric"
-              pattern="[0-9]{6}"
-              maxlength="6"
-              placeholder="6-digit Google Auth code"
-              required
-            />
-            <span id="login-totp-count" class="auth-char-count">0/6</span>
-          </div>
-          <button type="submit" class="btn btn-primary auth-submit-btn">Verify 2FA</button>
-          <button type="button" id="auth-2fa-skip-btn" class="auth-2fa-skip-btn hidden">Skip 2FA for now</button>
-        </form>
       </div>
 
       <p id="auth-login-error" class="auth-login-error hidden"></p>
