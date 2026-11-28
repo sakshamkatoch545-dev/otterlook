@@ -46,7 +46,7 @@ from backend.recommendations.outfit_synthesizer import (
 )
 from backend.vision.face_biometrics import extract_face_embedding
 from backend.db.face_memory import face_memory_db
-from backend.db import supabase_client
+from backend.db import neon_client as db_client
 
 logger = logging.getLogger("otterlook.api")
 
@@ -496,12 +496,12 @@ async def analyze_portrait(
         )
     }
 
-    # Persist analysis to Supabase synchronously so the row exists before feedback is submitted
+    # Persist analysis to Neon Postgres synchronously so the row exists before feedback is submitted
     import uuid as _uuid
     analysis_id = str(_uuid.uuid4())
-    if supabase_client.is_available():
+    if db_client.is_available():
         try:
-            saved_id = supabase_client.save_analysis(
+            saved_id = db_client.save_analysis(
                 features=color_features["ml_features"],
                 predicted_undertone=predicted_undertone,
                 confidence=ml_prediction["confidence"],
@@ -511,7 +511,7 @@ async def analyze_portrait(
             if saved_id:
                 analysis_id = saved_id
         except Exception as e:
-            logger.error("Supabase save_analysis failed: %s", e)
+            logger.error("Neon save_analysis failed: %s", e)
 
     # Return comprehensive structured response
     return {
@@ -636,7 +636,7 @@ async def submit_feedback(feedback: FeedbackRequest):
     if not feedback.analysis_id:
         raise HTTPException(status_code=400, detail="analysis_id is required.")
 
-    feedback_id = supabase_client.save_feedback(
+    feedback_id = db_client.save_feedback(
         analysis_id=feedback.analysis_id,
         corrected_undertone=corrected
     )
@@ -657,10 +657,11 @@ async def submit_feedback(feedback: FeedbackRequest):
 @app.get("/api/db-status")
 async def db_status():
     """
-    Check whether Supabase is connected and operational.
+    Check whether Neon Postgres is connected and operational.
     """
     return {
-        "supabase_connected": supabase_client.is_available(),
+        "database_connected": db_client.is_available(),
+        "database_provider": "neon_postgres",
         "face_memory": face_memory_db.get_stats(),
     }
 

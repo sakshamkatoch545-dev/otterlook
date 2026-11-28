@@ -58,7 +58,8 @@ def test_api_db_status(client):
     response = client.get("/api/db-status")
     assert response.status_code == 200
     data = response.json()
-    assert "supabase_connected" in data
+    assert "database_connected" in data
+    assert data.get("database_provider") == "neon_postgres"
 
 
 def test_api_feedback_validation(client):
