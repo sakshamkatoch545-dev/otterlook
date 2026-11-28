@@ -73,6 +73,34 @@ def test_api_auth_config_and_google_validation(client):
     assert bad.status_code in (400, 503)
 
 
+def test_api_user_progress_persistence(client):
+    save_res = client.post(
+        "/api/auth/progress",
+        json={
+            "email": "otter.progress@test.com",
+            "name": "Otter User",
+            "picture": "https://example.com/avatar.png",
+            "progress": {
+                "view": "results",
+                "selectedGenderMode": "male",
+                "currentClothingType": "formal",
+                "currentWeather": "winter",
+            },
+        },
+    )
+    assert save_res.status_code == 200
+    sdata = save_res.json()
+    assert sdata["success"] is True
+    assert sdata["progress"]["view"] == "results"
+
+    get_res = client.get("/api/auth/progress", params={"email": "otter.progress@test.com"})
+    assert get_res.status_code == 200
+    gdata = get_res.json()
+    assert gdata["success"] is True
+    assert gdata["progress"]["selectedGenderMode"] == "male"
+    assert gdata["progress"]["currentClothingType"] == "formal"
+
+
 def test_api_email_auth_and_google_authenticator_2fa(client):
     import time
     from backend.auth_utils import _totp_at

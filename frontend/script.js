@@ -1730,6 +1730,15 @@ document.addEventListener("DOMContentLoaded", () => {
       resultsSection.classList.remove("hidden");
       const navHomeBtnEl = document.getElementById("nav-home-btn");
       if (navHomeBtnEl) navHomeBtnEl.classList.remove("hidden");
+      if (typeof window.__otterlookSaveProgress === "function") {
+        window.__otterlookSaveProgress({
+          view: "results",
+          cachedApiData: data,
+          selectedGenderMode,
+          currentClothingType,
+          currentWeather,
+        });
+      }
       window.scrollTo({ top: 0, behavior: "smooth" });
 
     } catch (err) {
@@ -1755,6 +1764,15 @@ document.addEventListener("DOMContentLoaded", () => {
     studioSection.classList.remove("hidden");
     heroSection.classList.remove("hidden");
     if (navHomeBtn) navHomeBtn.classList.add("hidden");
+    if (typeof window.__otterlookSaveProgress === "function") {
+      window.__otterlookSaveProgress({
+        view: "home",
+        cachedApiData: null,
+        selectedGenderMode,
+        currentClothingType,
+        currentWeather,
+      });
+    }
     resetUploadState();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -2937,9 +2955,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // --- Google Cloud Console OAuth Login ---
+  // --- Google Cloud Console OAuth Login & Saved User Progress ---
   (async function initAuthLogin() {
     const loginPage = document.getElementById("auth-login-page");
+    const loginSubEl = document.getElementById("auth-login-sub");
     const googleContainer = document.getElementById("google-signin-container");
     const loginErrorEl = document.getElementById("auth-login-error");
     const userChip = document.getElementById("header-user-chip");
@@ -2947,6 +2966,39 @@ document.addEventListener("DOMContentLoaded", () => {
     const userAvatarEl = document.getElementById("header-user-avatar");
     const logoutBtn = document.getElementById("logout-btn");
     const STORAGE_KEY = "otterlook_user_v1";
+    const LAST_LOGIN_KEY = "otterlook_last_login_v1";
+    const PROGRESS_KEY_PREFIX = "otterlook_progress_v1_";
+    let activeUser = null;
+
+    const getProgressKey = (email) => PROGRESS_KEY_PREFIX + String(email || "guest").trim().toLowerCase();
+
+    const loadLocalProgress = (email) => {
+      if (!email) return null;
+      try {
+        return JSON.parse(localStorage.getItem(getProgressKey(email)) || "null");
+      } catch (_) {
+        return null;
+      }
+    };
+
+    const saveLocalProgress = (email, progress) => {
+      if (!email || !progress) return;
+      try {
+        localStorage.setItem(getProgressKey(email), JSON.stringify(progress));
+      } catch (_) {}
+    };
+
+    const updateRememberedSubtitle = () => {
+      if (!loginSubEl) return;
+      try {
+        const last = JSON.parse(localStorage.getItem(LAST_LOGIN_KEY) || "null");
+        if (last && last.name) {
+          loginSubEl.textContent = `Welcome back, ${String(last.name).slice(0, 16)} · Sign in with Google`;
+          return;
+        }
+      } catch (_) {}
+      loginSubEl.textContent = "Sign in with Google";
+    };
 
     const showAuthErr = (msg) => {
       if (!loginErrorEl) return;
@@ -2958,33 +3010,6 @@ document.addEventListener("DOMContentLoaded", () => {
         loginErrorEl.classList.remove("hidden");
       }
     };
-
-    const applySession = (user) => {
-      if (!user || !user.name) {
-        if (loginPage) loginPage.classList.remove("hidden");
-        if (userChip) userChip.classList.add("hidden");
-        if (logoutBtn) logoutBtn.classList.add("hidden");
-        if (userAvatarEl) { userAvatarEl.src = ""; userAvatarEl.alt = ""; }
-        return;
-      }
-      const cleanName = String(user.name).trim().slice(0, 16);
-      if (userNameEl) userNameEl.textContent = cleanName;
-      if (userAvatarEl && user.picture) {
-        userAvatarEl.src = user.picture;
-        userAvatarEl.alt = cleanName;
-      }
-      if (userChip) userChip.classList.remove("hidden");
-      if (logoutBtn) logoutBtn.classList.remove("hidden");
-      if (loginPage) loginPage.classList.add("hidden");
-      showAuthErr("");
-    };
-
-    try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-      applySession(saved);
-    } catch (_) {
-      applySession(null);
-    }
 
     const postAuthJson = async (path, body) => {
       for (const ep of buildApiEndpoints(path)) {
@@ -3001,9 +3026,123 @@ document.addEventListener("DOMContentLoaded", () => {
       return { ok: false, status: 0, data: { detail: "Server unreachable." } };
     };
 
+    const restoreProgress = (progress) => {
+      if (!progress || typeof progress !== "object") return;
+      if (progress.selectedGenderMode) {
+        selectedGenderMode = progress.selectedGenderMode;
+        document.querySelectorAll("#upload-gender-options .gender-pill").forEach((pill) => {
+          pill.classList.toggle("active", pill.getAttribute("data-gender") === selectedGenderMode);
+        });
+      }
+      if (progress.currentClothingType) {
+        currentClothingType = progress.currentClothingType;
+        document.querySelectorAll("#upload-clothing-options .style-pill, #results-clothing-options .filter-pill").forEach((pill) => {
+          pill.classList.toggle("active", pill.getAttribute("data-type") === currentClothingType);
+        });
+      }
+      if (progress.currentWeather) {
+        currentWeather = progress.currentWeather;
+        document.querySelectorAll("#upload-weather-options .weather-pill, #results-weather-options .weather-filter-pill").forEach((pill) => {
+          pill.classList.toggle("active", pill.getAttribute("data-weather") === currentWeather);
+        });
+      }
+      if (progress.view === "results" && progress.cachedApiData) {
+        renderResults(progress.cachedApiData);
+        if (heroSection) heroSection.classList.add("hidden");
+        if (studioSection) studioSection.classList.add("hidden");
+        if (processingSection) processingSection.classList.add("hidden");
+        if (resultsSection) resultsSection.classList.remove("hidden");
+        const navHomeBtnEl = document.getElementById("nav-home-btn");
+        if (navHomeBtnEl) navHomeBtnEl.classList.remove("hidden");
+      }
+    };
+
+    window.__otterlookSaveProgress = async (patch) => {
+      if (!activeUser || !activeUser.email) return;
+      const prev = loadLocalProgress(activeUser.email) || {};
+      const next = { ...prev, ...patch, updatedAt: Date.now() };
+      saveLocalProgress(activeUser.email, next);
+      await postAuthJson("/api/auth/progress", {
+        email: activeUser.email,
+        name: activeUser.name || "",
+        picture: activeUser.picture || "",
+        progress: next,
+      });
+    };
+
+    const applySession = (user, serverProgress = null) => {
+      if (!user || !user.name) {
+        activeUser = null;
+        updateRememberedSubtitle();
+        if (loginPage) loginPage.classList.remove("hidden");
+        if (userChip) userChip.classList.add("hidden");
+        if (logoutBtn) logoutBtn.classList.add("hidden");
+        if (userAvatarEl) { userAvatarEl.src = ""; userAvatarEl.alt = ""; }
+        return;
+      }
+      activeUser = user;
+      const cleanName = String(user.name).trim().slice(0, 16);
+      if (userNameEl) userNameEl.textContent = cleanName;
+      if (userAvatarEl && user.picture) {
+        userAvatarEl.src = user.picture;
+        userAvatarEl.alt = cleanName;
+      }
+      if (user.email) {
+        try {
+          localStorage.setItem(LAST_LOGIN_KEY, JSON.stringify({
+            name: cleanName,
+            email: user.email,
+            picture: user.picture || "",
+          }));
+        } catch (_) {}
+      }
+      if (userChip) userChip.classList.remove("hidden");
+      if (logoutBtn) logoutBtn.classList.remove("hidden");
+      if (loginPage) loginPage.classList.add("hidden");
+      showAuthErr("");
+
+      const localProg = loadLocalProgress(user.email);
+      const effectiveProg = (serverProgress && Object.keys(serverProgress).length > 0)
+        ? serverProgress
+        : localProg;
+      if (effectiveProg && Object.keys(effectiveProg).length > 0) {
+        saveLocalProgress(user.email, effectiveProg);
+        restoreProgress(effectiveProg);
+      }
+    };
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      applySession(saved);
+      if (saved && saved.email && !loadLocalProgress(saved.email)) {
+        for (const ep of buildApiEndpoints(`/api/auth/progress?email=${encodeURIComponent(saved.email)}`)) {
+          try {
+            const r = await fetch(ep);
+            if (r.ok) {
+              const pData = await r.json();
+              if (pData && pData.progress && Object.keys(pData.progress).length > 0) {
+                saveLocalProgress(saved.email, pData.progress);
+                restoreProgress(pData.progress);
+              }
+              break;
+            }
+          } catch (_) {}
+        }
+      }
+    } catch (_) {
+      applySession(null);
+    }
+
     if (logoutBtn) {
       logoutBtn.addEventListener("click", () => {
         try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+        try { window.google?.accounts?.id?.disableAutoSelect?.(); } catch (_) {}
+        if (resultsSection) resultsSection.classList.add("hidden");
+        if (processingSection) processingSection.classList.add("hidden");
+        if (studioSection) studioSection.classList.remove("hidden");
+        if (heroSection) heroSection.classList.remove("hidden");
+        const navHomeBtnEl = document.getElementById("nav-home-btn");
+        if (navHomeBtnEl) navHomeBtnEl.classList.add("hidden");
         applySession(null);
       });
     }
@@ -3022,11 +3161,12 @@ document.addEventListener("DOMContentLoaded", () => {
           if (!window.google || !window.google.accounts || !window.google.accounts.id) return false;
           window.google.accounts.id.initialize({
             client_id: cfg.google_client_id,
+            auto_select: true,
             callback: async (response) => {
               const res = await postAuthJson("/api/auth/google", { credential: response.credential });
               if (res.ok && res.data.success && res.data.user) {
                 try { localStorage.setItem(STORAGE_KEY, JSON.stringify(res.data.user)); } catch (_) {}
-                applySession(res.data.user);
+                applySession(res.data.user, res.data.progress || null);
               } else {
                 showAuthErr("Google sign-in failed.");
               }

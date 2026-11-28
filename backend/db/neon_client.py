@@ -156,6 +156,18 @@ def _ensure_schema(conn) -> None:
         )
         """
     )
+    conn.run(
+        """
+        CREATE TABLE IF NOT EXISTS user_progress (
+            email TEXT PRIMARY KEY,
+            name TEXT NOT NULL DEFAULT '',
+            picture TEXT NOT NULL DEFAULT '',
+            progress_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+            last_login_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+        """
+    )
     _schema_initialized = True
 
 
@@ -549,5 +561,104 @@ def enable_user_2fa(email: str, totp_secret: Optional[str] = None) -> bool:
     except Exception as exc:
         logger.error("Failed to enable 2FA for %s: %s", norm_email, exc)
         return False
+    finally:
+        _close_if_not_shared(conn)
+
+
+_local_progress_fallback: Dict[str, Dict[str, Any]] = {}
+
+
+def save_user_progress(
+    email: str,
+    name: str = "",
+    picture: str = "",
+    progress: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Upsert Google login info and optional user progress into Neon Postgres."""
+    norm_email = (email or "").strip().lower()
+    if not norm_email:
+        return {}
+
+    existing = _local_progress_fallback.get(norm_email, {})
+    merged_progress = progress if progress is not None else existing.get("progress", {})
+    record = {
+        "email": norm_email,
+        "name": name or existing.get("name", ""),
+        "picture": picture or existing.get("picture", ""),
+        "progress": merged_progress,
+    }
+    _local_progress_fallback[norm_email] = record
+
+    conn = _open_connection()
+    if conn is None:
+        return record
+    try:
+        if progress is not None:
+            conn.run(
+                """
+                INSERT INTO user_progress (email, name, picture, progress_json, last_login_at, updated_at)
+                VALUES (:email, :name, :picture, CAST(:pjson AS jsonb), now(), now())
+                ON CONFLICT (email) DO UPDATE SET
+                    name = CASE WHEN EXCLUDED.name <> '' THEN EXCLUDED.name ELSE user_progress.name END,
+                    picture = CASE WHEN EXCLUDED.picture <> '' THEN EXCLUDED.picture ELSE user_progress.picture END,
+                    progress_json = EXCLUDED.progress_json,
+                    updated_at = now()
+                """,
+                email=norm_email,
+                name=name or "",
+                picture=picture or "",
+                pjson=json.dumps(progress),
+            )
+        else:
+            conn.run(
+                """
+                INSERT INTO user_progress (email, name, picture, progress_json, last_login_at, updated_at)
+                VALUES (:email, :name, :picture, '{}'::jsonb, now(), now())
+                ON CONFLICT (email) DO UPDATE SET
+                    name = CASE WHEN EXCLUDED.name <> '' THEN EXCLUDED.name ELSE user_progress.name END,
+                    picture = CASE WHEN EXCLUDED.picture <> '' THEN EXCLUDED.picture ELSE user_progress.picture END,
+                    last_login_at = now()
+                """,
+                email=norm_email,
+                name=name or "",
+                picture=picture or "",
+            )
+        return get_user_progress(norm_email) or record
+    except Exception as exc:
+        logger.error("Failed to save user progress for %s: %s", norm_email, exc)
+        return record
+    finally:
+        _close_if_not_shared(conn)
+
+
+def get_user_progress(email: str) -> Optional[Dict[str, Any]]:
+    """Retrieve remembered login info and saved progress for a user."""
+    norm_email = (email or "").strip().lower()
+    if not norm_email:
+        return None
+    conn = _open_connection()
+    if conn is None:
+        return _local_progress_fallback.get(norm_email)
+    try:
+        rows = conn.run(
+            """
+            SELECT email, name, picture, progress_json
+            FROM user_progress
+            WHERE email = :email
+            """,
+            email=norm_email,
+        )
+        if not rows:
+            return None
+        r = rows[0]
+        return {
+            "email": r[0],
+            "name": r[1],
+            "picture": r[2],
+            "progress": _parse(r[3], {}),
+        }
+    except Exception as exc:
+        logger.error("Failed to load user progress for %s: %s", norm_email, exc)
+        return _local_progress_fallback.get(norm_email)
     finally:
         _close_if_not_shared(conn)

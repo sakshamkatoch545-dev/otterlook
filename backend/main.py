@@ -77,6 +77,13 @@ class GoogleAuthRequest(BaseModel):
     credential: str
 
 
+class UserProgressRequest(BaseModel):
+    email: str
+    name: Optional[str] = None
+    picture: Optional[str] = None
+    progress: Dict[str, Any]
+
+
 class EmailAuthRequest(BaseModel):
     email: str
     password: str
@@ -739,20 +746,62 @@ async def verify_google_login(payload: GoogleAuthRequest):
 
         raw_name = (info.get("name") or info.get("given_name") or info.get("email") or "User").strip()
         short_name = raw_name[:16]
+        user_email = info.get("email", "")
+        user_picture = info.get("picture", "")
+        saved_record = db_client.save_user_progress(
+            email=user_email,
+            name=short_name,
+            picture=user_picture,
+            progress=None,
+        )
         return {
             "success": True,
             "user": {
                 "name": short_name,
-                "email": info.get("email", ""),
-                "picture": info.get("picture", ""),
+                "email": user_email,
+                "picture": user_picture,
                 "provider": "google",
             },
+            "progress": (saved_record or {}).get("progress") or {},
         }
     except HTTPException:
         raise
     except Exception as exc:
         logger.error("Google token verification failed: %s", exc)
         raise HTTPException(status_code=401, detail="Google authentication failed.")
+
+
+@app.get("/api/auth/progress")
+async def get_auth_progress(email: str):
+    """Retrieve saved progress and remembered login metadata for a signed-in user."""
+    clean_email = (email or "").strip().lower()
+    if not clean_email or "@" not in clean_email:
+        raise HTTPException(status_code=400, detail="Valid email is required.")
+    record = db_client.get_user_progress(clean_email)
+    return {
+        "success": True,
+        "email": clean_email,
+        "progress": (record or {}).get("progress") or {},
+    }
+
+
+@app.post("/api/auth/progress")
+async def save_auth_progress(payload: UserProgressRequest):
+    """Persist signed-in user's preferences and latest analysis progress."""
+    clean_email = (payload.email or "").strip().lower()
+    if not clean_email or "@" not in clean_email:
+        raise HTTPException(status_code=400, detail="Valid email is required.")
+    record = db_client.save_user_progress(
+        email=clean_email,
+        name=(payload.name or "").strip()[:16],
+        picture=(payload.picture or "").strip(),
+        progress=payload.progress or {},
+    )
+    return {
+        "success": True,
+        "email": clean_email,
+        "progress": (record or {}).get("progress") or {},
+    }
 
 
 def _validate_email_password(email: str, password: str) -> tuple[str, str]:
