@@ -1223,11 +1223,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    const canToggleFocus = Boolean(originalImageBitmap && detectedFacesList.length > 0 && (
-      isAutoCroppedPortrait ||
-      detectedFacesList.length > 1 ||
-      (yoloBbox && yoloBbox.pctW && yoloBbox.pctH && (yoloBbox.pctW * yoloBbox.pctH) < 3500)
-    ));
+    const canToggleFocus = Boolean(originalImageBitmap && detectedFacesList.length > 0);
     renderFaceAutoSelectBar(detectedFacesList, selectedFaceIndex, isAutoCroppedPortrait, canToggleFocus);
 
     const regionRes = extractFacialDermisAndRegions(imgData, sampleW, sampleH);
