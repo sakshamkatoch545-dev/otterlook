@@ -422,8 +422,14 @@ async def analyze_portrait(
         rep_skin_hex = recognized_profile.get("skin_hex") or color_features["display_metrics"].get("representative_hex") or "#C68B59"
 
         saved_outfits = recognized_profile.get("curated_outfits")
+        expected_panel = "UPPERWEAR / BLOUSE" if effective_gender == "female" else "UPPERWEAR / SHIRT"
+        has_current_lookboard = (
+            isinstance(saved_outfits, list)
+            and len(saved_outfits) > 0
+            and expected_panel in (saved_outfits[0].get("svg") or "")
+        )
         if (
-            saved_outfits
+            has_current_lookboard
             and user_clothing_type == "all"
             and user_weather == "all"
             and recognized_profile.get("gender") == effective_gender
