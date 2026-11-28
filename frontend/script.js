@@ -65,8 +65,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // State
   let currentFile = null;
   let currentImageBitmap = null;
-  let currentGender = "male";
-  let selectedGenderMode = "male";
+  let currentGender = "all";
+  let selectedGenderMode = "all";
   let currentClothingType = "all";
   let currentWeather = "all";
   let cachedApiData = null;
