@@ -6035,5 +6035,22 @@ button,
   }
 }
 
+/* Hide numeric hex/luminance badges so only names are shown */
+.swatch-hex,
+.rec-hex-badge,
+.piece-hex,
+.harmony-hex,
+.swatch-lum-badge,
+#sample-hex-1,
+#sample-hex-2,
+#sample-hex-3,
+#sample-hex-4,
+#res-area-hex-1,
+#res-area-hex-2,
+#res-area-hex-3,
+#res-area-hex-4 {
+  display: none !important;
+}
+
 
 

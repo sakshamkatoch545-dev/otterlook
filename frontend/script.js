@@ -2314,7 +2314,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const repSwatch = document.getElementById("rep-swatch");
     if (repSwatch) repSwatch.style.backgroundColor = skinMetrics.representative_hex;
     const repHex = document.getElementById("rep-hex");
-    if (repHex) repHex.textContent = `${skinMetrics.representative_hex} · ${(skinMetrics.phototype_estimate || '').split('—')[0] || ''}`;
+    if (repHex) repHex.textContent = (skinMetrics.phototype_estimate || "Natural Skin Tone").split("—")[0].trim();
     const repPhototype = document.getElementById("rep-phototype");
     if (repPhototype) repPhototype.textContent = skinMetrics.phototype_estimate || '';
 

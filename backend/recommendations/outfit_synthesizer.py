@@ -1874,7 +1874,7 @@ def _generate_outfit_svg(
 
     <text x="16" y="284" class="stitch-text-muted" font-size="8.5" font-weight="700">TONE</text>
     <circle cx="80" cy="280" r="7" fill="{upper_hex}" stroke="rgba(255,255,255,0.4)" stroke-width="1.2" />
-    <text x="94" y="284" class="stitch-text-title" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700">{upper_hex.upper()}</text>
+    <text x="94" y="284" class="stitch-text-body" font-size="9.5" font-weight="600">Calibrated Shade</text>
   </g>
 
 
@@ -1919,7 +1919,7 @@ def _generate_outfit_svg(
 
     <text x="16" y="284" class="stitch-text-muted" font-size="8.5" font-weight="700">TONE</text>
     <circle cx="80" cy="280" r="7" fill="{bottom_hex}" stroke="rgba(255,255,255,0.4)" stroke-width="1.2" />
-    <text x="94" y="284" class="stitch-text-title" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700">{bottom_hex.upper()}</text>
+    <text x="94" y="284" class="stitch-text-body" font-size="9.5" font-weight="600">Calibrated Shade</text>
   </g>
 
 
@@ -2006,7 +2006,7 @@ def _generate_outfit_svg(
 
     <text x="16" y="284" class="stitch-text-muted" font-size="8.5" font-weight="700">TONE</text>
     <circle cx="82" cy="280" r="7" fill="{shoes_hex}" stroke="rgba(255,255,255,0.4)" stroke-width="1.2" />
-    <text x="96" y="284" class="stitch-text-title" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700">{shoes_hex.upper()}</text>
+    <text x="96" y="284" class="stitch-text-body" font-size="9.5" font-weight="600">Calibrated Shade</text>
   </g>
 
 
