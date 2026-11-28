@@ -6253,11 +6253,11 @@ button,
 }
 
 @media (max-width: 768px) {
-  .header-user-chip {
-    display: none !important;
+  .header-user-name {
+    max-width: 72px;
   }
-  .header-logout-btn {
-    display: none !important;
+  .header-logout-btn span:last-child {
+    display: none;
   }
 }
 
