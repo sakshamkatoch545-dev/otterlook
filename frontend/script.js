@@ -1003,50 +1003,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (!bar) return;
 
-    if (!faces || faces.length === 0 || (!showToggle && faces.length <= 1)) {
+    if (!faces || faces.length === 0 || !showToggle) {
       bar.classList.add("hidden");
       return;
     }
 
-    const multi = faces.length > 1;
-    const labelText = multi
-      ? `${faces.length} human faces found • Selected Face ${activeIdx + 1}`
-      : (isCropped ? "Auto-focused on detected human face" : "Viewing full uploaded photo");
+    const labelText = isCropped
+      ? "Auto-focused on primary face"
+      : "Viewing full uploaded photo";
 
-    let chipsHtml = "";
-    if (multi) {
-      chipsHtml += faces.map((_, i) =>
-        `<button type="button" class="face-chip-btn ${i === activeIdx ? "active" : ""}" data-face-idx="${i}">Face ${i + 1}</button>`
-      ).join("");
-    }
-    if (showToggle) {
-      chipsHtml += `<button type="button" class="face-chip-btn" id="toggle-full-photo-btn">${isCropped ? "Use Full Photo" : "Auto-Focus Face"}</button>`;
-    }
+    const chipsHtml = `<button type="button" class="face-chip-btn" id="toggle-full-photo-btn">${isCropped ? "Use Full Photo" : "Auto-Focus Face"}</button>`;
 
     bar.innerHTML = `
       <span class="face-autoselect-label">🎯 ${labelText}</span>
       <div class="face-autoselect-actions">${chipsHtml}</div>
     `;
     bar.classList.remove("hidden");
-
-    bar.querySelectorAll("[data-face-idx]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        const idx = parseInt(btn.getAttribute("data-face-idx"), 10);
-        if (isNaN(idx) || !originalImageBitmap || !detectedFacesList[idx]) return;
-        selectedFaceIndex = idx;
-        const cropped = await cropPortraitAroundFace(originalImageBitmap, detectedFacesList[idx]);
-        if (!cropped) return;
-        isAutoCroppedPortrait = true;
-        currentFile = cropped.file;
-        previewImg.src = cropped.dataUrl;
-        const nextImg = new Image();
-        nextImg.src = cropped.dataUrl;
-        nextImg.onload = () => {
-          currentImageBitmap = nextImg;
-          checkImageQualityAndAutoColor(nextImg, uploadGenerationId, true);
-        };
-      });
-    });
 
     const toggleBtn = document.getElementById("toggle-full-photo-btn");
     if (toggleBtn && originalImageBitmap && originalUploadedFile) {
