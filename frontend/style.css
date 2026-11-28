@@ -6222,6 +6222,18 @@ button,
   color: #EF4444;
 }
 
+.outfit-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.wardrobe-toggle-btn {
+  padding: 0.42rem 0.85rem;
+  font-size: 0.76rem;
+}
+
 @media (max-width: 768px) {
   .header-user-name {
     max-width: 72px;

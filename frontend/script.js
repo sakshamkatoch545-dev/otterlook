@@ -3261,6 +3261,19 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (_) {}
   })();
 
+  // --- Wardrobe Synthesizer Hide / Show Toggle ---
+  const toggleWardrobeBtn = document.getElementById("toggle-wardrobe-btn");
+  const wardrobeSynthBody = document.getElementById("wardrobe-synthesizer-body");
+  if (toggleWardrobeBtn && wardrobeSynthBody) {
+    toggleWardrobeBtn.addEventListener("click", () => {
+      const isHidden = wardrobeSynthBody.classList.toggle("hidden");
+      toggleWardrobeBtn.setAttribute("aria-expanded", String(!isHidden));
+      toggleWardrobeBtn.innerHTML = isHidden
+        ? '<span class="material-symbols-outlined" style="font-size: 16px;">visibility</span><span>Show Wardrobe Synthesizer</span>'
+        : '<span class="material-symbols-outlined" style="font-size: 16px;">visibility_off</span><span>Hide Wardrobe Synthesizer</span>';
+    });
+  }
+
   // Global restrictions to disable copy, cut, paste and context menu
   document.addEventListener('copy', (e) => e.preventDefault());
   document.addEventListener('cut', (e) => e.preventDefault());
