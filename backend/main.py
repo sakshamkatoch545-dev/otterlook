@@ -47,6 +47,13 @@ from backend.recommendations.outfit_synthesizer import (
 from backend.vision.face_biometrics import extract_face_embedding
 from backend.db.face_memory import face_memory_db
 from backend.db import neon_client as db_client
+from backend.auth_utils import (
+    hash_password,
+    verify_password,
+    generate_totp_secret,
+    build_otpauth_uri,
+    verify_totp_code,
+)
 
 logger = logging.getLogger("otterlook.api")
 
@@ -68,6 +75,18 @@ class GenerateOutfitsRequest(BaseModel):
 
 class GoogleAuthRequest(BaseModel):
     credential: str
+
+
+class EmailAuthRequest(BaseModel):
+    email: str
+    password: str
+    name: Optional[str] = None
+    totp_code: Optional[str] = None
+
+
+class Verify2FARequest(BaseModel):
+    email: str
+    totp_code: str
 
 app = FastAPI(
     title="AI-Based Personal Colour Analysis API",
@@ -734,6 +753,107 @@ async def verify_google_login(payload: GoogleAuthRequest):
     except Exception as exc:
         logger.error("Google token verification failed: %s", exc)
         raise HTTPException(status_code=401, detail="Google authentication failed.")
+
+
+def _validate_email_password(email: str, password: str) -> tuple[str, str]:
+    clean_email = (email or "").strip().lower()
+    if not clean_email or "@" not in clean_email or "." not in clean_email.split("@")[-1]:
+        raise HTTPException(status_code=400, detail="Enter a valid email.")
+    if len(clean_email) > 50:
+        raise HTTPException(status_code=400, detail="Email max 50 characters.")
+    if len(password or "") < 6 or len(password or "") > 16:
+        raise HTTPException(status_code=400, detail="Password must be 6–16 characters.")
+    return clean_email, password
+
+
+@app.post("/api/auth/register")
+async def register_email_user(payload: EmailAuthRequest):
+    """Register an account with limited-character email/password and Google Authenticator 2FA secret."""
+    clean_email, password = _validate_email_password(payload.email, payload.password)
+    if db_client.get_user_by_email(clean_email):
+        raise HTTPException(status_code=409, detail="Email already registered.")
+
+    raw_name = (payload.name or clean_email.split("@")[0]).strip()
+    short_name = (raw_name or "User")[:16]
+    pw_hash = hash_password(password)
+    totp_secret = generate_totp_secret()
+
+    user = db_client.create_user(
+        email=clean_email,
+        name=short_name,
+        password_hash=pw_hash,
+        totp_secret=totp_secret,
+    )
+    if not user:
+        raise HTTPException(status_code=500, detail="Could not create account.")
+
+    return {
+        "success": True,
+        "user": {
+            "name": user["name"],
+            "email": user["email"],
+            "totp_enabled": False,
+            "provider": "email",
+        },
+        "totp_setup": {
+            "secret": totp_secret,
+            "otpauth_uri": build_otpauth_uri(clean_email, totp_secret),
+        },
+    }
+
+
+@app.post("/api/auth/login")
+async def login_email_user(payload: EmailAuthRequest):
+    """Authenticate with email/password and verify Google Authenticator 6-digit code if 2FA is active."""
+    clean_email, password = _validate_email_password(payload.email, payload.password)
+    user = db_client.get_user_by_email(clean_email)
+    if not user or not verify_password(password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
+
+    if user.get("totp_enabled") and user.get("totp_secret"):
+        code = (payload.totp_code or "").strip()
+        if not code:
+            return {
+                "success": False,
+                "requires_2fa": True,
+                "email": user["email"],
+                "message": "Enter 6-digit Google Authenticator code.",
+            }
+        if not verify_totp_code(user["totp_secret"], code):
+            raise HTTPException(status_code=401, detail="Invalid 6-digit authenticator code.")
+
+    return {
+        "success": True,
+        "user": {
+            "name": user["name"][:16],
+            "email": user["email"],
+            "totp_enabled": bool(user.get("totp_enabled")),
+            "provider": "email",
+        },
+    }
+
+
+@app.post("/api/auth/2fa/verify")
+async def verify_and_enable_2fa(payload: Verify2FARequest):
+    """Verify a 6-digit Google Authenticator code and enable 2-step verification on the account."""
+    clean_email = (payload.email or "").strip().lower()
+    user = db_client.get_user_by_email(clean_email)
+    if not user or not user.get("totp_secret"):
+        raise HTTPException(status_code=404, detail="Account or 2FA setup not found.")
+
+    if not verify_totp_code(user["totp_secret"], payload.totp_code):
+        raise HTTPException(status_code=401, detail="Invalid 6-digit Google Authenticator code.")
+
+    db_client.enable_user_2fa(clean_email)
+    return {
+        "success": True,
+        "user": {
+            "name": user["name"][:16],
+            "email": user["email"],
+            "totp_enabled": True,
+            "provider": "email",
+        },
+    }
 
 
 @app.delete("/api/face-profile/{face_id}")

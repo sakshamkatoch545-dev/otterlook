@@ -143,6 +143,19 @@ def _ensure_schema(conn) -> None:
         )
         """
     )
+    conn.run(
+        """
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            email TEXT UNIQUE NOT NULL,
+            name TEXT NOT NULL,
+            password_hash TEXT NOT NULL,
+            totp_secret TEXT,
+            totp_enabled BOOLEAN NOT NULL DEFAULT false,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+        """
+    )
     _schema_initialized = True
 
 
@@ -425,5 +438,116 @@ def get_face_stats() -> Dict[str, Any]:
         }
     except Exception as exc:
         return {"error": str(exc), "total_registered_faces": 0, "total_recognitions": 0}
+    finally:
+        _close_if_not_shared(conn)
+
+
+# ---------------------------------------------------------------------------
+# User Accounts & Google Authenticator 2FA (Neon + in-memory offline fallback)
+# ---------------------------------------------------------------------------
+_local_users_fallback: Dict[str, Dict[str, Any]] = {}
+
+
+def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
+    norm_email = email.strip().lower()
+    conn = _open_connection()
+    if conn is None:
+        return _local_users_fallback.get(norm_email)
+    try:
+        rows = conn.run(
+            """
+            SELECT id, email, name, password_hash, totp_secret, totp_enabled
+            FROM users
+            WHERE email = :email
+            """,
+            email=norm_email,
+        )
+        if not rows:
+            return None
+        r = rows[0]
+        return {
+            "id": r[0],
+            "email": r[1],
+            "name": r[2],
+            "password_hash": r[3],
+            "totp_secret": r[4],
+            "totp_enabled": bool(r[5]),
+        }
+    except Exception as exc:
+        logger.error("Failed to fetch user %s from Neon: %s", norm_email, exc)
+        return None
+    finally:
+        _close_if_not_shared(conn)
+
+
+def create_user(
+    email: str,
+    name: str,
+    password_hash: str,
+    totp_secret: str,
+) -> Optional[Dict[str, Any]]:
+    norm_email = email.strip().lower()
+    user_id = f"usr_{uuid.uuid4().hex[:12]}"
+    user_obj = {
+        "id": user_id,
+        "email": norm_email,
+        "name": name,
+        "password_hash": password_hash,
+        "totp_secret": totp_secret,
+        "totp_enabled": False,
+    }
+    conn = _open_connection()
+    if conn is None:
+        if norm_email in _local_users_fallback:
+            return None
+        _local_users_fallback[norm_email] = user_obj
+        return user_obj
+    try:
+        conn.run(
+            """
+            INSERT INTO users (id, email, name, password_hash, totp_secret, totp_enabled)
+            VALUES (:id, :email, :name, :password_hash, :totp_secret, false)
+            """,
+            id=user_id,
+            email=norm_email,
+            name=name,
+            password_hash=password_hash,
+            totp_secret=totp_secret,
+        )
+        return user_obj
+    except Exception as exc:
+        logger.error("Failed to create user %s in Neon: %s", norm_email, exc)
+        return None
+    finally:
+        _close_if_not_shared(conn)
+
+
+def enable_user_2fa(email: str, totp_secret: Optional[str] = None) -> bool:
+    norm_email = email.strip().lower()
+    conn = _open_connection()
+    if conn is None:
+        u = _local_users_fallback.get(norm_email)
+        if not u:
+            return False
+        if totp_secret:
+            u["totp_secret"] = totp_secret
+        u["totp_enabled"] = True
+        return True
+    try:
+        if totp_secret:
+            conn.run(
+                "UPDATE users SET totp_enabled = true, totp_secret = :sec WHERE email = :email",
+                email=norm_email,
+                sec=totp_secret,
+            )
+        else:
+            conn.run(
+                "UPDATE users SET totp_enabled = true WHERE email = :email",
+                email=norm_email,
+            )
+        return True
+    except Exception as exc:
+        logger.error("Failed to enable 2FA for %s: %s", norm_email, exc)
+        return False
     finally:
         _close_if_not_shared(conn)

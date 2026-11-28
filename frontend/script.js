@@ -2937,18 +2937,57 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // --- Google Cloud Console OAuth & Limited-Character Login Gate ---
+  // --- Google Cloud Console OAuth, Limited Email/Password & Google Authenticator 2FA ---
   (async function initAuthLogin() {
     const loginPage = document.getElementById("auth-login-page");
+    const loginSubEl = document.getElementById("auth-login-sub");
     const googleContainer = document.getElementById("google-signin-container");
-    const quickForm = document.getElementById("quick-login-form");
-    const nameInput = document.getElementById("login-name-input");
-    const charCountEl = document.getElementById("login-char-count");
+    const modeTabsWrap = document.getElementById("auth-mode-tabs");
+    const emailForm = document.getElementById("email-auth-form");
+    const emailInput = document.getElementById("login-email-input");
+    const pwInput = document.getElementById("login-password-input");
+    const emailCountEl = document.getElementById("login-email-count");
+    const pwCountEl = document.getElementById("login-pw-count");
+    const emailSubmitBtn = document.getElementById("email-auth-submit-btn");
+    const twoFaPanel = document.getElementById("auth-2fa-panel");
+    const qrWrap = document.getElementById("auth-2fa-qr-wrap");
+    const qrImg = document.getElementById("auth-2fa-qr-img");
+    const secretTextEl = document.getElementById("auth-2fa-secret-text");
+    const twoFaForm = document.getElementById("auth-2fa-form");
+    const totpInput = document.getElementById("login-totp-input");
+    const totpCountEl = document.getElementById("login-totp-count");
+    const skip2FaBtn = document.getElementById("auth-2fa-skip-btn");
     const loginErrorEl = document.getElementById("auth-login-error");
     const userChip = document.getElementById("header-user-chip");
     const userNameEl = document.getElementById("header-user-name");
     const logoutBtn = document.getElementById("logout-btn");
     const STORAGE_KEY = "otterlook_user_v1";
+
+    let authMode = "login"; // "login" | "register"
+    let pending2FA = null;  // { email, password, user }
+
+    const showAuthErr = (msg) => {
+      if (!loginErrorEl) return;
+      if (!msg) {
+        loginErrorEl.classList.add("hidden");
+        loginErrorEl.textContent = "";
+      } else {
+        loginErrorEl.textContent = msg;
+        loginErrorEl.classList.remove("hidden");
+      }
+    };
+
+    const resetToMainForm = () => {
+      pending2FA = null;
+      if (twoFaPanel) twoFaPanel.classList.add("hidden");
+      if (qrWrap) qrWrap.classList.add("hidden");
+      if (emailForm) emailForm.classList.remove("hidden");
+      if (modeTabsWrap) modeTabsWrap.classList.remove("hidden");
+      if (loginSubEl) loginSubEl.textContent = "Sign in to continue";
+      if (totpInput) totpInput.value = "";
+      if (totpCountEl) totpCountEl.textContent = "0/6";
+      showAuthErr("");
+    };
 
     const applySession = (user) => {
       if (!user || !user.name) {
@@ -2960,6 +2999,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (userNameEl) userNameEl.textContent = cleanName;
       if (userChip) userChip.classList.remove("hidden");
       if (loginPage) loginPage.classList.add("hidden");
+      resetToMainForm();
     };
 
     try {
@@ -2969,36 +3009,134 @@ document.addEventListener("DOMContentLoaded", () => {
       applySession(null);
     }
 
-    if (nameInput && charCountEl) {
-      nameInput.addEventListener("input", () => {
-        if (nameInput.value.length > 16) nameInput.value = nameInput.value.slice(0, 16);
-        charCountEl.textContent = `${nameInput.value.length}/16`;
+    const bindCounter = (inputEl, countEl, maxLen) => {
+      if (!inputEl || !countEl) return;
+      inputEl.addEventListener("input", () => {
+        if (inputEl.value.length > maxLen) inputEl.value = inputEl.value.slice(0, maxLen);
+        countEl.textContent = `${inputEl.value.length}/${maxLen}`;
       });
-    }
+    };
+    bindCounter(emailInput, emailCountEl, 50);
+    bindCounter(pwInput, pwCountEl, 16);
+    bindCounter(totpInput, totpCountEl, 6);
 
-    if (quickForm && nameInput) {
-      quickForm.addEventListener("submit", (e) => {
+    document.querySelectorAll(".auth-mode-tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        authMode = tab.getAttribute("data-auth-mode") === "register" ? "register" : "login";
+        document.querySelectorAll(".auth-mode-tab").forEach((t) => {
+          t.classList.toggle("active", t === tab);
+        });
+        if (emailSubmitBtn) {
+          emailSubmitBtn.textContent = authMode === "register" ? "Create Account" : "Sign In";
+        }
+        showAuthErr("");
+      });
+    });
+
+    const postAuthJson = async (path, body) => {
+      for (const ep of buildApiEndpoints(path)) {
+        try {
+          const r = await fetch(ep, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const data = await r.json().catch(() => ({}));
+          return { ok: r.ok, status: r.status, data };
+        } catch (_) {}
+      }
+      return { ok: false, status: 0, data: { detail: "Server unreachable." } };
+    };
+
+    if (emailForm && emailInput && pwInput) {
+      emailForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const val = nameInput.value.trim().slice(0, 16);
-        if (val.length < 2) {
-          if (loginErrorEl) {
-            loginErrorEl.textContent = "Enter 2–16 characters.";
-            loginErrorEl.classList.remove("hidden");
+        showAuthErr("");
+        const email = emailInput.value.trim().slice(0, 50);
+        const password = pwInput.value.slice(0, 16);
+        if (password.length < 6) {
+          showAuthErr("Password must be 6–16 characters.");
+          return;
+        }
+        const endpoint = authMode === "register" ? "/api/auth/register" : "/api/auth/login";
+        if (emailSubmitBtn) emailSubmitBtn.disabled = true;
+        const res = await postAuthJson(endpoint, { email, password });
+        if (emailSubmitBtn) emailSubmitBtn.disabled = false;
+
+        if (!res.ok) {
+          showAuthErr(res.data.detail || "Authentication failed.");
+          return;
+        }
+
+        if (authMode === "register" && res.data.totp_setup) {
+          pending2FA = { email, password, user: res.data.user, isSetup: true };
+          if (emailForm) emailForm.classList.add("hidden");
+          if (modeTabsWrap) modeTabsWrap.classList.add("hidden");
+          if (twoFaPanel) twoFaPanel.classList.remove("hidden");
+          if (qrWrap) qrWrap.classList.remove("hidden");
+          if (skip2FaBtn) skip2FaBtn.classList.remove("hidden");
+          if (loginSubEl) loginSubEl.textContent = "Scan with Google Authenticator";
+          if (secretTextEl) secretTextEl.textContent = res.data.totp_setup.secret;
+          if (qrImg) {
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(res.data.totp_setup.otpauth_uri)}`;
           }
           return;
         }
-        const user = { name: val, provider: "name" };
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(user)); } catch (_) {}
-        if (loginErrorEl) loginErrorEl.classList.add("hidden");
-        applySession(user);
+
+        if (res.data.requires_2fa) {
+          pending2FA = { email, password, isSetup: false };
+          if (emailForm) emailForm.classList.add("hidden");
+          if (modeTabsWrap) modeTabsWrap.classList.add("hidden");
+          if (twoFaPanel) twoFaPanel.classList.remove("hidden");
+          if (qrWrap) qrWrap.classList.add("hidden");
+          if (skip2FaBtn) skip2FaBtn.classList.add("hidden");
+          if (loginSubEl) loginSubEl.textContent = "Enter Google Authenticator code";
+          return;
+        }
+
+        if (res.data.success && res.data.user) {
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(res.data.user)); } catch (_) {}
+          applySession(res.data.user);
+        }
+      });
+    }
+
+    if (twoFaForm && totpInput) {
+      twoFaForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!pending2FA) return;
+        showAuthErr("");
+        const code = totpInput.value.trim().slice(0, 6);
+        const res = pending2FA.isSetup
+          ? await postAuthJson("/api/auth/2fa/verify", { email: pending2FA.email, totp_code: code })
+          : await postAuthJson("/api/auth/login", { email: pending2FA.email, password: pending2FA.password, totp_code: code });
+
+        if (!res.ok || !res.data.success || !res.data.user) {
+          showAuthErr(res.data.detail || "Invalid 6-digit code.");
+          return;
+        }
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(res.data.user)); } catch (_) {}
+        applySession(res.data.user);
+      });
+    }
+
+    if (skip2FaBtn) {
+      skip2FaBtn.addEventListener("click", () => {
+        if (pending2FA && pending2FA.user) {
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(pending2FA.user)); } catch (_) {}
+          applySession(pending2FA.user);
+        }
       });
     }
 
     if (logoutBtn) {
       logoutBtn.addEventListener("click", () => {
         try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
-        if (nameInput) nameInput.value = "";
-        if (charCountEl) charCountEl.textContent = "0/16";
+        if (emailInput) emailInput.value = "";
+        if (pwInput) pwInput.value = "";
+        if (emailCountEl) emailCountEl.textContent = "0/50";
+        if (pwCountEl) pwCountEl.textContent = "0/16";
+        resetToMainForm();
         applySession(null);
       });
     }
@@ -3018,26 +3156,13 @@ document.addEventListener("DOMContentLoaded", () => {
           window.google.accounts.id.initialize({
             client_id: cfg.google_client_id,
             callback: async (response) => {
-              try {
-                let authData = null;
-                for (const ep of buildApiEndpoints("/api/auth/google")) {
-                  try {
-                    const r = await fetch(ep, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ credential: response.credential }),
-                    });
-                    if (r.ok) { authData = await r.json(); break; }
-                  } catch (_) {}
-                }
-                if (authData && authData.success && authData.user) {
-                  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(authData.user)); } catch (_) {}
-                  applySession(authData.user);
-                } else if (loginErrorEl) {
-                  loginErrorEl.textContent = "Google sign-in failed.";
-                  loginErrorEl.classList.remove("hidden");
-                }
-              } catch (_) {}
+              const res = await postAuthJson("/api/auth/google", { credential: response.credential });
+              if (res.ok && res.data.success && res.data.user) {
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(res.data.user)); } catch (_) {}
+                applySession(res.data.user);
+              } else {
+                showAuthErr("Google sign-in failed.");
+              }
             },
           });
           window.google.accounts.id.renderButton(googleContainer, {

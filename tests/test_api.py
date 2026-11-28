@@ -73,6 +73,39 @@ def test_api_auth_config_and_google_validation(client):
     assert bad.status_code in (400, 503)
 
 
+def test_api_email_auth_and_google_authenticator_2fa(client):
+    import time
+    from backend.auth_utils import _totp_at
+
+    # Character limits enforced
+    short_pw = client.post("/api/auth/register", json={"email": "a@b.com", "password": "123"})
+    assert short_pw.status_code == 400
+    long_pw = client.post("/api/auth/register", json={"email": "a@b.com", "password": "x" * 17})
+    assert long_pw.status_code == 400
+    long_email = client.post("/api/auth/register", json={"email": ("a" * 45) + "@test.com", "password": "secret12"})
+    assert long_email.status_code == 400
+
+    # Valid registration generates Google Authenticator secret
+    reg = client.post("/api/auth/register", json={"email": "otter2fa@test.com", "password": "secret12"})
+    assert reg.status_code == 200
+    rdata = reg.json()
+    assert rdata["success"] is True
+    secret = rdata["totp_setup"]["secret"]
+    assert "otpauth://totp/" in rdata["totp_setup"]["otpauth_uri"]
+
+    # Enable 2FA with valid 6-digit TOTP code
+    code = _totp_at(secret, int(time.time()) // 30)
+    v2 = client.post("/api/auth/2fa/verify", json={"email": "otter2fa@test.com", "totp_code": code})
+    assert v2.status_code == 200
+    assert v2.json()["user"]["totp_enabled"] is True
+
+    # Login without 2FA code prompts for 2FA; login with valid code succeeds
+    l1 = client.post("/api/auth/login", json={"email": "otter2fa@test.com", "password": "secret12"})
+    assert l1.status_code == 200 and l1.json()["requires_2fa"] is True
+    l2 = client.post("/api/auth/login", json={"email": "otter2fa@test.com", "password": "secret12", "totp_code": code})
+    assert l2.status_code == 200 and l2.json()["success"] is True
+
+
 def test_api_feedback_validation(client):
     # Invalid undertone should return 400
     response = client.post("/api/feedback", json={"analysis_id": "test-uuid", "corrected_undertone": "Invalid"})

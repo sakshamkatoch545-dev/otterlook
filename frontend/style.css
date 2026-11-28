@@ -6225,5 +6225,76 @@ button,
   }
 }
 
+.auth-mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  margin-bottom: 0.9rem;
+  border-radius: 9999px;
+  background: rgba(15, 19, 28, 0.7);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+}
+
+[data-theme="light"] .auth-mode-tabs {
+  background: #F1F5F9;
+}
+
+.auth-mode-tab {
+  flex: 1;
+  padding: 0.45rem 0.75rem;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #94A3B8);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-mode-tab.active {
+  background: linear-gradient(135deg, #F2CA50, #D4AF37);
+  color: #0B0E16;
+  font-weight: 700;
+}
+
+.auth-2fa-qr-wrap {
+  margin-bottom: 0.85rem;
+}
+
+.auth-2fa-qr-img {
+  border-radius: 10px;
+  background: #FFFFFF;
+  padding: 6px;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+}
+
+.auth-2fa-secret {
+  margin-top: 0.45rem;
+  font-size: 0.72rem;
+  color: var(--text-muted, #94A3B8);
+  word-break: break-all;
+}
+
+.auth-2fa-secret code {
+  color: var(--accent-gold, #F2CA50);
+  font-weight: 700;
+}
+
+.auth-totp-input {
+  letter-spacing: 0.22em;
+  font-family: var(--font-mono, monospace);
+  text-align: center;
+}
+
+.auth-2fa-skip-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #94A3B8);
+  font-size: 0.74rem;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-top: 0.15rem;
+}
+
 
 
