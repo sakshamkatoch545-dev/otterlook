@@ -2757,35 +2757,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const label = undertoneLabel || "Undertone";
     const detectedGender = (data && data.gender && (data.gender.detected || data.gender.label)) || "Natural";
 
-    // Face bounding box and corner brackets removed per user requirement (clean portrait photo presentation)
-    // Marks for forehead, cheek, chin, jaw removed as requested
-
-    // 3. Draw Bottom Glassmorphic Summary Bar
-    const pillW = Math.min(320, Math.floor(displayWidth * 0.72));
-    const pillH = 34;
-    const pillX = 14;
-    const pillY = displayHeight - pillH - 12;
-
-    ctx.fillStyle = "rgba(10, 14, 22, 0.90)";
-    ctx.beginPath();
-    ctx.roundRect(pillX, pillY, pillW, pillH, 8);
-    ctx.fill();
-    ctx.strokeStyle = "rgba(212, 175, 55, 0.6)";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    const dotRadius = 9;
-    ctx.fillStyle = hex;
-    ctx.beginPath();
-    ctx.arc(pillX + 16, pillY + pillH / 2, dotRadius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#FFFFFF";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    ctx.fillStyle = "#F8FAFC";
-    ctx.font = "bold 11px 'Plus Jakarta Sans', sans-serif";
-    ctx.fillText(`Dermis ${hex} · ${label} · ${detectedGender}`, pillX + 32, pillY + pillH / 2 + 4);
+    // Face bounding box, region marks, and bottom summary bar removed for a clean portrait presentation
   }
 
   // --- Tab Navigation with Smooth Scrolling ---
