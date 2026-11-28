@@ -297,17 +297,15 @@ document.addEventListener("DOMContentLoaded", () => {
       analyzeBtn.disabled = true;
       currentFile = null;
 
-      if (qualityBar) qualityBar.classList.remove("hidden");
-      if (qualityBadgeText) {
-        qualityBadgeText.textContent = "Checking Oval";
-        qualityBadgeText.className = "badge-status";
-      }
-      if (qualityStatusText) {
-        qualityStatusText.textContent = "Checking if your face is inside the oval...";
-      }
+      const snapImg = new Image();
+      snapImg.src = snapDataUrl;
+      await new Promise((resolve) => {
+        snapImg.onload = resolve;
+        snapImg.onerror = resolve;
+      });
 
       // 2. Determine whether a face fits inside the oval
-      const detRes = await verifyFaceWithYolo(snapDataUrl);
+      const detRes = await verifyHumanFaceWithYOLO(snapImg, uploadGenerationId);
       if (detRes && !detRes.networkError) {
         const allFaces = (detRes.faces && detRes.faces.length)
           ? detRes.faces
@@ -331,25 +329,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (inOvalFaces.length === 0) {
           analyzeBtn.disabled = true;
           currentFile = null;
-          if (qualityBadgeText) {
-            qualityBadgeText.textContent = "Not In Oval";
-            qualityBadgeText.className = "badge-status poor";
-          }
-          if (qualityStatusText) {
-            qualityStatusText.textContent = "⚠️ Put your face in the oval and retake the picture.";
-          }
-          showError("⚠️ Face is not inside the oval. Please put your face inside the oval and capture again.");
+          showError("⚠️ Face is not inside the oval. Please put your face inside the oval and capture again.", true);
           return;
         }
 
         // 3. Only keep & analyze the face inside the oval (even when multiple faces appear)
         const targetFace = inOvalFaces[0].face;
-        const snapImg = new Image();
-        snapImg.src = snapDataUrl;
-        await new Promise((resolve) => {
-          snapImg.onload = resolve;
-          snapImg.onerror = resolve;
-        });
         const cropped = await cropPortraitAroundFace(snapImg, targetFace);
         if (cropped && cropped.file) {
           handleFileSelection(cropped.file);
