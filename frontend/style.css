@@ -868,19 +868,24 @@ body, button, input, select, textarea,
 }
 
 /* Custom Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(184, 138, 0, 0.4) transparent;
+}
+
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-lowest);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--bg-container-high);
-  border-radius: 4px;
+  background: rgba(184, 138, 0, 0.4);
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-gold-container);
+  background: var(--accent-gold, #F2CA50);
 }
 
 /* ==========================================================================
