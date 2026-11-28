@@ -2942,6 +2942,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const loginPage = document.getElementById("auth-login-page");
     const loginSubEl = document.getElementById("auth-login-sub");
     const googleContainer = document.getElementById("google-signin-container");
+    const googleSection = document.getElementById("auth-google-section");
+    const googleFallbackBtn = document.getElementById("google-fallback-btn");
     const modeTabsWrap = document.getElementById("auth-mode-tabs");
     const emailForm = document.getElementById("email-auth-form");
     const emailInput = document.getElementById("login-email-input");
@@ -2983,6 +2985,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (qrWrap) qrWrap.classList.add("hidden");
       if (emailForm) emailForm.classList.remove("hidden");
       if (modeTabsWrap) modeTabsWrap.classList.remove("hidden");
+      if (googleSection) googleSection.classList.remove("hidden");
       if (loginSubEl) loginSubEl.textContent = "Sign in to continue";
       if (totpInput) totpInput.value = "";
       if (totpCountEl) totpCountEl.textContent = "0/6";
@@ -3072,6 +3075,7 @@ document.addEventListener("DOMContentLoaded", () => {
           pending2FA = { email, password, user: res.data.user, isSetup: true };
           if (emailForm) emailForm.classList.add("hidden");
           if (modeTabsWrap) modeTabsWrap.classList.add("hidden");
+          if (googleSection) googleSection.classList.add("hidden");
           if (twoFaPanel) twoFaPanel.classList.remove("hidden");
           if (qrWrap) qrWrap.classList.remove("hidden");
           if (skip2FaBtn) skip2FaBtn.classList.remove("hidden");
@@ -3087,6 +3091,7 @@ document.addEventListener("DOMContentLoaded", () => {
           pending2FA = { email, password, isSetup: false };
           if (emailForm) emailForm.classList.add("hidden");
           if (modeTabsWrap) modeTabsWrap.classList.add("hidden");
+          if (googleSection) googleSection.classList.add("hidden");
           if (twoFaPanel) twoFaPanel.classList.remove("hidden");
           if (qrWrap) qrWrap.classList.add("hidden");
           if (skip2FaBtn) skip2FaBtn.classList.add("hidden");
@@ -3141,6 +3146,12 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
+    if (googleFallbackBtn) {
+      googleFallbackBtn.addEventListener("click", () => {
+        showAuthErr("Add GOOGLE_CLIENT_ID in Vercel Environment Variables to enable Google popup.");
+      });
+    }
+
     // Load Google Cloud Console OAuth Client ID from backend
     try {
       let cfg = null;
@@ -3151,6 +3162,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (_) {}
       }
       if (cfg && cfg.google_enabled && cfg.google_client_id && googleContainer) {
+        if (googleFallbackBtn) googleFallbackBtn.classList.add("hidden");
         const renderGsi = () => {
           if (!window.google || !window.google.accounts || !window.google.accounts.id) return false;
           window.google.accounts.id.initialize({
@@ -3166,10 +3178,11 @@ document.addEventListener("DOMContentLoaded", () => {
             },
           });
           window.google.accounts.id.renderButton(googleContainer, {
-            theme: "filled_black",
+            theme: "outline",
             size: "large",
             shape: "pill",
-            width: 280,
+            width: 300,
+            text: "signin_with",
           });
           return true;
         };

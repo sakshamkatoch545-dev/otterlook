@@ -6296,5 +6296,31 @@ button,
   margin-top: 0.15rem;
 }
 
+.auth-google-section {
+  margin-top: 0.25rem;
+}
+
+.auth-google-fallback-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #FFFFFF;
+  color: #1F2937;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.auth-google-fallback-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
 
 
