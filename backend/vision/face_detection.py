@@ -113,14 +113,9 @@ class FaceDetector:
             except Exception:
                 self.yunet_detector = None
 
-        # 4. FacemarkLBF 68-Point Landmark Model
-        lbf_path = os.path.join(models_dir, "lbfmodel.yaml")
-        if os.path.exists(lbf_path) and hasattr(cv2, "face") and hasattr(cv2.face, "createFacemarkLBF"):
-            try:
-                self.facemark = cv2.face.createFacemarkLBF()
-                self.facemark.loadModel(lbf_path)
-            except Exception:
-                self.facemark = None
+        # 4. FacemarkLBF 68-Point Landmark Model (lazy-loaded on first landmark request to speed up startup)
+        self._lbf_path = os.path.join(models_dir, "lbfmodel.yaml")
+        self._lbf_loaded = False
 
         # 5. Fallback Haar Cascade
         cascade_path = os.path.join(models_dir, "haarcascade_frontalface_default.xml")
@@ -165,7 +160,20 @@ class FaceDetector:
             pass
 
     def _extract_landmarks_lbf(self, image_bgr: np.ndarray, bbox: List[int]) -> Optional[List[Tuple[int, int, float]]]:
-        """Extracts 68 facial landmarks using FacemarkLBF if available."""
+        """Extracts 68 facial landmarks using FacemarkLBF (lazy-loaded on first use)."""
+        if not self._lbf_loaded:
+            self._lbf_loaded = True
+            if (
+                getattr(self, "_lbf_path", None)
+                and os.path.exists(self._lbf_path)
+                and hasattr(cv2, "face")
+                and hasattr(cv2.face, "createFacemarkLBF")
+            ):
+                try:
+                    self.facemark = cv2.face.createFacemarkLBF()
+                    self.facemark.loadModel(self._lbf_path)
+                except Exception:
+                    self.facemark = None
         if self.facemark is None:
             return None
         try:

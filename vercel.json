@@ -7,6 +7,20 @@
       "excludeFiles": "{venv/**,data/**,training/**,docs/**,tests/**,results/**,streamlit_app.py,backend/vision/models/lbfmodel.yaml,backend/vision/models/yolov8n-face.pt,backend/vision/models/blaze_face_short_range.tflite}"
     }
   },
+  "headers": [
+    {
+      "source": "/static/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
+      ]
+    },
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=300, stale-while-revalidate=86400" }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
