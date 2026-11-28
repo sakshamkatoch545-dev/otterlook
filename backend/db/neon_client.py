@@ -21,6 +21,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 logger = logging.getLogger("otterlook.neon")
 
 _schema_initialized = False
+_shared_conn = None
 
 
 def _get_connection_url() -> str:
@@ -33,7 +34,8 @@ def _get_connection_url() -> str:
 
 
 def _open_connection():
-    """Open a short-lived Neon Postgres connection (serverless-safe)."""
+    """Return a reusable Neon Postgres connection, reconnecting if closed."""
+    global _shared_conn
     db_url = _get_connection_url()
     if not db_url:
         return None
@@ -43,6 +45,17 @@ def _open_connection():
     except ImportError:
         logger.warning("pg8000 package not installed. Run: pip install pg8000>=1.31.0")
         return None
+
+    if _shared_conn is not None:
+        try:
+            _shared_conn.run("SELECT 1")
+            return _shared_conn
+        except Exception:
+            try:
+                _shared_conn.close()
+            except Exception:
+                pass
+            _shared_conn = None
 
     try:
         parsed = urlparse(db_url)
@@ -68,10 +81,19 @@ def _open_connection():
             timeout=10,
         )
         _ensure_schema(conn)
+        _shared_conn = conn
         return conn
     except Exception as exc:
         logger.error("Failed to connect to Neon Postgres: %s", exc)
         return None
+
+
+def _close_if_not_shared(conn) -> None:
+    if conn is not None and conn is not _shared_conn:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 
 def _ensure_schema(conn) -> None:
@@ -167,10 +189,7 @@ def save_analysis(
         logger.error("Failed to save analysis to Neon: %s", exc)
         return None
     finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
+        _close_if_not_shared(conn)
 
 
 def save_feedback(
@@ -208,10 +227,7 @@ def save_feedback(
         logger.error("Failed to save feedback to Neon: %s", exc)
         return None
     finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
+        _close_if_not_shared(conn)
 
 
 # ---------------------------------------------------------------------------
@@ -236,10 +252,7 @@ def load_face_embeddings() -> List[Dict[str, Any]]:
         logger.error("Failed to load face embeddings from Neon: %s", exc)
         return []
     finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
+        _close_if_not_shared(conn)
 
 
 def get_face_profile(face_id: str) -> Optional[Dict[str, Any]]:
@@ -291,10 +304,7 @@ def get_face_profile(face_id: str) -> Optional[Dict[str, Any]]:
         logger.error("Failed to fetch face profile %s from Neon: %s", face_id, exc)
         return None
     finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
+        _close_if_not_shared(conn)
 
 
 def save_face_profile(
@@ -344,10 +354,7 @@ def save_face_profile(
         logger.error("Failed to save face profile %s to Neon: %s", face_id, exc)
         return False
     finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
+        _close_if_not_shared(conn)
 
 
 def touch_face_profile(face_id: str, blended_embedding: Optional[List[float]] = None) -> None:
@@ -381,10 +388,7 @@ def touch_face_profile(face_id: str, blended_embedding: Optional[List[float]] = 
     except Exception as exc:
         logger.error("Failed to touch face profile %s in Neon: %s", face_id, exc)
     finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
+        _close_if_not_shared(conn)
 
 
 def delete_face_profile(face_id: str) -> bool:
@@ -402,10 +406,7 @@ def delete_face_profile(face_id: str) -> bool:
         logger.error("Failed to delete face profile %s from Neon: %s", face_id, exc)
         return False
     finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
+        _close_if_not_shared(conn)
 
 
 def get_face_stats() -> Dict[str, Any]:
@@ -425,7 +426,4 @@ def get_face_stats() -> Dict[str, Any]:
     except Exception as exc:
         return {"error": str(exc), "total_registered_faces": 0, "total_recognitions": 0}
     finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
+        _close_if_not_shared(conn)

@@ -375,7 +375,7 @@ async def analyze_portrait(
     match_result = face_memory_db.find_matching_profile(face_embedding, threshold=0.82)
     if match_result is not None:
         recognized_profile, similarity_score = match_result
-        face_memory_db.touch_profile(recognized_profile["face_id"], face_embedding)
+        background_tasks.add_task(face_memory_db.touch_profile, recognized_profile["face_id"], face_embedding)
         saved_face_id = recognized_profile["face_id"]
         logger.info("Recognized returning face %s (similarity: %.1f%%)", saved_face_id, similarity_score * 100)
 
@@ -383,8 +383,18 @@ async def analyze_portrait(
     if sel_gender not in ("male", "female", "all"):
         sel_gender = "all"
 
-    detected_gender_info = gender_detector.detect_gender(image_bgr, bbox)
-    effective_gender = detected_gender_info["gender"] if sel_gender == "all" else sel_gender
+    if sel_gender == "all":
+        detected_gender_info = gender_detector.detect_gender(image_bgr, bbox)
+        effective_gender = detected_gender_info["gender"]
+    else:
+        detected_gender_info = {
+            "gender": sel_gender,
+            "label": "Women's Style" if sel_gender == "female" else "Men's Style",
+            "confidence": 1.0,
+            "confidence_percentage": 100.0,
+            "auto_detected": False,
+        }
+        effective_gender = sel_gender
 
     if recognized_profile is not None:
         # Recognized returning face: retrieve the exact same calibrated signature palette and answers!
@@ -496,22 +506,18 @@ async def analyze_portrait(
         )
     }
 
-    # Persist analysis to Neon Postgres synchronously so the row exists before feedback is submitted
+    # Persist analysis to Neon Postgres in background so response returns immediately
     import uuid as _uuid
     analysis_id = str(_uuid.uuid4())
     if db_client.is_available():
-        try:
-            saved_id = db_client.save_analysis(
-                features=color_features["ml_features"],
-                predicted_undertone=predicted_undertone,
-                confidence=ml_prediction["confidence"],
-                quality_score=quality_result["score"],
-                analysis_id=analysis_id
-            )
-            if saved_id:
-                analysis_id = saved_id
-        except Exception as e:
-            logger.error("Neon save_analysis failed: %s", e)
+        background_tasks.add_task(
+            db_client.save_analysis,
+            features=color_features["ml_features"],
+            predicted_undertone=predicted_undertone,
+            confidence=ml_prediction["confidence"],
+            quality_score=quality_result["score"],
+            analysis_id=analysis_id,
+        )
 
     # Return comprehensive structured response
     return {
