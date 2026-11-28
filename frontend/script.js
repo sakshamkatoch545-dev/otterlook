@@ -3261,16 +3261,29 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (_) {}
   })();
 
-  // --- Wardrobe Synthesizer Hide / Show Toggle ---
+  // --- Wardrobe Synthesizer Hide / Show Toggle (Hidden by default; remembers user choice) ---
   const toggleWardrobeBtn = document.getElementById("toggle-wardrobe-btn");
   const wardrobeSynthBody = document.getElementById("wardrobe-synthesizer-body");
+  const WARDROBE_VISIBILITY_KEY = "otterlook_wardrobe_visible_v1";
+  const applyWardrobeVisibility = (visible) => {
+    if (!toggleWardrobeBtn || !wardrobeSynthBody) return;
+    wardrobeSynthBody.classList.toggle("hidden", !visible);
+    toggleWardrobeBtn.setAttribute("aria-expanded", String(visible));
+    toggleWardrobeBtn.innerHTML = visible
+      ? '<span class="material-symbols-outlined" style="font-size: 16px;">visibility_off</span><span>Hide Wardrobe Synthesizer</span>'
+      : '<span class="material-symbols-outlined" style="font-size: 16px;">visibility</span><span>Show Wardrobe Synthesizer</span>';
+  };
   if (toggleWardrobeBtn && wardrobeSynthBody) {
+    let savedVisible = false;
+    try {
+      savedVisible = localStorage.getItem(WARDROBE_VISIBILITY_KEY) === "true";
+    } catch (_) {}
+    applyWardrobeVisibility(savedVisible);
+
     toggleWardrobeBtn.addEventListener("click", () => {
-      const isHidden = wardrobeSynthBody.classList.toggle("hidden");
-      toggleWardrobeBtn.setAttribute("aria-expanded", String(!isHidden));
-      toggleWardrobeBtn.innerHTML = isHidden
-        ? '<span class="material-symbols-outlined" style="font-size: 16px;">visibility</span><span>Show Wardrobe Synthesizer</span>'
-        : '<span class="material-symbols-outlined" style="font-size: 16px;">visibility_off</span><span>Hide Wardrobe Synthesizer</span>';
+      const nextVisible = wardrobeSynthBody.classList.contains("hidden");
+      applyWardrobeVisibility(nextVisible);
+      try { localStorage.setItem(WARDROBE_VISIBILITY_KEY, String(nextVisible)); } catch (_) {}
     });
   }
 

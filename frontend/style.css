@@ -6230,8 +6230,17 @@ button,
 }
 
 .wardrobe-toggle-btn {
-  padding: 0.42rem 0.85rem;
-  font-size: 0.76rem;
+  padding: 0.45rem 0.95rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-color: rgba(212, 175, 55, 0.55);
+  color: var(--accent-gold, #F2CA50);
+  background: rgba(212, 175, 55, 0.1);
+}
+
+.wardrobe-toggle-btn:hover {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: var(--accent-gold, #F2CA50);
 }
 
 @media (max-width: 768px) {
