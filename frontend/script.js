@@ -259,8 +259,24 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (cameraCaptureBtn) {
-    cameraCaptureBtn.addEventListener("click", () => {
+    cameraCaptureBtn.addEventListener("click", async () => {
       if (!cameraVideo || !cameraVideo.videoWidth) return;
+      const liveMeterEl = document.getElementById("camera-live-meter");
+      const ovalEl = document.querySelector(".camera-face-oval");
+
+      // Compute oval geometry normalized to video frame (0..1)
+      let ovalCx = 0.5, ovalCy = 0.5, ovalW = 0.56, ovalH = 0.74;
+      if (ovalEl) {
+        const vRect = cameraVideo.getBoundingClientRect();
+        const oRect = ovalEl.getBoundingClientRect();
+        if (vRect.width > 0 && vRect.height > 0 && oRect.width > 0 && oRect.height > 0) {
+          ovalCx = ((oRect.left + oRect.width / 2) - vRect.left) / vRect.width;
+          ovalCy = ((oRect.top + oRect.height / 2) - vRect.top) / vRect.height;
+          ovalW = oRect.width / vRect.width;
+          ovalH = oRect.height / vRect.height;
+        }
+      }
+
       const snapCanvas = document.createElement("canvas");
       snapCanvas.width = cameraVideo.videoWidth;
       snapCanvas.height = cameraVideo.videoHeight;
@@ -270,13 +286,77 @@ document.addEventListener("DOMContentLoaded", () => {
         snapCtx.scale(-1, 1);
       }
       snapCtx.drawImage(cameraVideo, 0, 0);
-      snapCanvas.toBlob((blob) => {
-        if (blob) {
-          const file = new File([blob], "selfie.jpg", { type: "image/jpeg" });
-          handleFileSelection(file);
+
+      cameraCaptureBtn.disabled = true;
+      if (liveMeterEl) {
+        liveMeterEl.textContent = "Checking face inside oval...";
+        liveMeterEl.className = "camera-live-meter";
+      }
+
+      try {
+        const snapDataUrl = snapCanvas.toDataURL("image/jpeg", 0.92);
+        const detRes = await verifyFaceWithYolo(snapDataUrl);
+
+        if (detRes && !detRes.networkError) {
+          const allFaces = (detRes.faces && detRes.faces.length)
+            ? detRes.faces
+            : (detRes.bounding_box ? [detRes.bounding_box] : []);
+
+          // Filter to only faces positioned inside the oval
+          const inOvalFaces = allFaces
+            .map((f) => {
+              const fcx = (f.pctX + f.pctW / 2) / 100;
+              const fcy = (f.pctY + f.pctH / 2) / 100;
+              const fw = f.pctW / 100;
+              const fh = f.pctH / 100;
+              const rx = Math.max(0.15, ovalW * 0.5);
+              const ry = Math.max(0.15, ovalH * 0.5);
+              const dist2 = Math.pow((fcx - ovalCx) / rx, 2) + Math.pow((fcy - ovalCy) / ry, 2);
+              const fitsSize = fw >= ovalW * 0.25 && fh >= ovalH * 0.22;
+              return { face: f, dist2, inside: dist2 <= 1.1 && fitsSize };
+            })
+            .filter((item) => item.inside)
+            .sort((a, b) => a.dist2 - b.dist2);
+
+          if (inOvalFaces.length === 0) {
+            if (liveMeterEl) {
+              liveMeterEl.textContent = "⚠️ Put your face in the oval";
+              liveMeterEl.className = "camera-live-meter warn";
+            }
+            if (ovalEl) {
+              ovalEl.style.borderColor = "#EF4444";
+              setTimeout(() => { ovalEl.style.borderColor = ""; }, 1600);
+            }
+            return;
+          }
+
+          // Only keep & crop the single face inside the oval (excludes any other faces outside)
+          const targetFace = inOvalFaces[0].face;
+          const snapImg = new Image();
+          snapImg.src = snapDataUrl;
+          await new Promise((resolve) => {
+            snapImg.onload = resolve;
+            snapImg.onerror = resolve;
+          });
+          const cropped = await cropPortraitAroundFace(snapImg, targetFace);
+          if (cropped && cropped.file) {
+            stopCameraStream();
+            handleFileSelection(cropped.file);
+            return;
+          }
         }
-      }, "image/jpeg", 0.95);
-      stopCameraStream();
+
+        // Offline fallback if /api/detect-face was unreachable
+        snapCanvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], "selfie.jpg", { type: "image/jpeg" });
+            handleFileSelection(file);
+          }
+        }, "image/jpeg", 0.92);
+        stopCameraStream();
+      } finally {
+        cameraCaptureBtn.disabled = false;
+      }
     });
   }
 
